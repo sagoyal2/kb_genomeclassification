@@ -37,5 +37,10 @@ parameters :
             Select the attribute
         short-hint : |
             Select the attribute that classifier be built
+    classifier_out :
+        ui-name : |
+            Classifier Name
+        short-hint : |
+            Name the classifier object
 description : |
     <p>This module build a classifier and predict phenotypes based on the classifier.</p>

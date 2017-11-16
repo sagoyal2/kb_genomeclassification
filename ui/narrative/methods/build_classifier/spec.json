@@ -21,36 +21,48 @@
             "n_rows" : 15
         }
     },
-        {
-           "id": "attribute",
-           "optional": false,
-           "advanced": false,
-           "allow_multiple": false,
-           "default_values": [ "Functional annotations" ],
-           "field_type": "dropdown",
-           "dropdown_options": {
-               "options": [
-                   {
-                     "value": "functional_roles",
-                     "display": "Functional annotations",
-                     "id": "functional_roles",
-                     "ui_name": "Functional annotations"
-                   },
-                   {
-                     "value": "prot_seq",
-                     "display": "Protein sequences",
-                     "id": "prot_seq",
-                     "ui_name": "Protein sequences"
-                   },
-                   {
-                     "value": "kmer",
-                     "display": "K-mers 18mer",
-                     "id": "kmer",
-                     "ui_name": "K-mers 18mer"
-                   }
-                ]
-            }
+    {
+       "id": "attribute",
+       "optional": false,
+       "advanced": false,
+       "allow_multiple": false,
+       "default_values": [ "Functional annotations" ],
+       "field_type": "dropdown",
+       "dropdown_options": {
+           "options": [
+               {
+                 "value": "functional_roles",
+                 "display": "Functional annotations",
+                 "id": "functional_roles",
+                 "ui_name": "Functional annotations"
+               },
+               {
+                 "value": "prot_seq",
+                 "display": "Protein sequences",
+                 "id": "prot_seq",
+                 "ui_name": "Protein sequences"
+               },
+               {
+                 "value": "kmer",
+                 "display": "K-mers 18mer",
+                 "id": "kmer",
+                 "ui_name": "K-mers 18mer"
+               }
+            ]
         }
+    },
+    {
+            "id" : "classifier_out",
+            "optional" : false,
+            "advanced" : false,
+            "allow_multiple" : false,
+            "default_values" : [ "" ],
+            "field_type" : "text",
+            "text_options" : {
+            "valid_ws_types" : [ "KBaseGenomes.Genome" ],
+            "is_output_name":true
+            }
+    }
     ],
     "behavior": {
         "service-mapping": {
@@ -65,6 +77,11 @@
                 {
                     "input_parameter": "classifier_training_set",
                     "target_property": "classifier_training_set"
+
+                },
+                {
+                    "input_parameter": "classifier_out",
+                    "target_property": "classifier_out"
 
                 },
                 {

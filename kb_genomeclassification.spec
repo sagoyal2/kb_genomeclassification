@@ -19,7 +19,7 @@ module kb_genomeclassification {
         string attribute;
         string workspace;
         mapping <string genome_id,ClassifierTrainingSet> classifier_training_set;
-
+        string classifier_out;
     }BuildClassifierInput;
 
     typedef structure {
