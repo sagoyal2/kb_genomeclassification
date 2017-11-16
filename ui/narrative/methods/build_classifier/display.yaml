@@ -1,0 +1,41 @@
+#
+# define display information
+#
+name: Build Genome Classifier
+tooltip: |
+    This module build a classifier based on selected atrribute
+screenshots: []
+
+icon: null
+
+#
+# define a set of similar methods that might be useful to the user
+#
+suggestions:
+    apps:
+        related:
+            []
+        next:
+            []
+    methods:
+        related:
+            []
+        next:
+            []
+
+#
+# Configure the display and description of parameters
+#
+parameters :
+    classifier_training_set :
+        ui-name : |
+            Classifier Training Set
+        short-hint : |
+            Paste the list of traning set data
+    attribute :
+        ui-name : |
+            Select the attribute
+        short-hint : |
+            Select the attribute that classifier be built
+description : |
+    <p>This module build a classifier and predict phenotypes based on the classifier.</p>

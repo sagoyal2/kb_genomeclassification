@@ -1,0 +1,92 @@
+{
+    "ver": "0.0.1",
+    "authors": [
+        "janakakbase"
+    ],
+    "contact": "https://kbase.us/contact-us/",
+    "categories": ["active"],
+    "widgets": {
+        "input": null,
+        "output": "no-display"
+    },
+    "parameters": [
+        {
+        "id": "classifier_training_set",
+        "optional": true,
+        "advanced": false,
+        "allow_multiple": false,
+        "default_values": [ "" ],
+        "field_type": "textarea",
+        "textarea_options" : {
+            "n_rows" : 15
+        }
+    },
+        {
+           "id": "attribute",
+           "optional": false,
+           "advanced": false,
+           "allow_multiple": false,
+           "default_values": [ "Functional annotations" ],
+           "field_type": "dropdown",
+           "dropdown_options": {
+               "options": [
+                   {
+                     "value": "functional_roles",
+                     "display": "Functional annotations",
+                     "id": "functional_roles",
+                     "ui_name": "Functional annotations"
+                   },
+                   {
+                     "value": "prot_seq",
+                     "display": "Protein sequences",
+                     "id": "prot_seq",
+                     "ui_name": "Protein sequences"
+                   },
+                   {
+                     "value": "kmer",
+                     "display": "K-mers 18mer",
+                     "id": "kmer",
+                     "ui_name": "K-mers 18mer"
+                   }
+                ]
+            }
+        }
+    ],
+    "behavior": {
+        "service-mapping": {
+            "url": "",
+            "name":"kb_genomeclassification",
+            "method": "build_classifier",
+            "input_mapping": [
+                {
+                    "narrative_system_variable": "workspace",
+                    "target_property": "workspace"
+                },
+                {
+                    "input_parameter": "classifier_training_set",
+                    "target_property": "classifier_training_set"
+
+                },
+                {
+                    "input_parameter": "attribute",
+                    "target_property": "attribute"
+                }
+            ],
+            "output_mapping": [
+                {
+                    "service_method_output_path": [0,"report_name"],
+                    "target_property": "report_name"
+                },
+                {
+                    "service_method_output_path": [0,"report_ref"],
+                    "target_property": "report_ref"
+                },
+                {
+                    "narrative_system_variable": "workspace",
+                    "target_property": "ws"
+                }
+            ]
+        }
+    },
+    "job_id_output_field": "docker"
+}
