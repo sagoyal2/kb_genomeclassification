@@ -19,7 +19,7 @@ from sklearn.metrics import recall_score
 from sklearn.model_selection import StratifiedKFold
 import seaborn; seaborn.set()
 import matplotlib.pyplot as plt
-%matplotlib inline
+#%matplotlib inline
 
     #here are imports for specific classifiers
 from sklearn.neighbors import KNeighborsClassifier
@@ -68,86 +68,6 @@ This module build a classifier and predict phenotypes based on the classifier
 
         #END_CONSTRUCTOR
         pass
-
-
-    def build_classifier(self, ctx, params):
-        """
-        :param params: instance of type "BuildClassifierInput" -> structure:
-           parameter "phenotypeclass" of String, parameter "attribute" of
-           String, parameter "workspace" of String, parameter
-           "classifier_training_set" of mapping from String to type
-           "ClassifierTrainingSet" (typedef string genome_id; typedef string
-           phenotype;) -> structure: parameter "phenotype" of String,
-           parameter "genome_name" of String
-        :returns: instance of type "ClassifierOut" -> structure: parameter
-           "classifier_ref" of String, parameter "phenotype" of String
-        """
-        # ctx is the context object
-        # return variables are: output
-        #BEGIN build_classifier
-
-
-        # Add the block of code that reads in .txt file contain the annotations.
-        # (Here my question is how to change this section so that it reads in the genomes files on the KBASE Narrative)
-
-
-        # Add in block of code that creates one dimensional array is constructed for the organisms and all of the functional roles.
-        # Add in block of code used to create the functional role data matrix; full_attribute_array
-
-        # create training and testing blocks and randomly split
-        train_index=[]
-        test_index=[]
-        splits =10
-        skf = StratifiedKFold(n_splits=splits,random_state=0,shuffle=True)
-        for train_idx, test_idx in skf.split(full_attribute_array,full_classification_array):
-            train_index.append(train_idx)
-            test_index.append(test_idx)
-
-        # test all classifiers so user can see results
-        classiferTest(KNeighborsClassifier(),"Metabolism-KNeighborsClassifier",True)
-        classiferTest(GaussianNB(),"Metabolism-GaussianNB",True)
-        classiferTest(LogisticRegression(random_state=0),"Metabolism-LogisticRegression",True)
-        classiferTest(DecisionTreeClassifier(random_state=0),"Metabolism-DecisionTreeClassifier",True)
-        classiferTest(svm.LinearSVC(random_state=0),"Metabolism-SVM",True)
-
-        # building the visual tree for the DecisionTreeClassifier
-        tree = DecisionTreeClassifier(random_state=0,max_depth=3, criterion='entropy')
-        tree.fit(full_attribute_array,full_classification_array)
-        tree_code(tree, attribute_list, class_list) # <-- prints the tree to see the "decisions" that the classifier is making
-
-        #END build_classifier
-
-        # At some point might do deeper type checking...
-        if not isinstance(output, dict):
-            raise ValueError('Method build_classifier return value ' +
-                             'output is not type dict as required.')
-        # return the results
-        return [output]
-
-    def plot_confusion_matrix(cm, classes, title,classifier_name):
-        plt.rcParams.update({'font.size': 18})
-        fig,ax= plt.subplots(figsize=(5,4))
-        sns.set(font_scale=1.5)
-        sns_plot = sns.heatmap(cm, annot=True, ax = ax, cmap="Blues"); #annot=True to annotate cells
-        # labels, title and ticks
-        ax.set_xlabel('Predicted labels');ax.set_ylabel('True labels'); 
-        ax.set_title(title); 
-        ax.xaxis.set_ticklabels(classes); ax.yaxis.set_ticklabels(classes);
-        # fig.savefig(classifier_name+".png") this may not be necessary as not necessary to save png file
-
-    def cf_stats(TN,TP,FP,FN):
-        AN = TN+FP
-        AP = TN+FN
-        PN = TN+FN
-        PP = TP+FP
-        Total = TN+TP+FP+FN
-        Recall = (TP/(TP+FN))
-        Precision = (TP/(TP+FP))
-        print("Accuracy:\t\t%6.3f"%((TP+TN)/Total))
-        print("Precision:\t\t%6.3f"%(Precision))
-        print("Recall:\t\t%6.3f"%(Recall))
-        print("F1 score::\t\t%6.3f"%(2*((Precision*Recall)/(Precision+Recall))))
-        print()
 
     def classiferTest(classifier,classifier_name,print_cfm):
     # so in this method we need to be returning a classifier instead of all the confusion matrices?
@@ -227,6 +147,136 @@ This module build a classifier and predict phenotypes based on the classifier
             plot_confusion_matrix(cnf_matrix_f/splits*100.0,class_list,'Confusion Matrix %',classifier_name)
         return (numpy.average(train_score),numpy.std(train_score),numpy.average(validate_score),numpy.std(validate_score))
 
+    def build_classifier(self, ctx, params):
+        """
+        :param params: instance of type "BuildClassifierInput" -> structure:
+           parameter "phenotypeclass" of String, parameter "attribute" of
+           String, parameter "workspace" of String, parameter
+           "classifier_training_set" of mapping from String to type
+           "ClassifierTrainingSet" (typedef string genome_id; typedef string
+           phenotype;) -> structure: parameter "phenotype" of String,
+           parameter "genome_name" of String
+        :returns: instance of type "ClassifierOut" -> structure: parameter
+           "classifier_ref" of String, parameter "phenotype" of String
+        """
+        # ctx is the context object
+        # return variables are: output
+        #BEGIN build_classifier
+
+
+        # Add the block of code that reads in .txt file contain the annotations.
+        # (Here my question is how to change this section so that it reads in the genomes files on the KBASE Narrative)
+        organisams={}
+        organism_id=[]
+        attributes_full={}
+        atributes_by_class={}
+        class_set=set()
+        class_counter = {'anaerobic':0, 'aerobic':0, 'facultative':0}
+        with open("/home/sagoyal/Downloads/cleanData.txt") as infile:
+            for line in infile:
+                # data is tab delimited
+                data = line.rstrip().split("\t")
+                # first column contains organism name
+                organism_id.append(data[0])
+                # second column contains metabolic class
+                organisams[data[0]]={"class":data[1],"roles":[]}
+                class_set.add(data[1].replace("'", ""))
+                classtype=data[1].replace("'", "")
+                class_counter[classtype]+=1
+                for i in range(2,len(data)):
+                    attribute = data[i].replace("'", "")
+                    if(attribute not in organisams[data[0].replace("'", "")]["roles"]):
+                        organisams[data[0]]["roles"].append(attribute)
+                        if not attribute in attributes_full:
+                            attributes_full[attribute]=0
+                            atributes_by_class[attribute]={'anaerobic':0, 'aerobic':0, 'facultative':0}
+                        attributes_full[attribute]+=1
+                        atributes_by_class[attribute][classtype]+=1
+
+        print(len(organisams))
+        print(len(attributes_full))
+        print(class_set)
+        print(class_counter)
+
+        # Add in block of code that creates one dimensional array is constructed for the organisms and all of the functional roles.
+        import numpy
+        attribute_list = list(attributes_full.keys())
+        organisam_list = list(organisams.keys())
+        class_list = list(class_set)
+        full_classification_array = numpy.array(["" for x in range(len(organisam_list))])
+
+        print(class_list)
+        print(len(attributes_full))
+        print(len(organisam_list))
+        print(len(full_classification_array))
+
+        full_attribute_array = numpy.zeros(shape=(len(organisam_list),len(attribute_list)))
+
+        # Add in block of code used to create the functional role data matrix; full_attribute_array
+
+        for y_indx in range(len(organisam_list)):
+            organisam = organisam_list[y_indx]
+            if organisam in organisams:
+                full_classification_array[y_indx] = class_list.index(organisams[organisam]["class"])
+                for attribute in organisams[organisam]["roles"]:
+                    if attribute in attributes_full:
+                        x_indx  = attribute_list.index(attribute)
+                        full_attribute_array[y_indx,x_indx]=1
+        
+        # create training and testing blocks and randomly split
+        train_index=[]
+        test_index=[]
+        splits =10
+        skf = StratifiedKFold(n_splits=splits,random_state=0,shuffle=True)
+        for train_idx, test_idx in skf.split(full_attribute_array,full_classification_array):
+            train_index.append(train_idx)
+            test_index.append(test_idx)
+
+        # test all classifiers so user can see results
+        classiferTest(KNeighborsClassifier(),"Metabolism-KNeighborsClassifier",True)
+        classiferTest(GaussianNB(),"Metabolism-GaussianNB",True)
+        classiferTest(LogisticRegression(random_state=0),"Metabolism-LogisticRegression",True)
+        classiferTest(DecisionTreeClassifier(random_state=0),"Metabolism-DecisionTreeClassifier",True)
+        classiferTest(svm.LinearSVC(random_state=0),"Metabolism-SVM",True)
+
+        # building the visual tree for the DecisionTreeClassifier
+        tree = DecisionTreeClassifier(random_state=0,max_depth=3, criterion='entropy')
+        tree.fit(full_attribute_array,full_classification_array)
+        tree_code(tree, attribute_list, class_list) # <-- prints the tree to see the "decisions" that the classifier is making
+
+        #END build_classifier
+
+        # At some point might do deeper type checking...
+        if not isinstance(output, dict):
+            raise ValueError('Method build_classifier return value ' +
+                             'output is not type dict as required.')
+        # return the results
+        return [output]
+
+    def plot_confusion_matrix(cm, classes, title,classifier_name):
+        plt.rcParams.update({'font.size': 18})
+        fig,ax= plt.subplots(figsize=(5,4))
+        sns.set(font_scale=1.5)
+        sns_plot = sns.heatmap(cm, annot=True, ax = ax, cmap="Blues"); #annot=True to annotate cells
+        # labels, title and ticks
+        ax.set_xlabel('Predicted labels');ax.set_ylabel('True labels'); 
+        ax.set_title(title); 
+        ax.xaxis.set_ticklabels(classes); ax.yaxis.set_ticklabels(classes);
+        # fig.savefig(classifier_name+".png") this may not be necessary as not necessary to save png file
+
+    def cf_stats(TN,TP,FP,FN):
+        AN = TN+FP
+        AP = TN+FN
+        PN = TN+FN
+        PP = TP+FP
+        Total = TN+TP+FP+FN
+        Recall = (TP/(TP+FN))
+        Precision = (TP/(TP+FP))
+        print("Accuracy:\t\t%6.3f"%((TP+TN)/Total))
+        print("Precision:\t\t%6.3f"%(Precision))
+        print("Recall:\t\t%6.3f"%(Recall))
+        print("F1 score::\t\t%6.3f"%(2*((Precision*Recall)/(Precision+Recall))))
+        print()
 
     def tree_code(tree, feature_names, target_names,
                  spacer_base="    "):
