@@ -76,6 +76,16 @@ class kb_genomeclassificationTest(unittest.TestCase):
     def getContext(self):
         return self.__class__.ctx
 
+    def test_build_classifier(self):
+        print(self.getImpl().build_classifier(self.getContext(), {"gram negative", "xyz"}))
+        print("done with test_build_classifier")
+        #result.build_classifier(self.getContext(), {"gram negative", "xyz"})
+        #result.classiferTest(KNeighborsClassifier(),"Metabolism-KNeighborsClassifier",True)
+
+        #impl_kb_genomeclassification.tree_code() # <-- prints the tree to see the "decisions" that the classifier is making
+
+
+    """
     # NOTE: According to Python unittest naming rules test method names should start from 'test'. # noqa
     def load_fasta_file(self, filename, obj_name, contents):
         f = open(filename, 'w')
@@ -130,3 +140,4 @@ class kb_genomeclassificationTest(unittest.TestCase):
                                            'assembly_input_ref': '1/fake/3',
                                            'min_length': 'ten'})
         self.assertIn('Cannot parse integer from min_length parameter', str(errorContext.exception))
+    """
