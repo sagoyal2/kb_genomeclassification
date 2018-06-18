@@ -1,6 +1,3 @@
-#quick update
-
-# -*- coding: utf-8 -*-
 #BEGIN_HEADER
 # The header block is where all import statments should live
 import os
@@ -11,15 +8,20 @@ from KBaseReport.KBaseReportClient import KBaseReport
 
     #here are some more imports for sklearn
 from sklearn.model_selection import train_test_split
+#from sklearn.grid_search import train_test_split
 from sklearn.feature_selection import SelectKBest
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 from sklearn import feature_selection
 from sklearn.metrics import recall_score
 from sklearn.model_selection import StratifiedKFold
-import seaborn; seaborn.set()
-import matplotlib.pyplot as plt
-#%matplotlib inline
+#from sklearn.grid_search import StratifiedKFold
+
+#fix later
+#import seaborn; seaborn.set()
+#import matplotlib.pyplot as plt
+
+#%matplotlib inlines    
 
     #here are imports for specific classifiers
 from sklearn.neighbors import KNeighborsClassifier
@@ -28,6 +30,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn import svm
 from sklearn.neural_network import MLPClassifier
+
+import numpy
+import numpy as np
+import pickle
 
 #END_HEADER
 
@@ -66,9 +72,107 @@ This module build a classifier and predict phenotypes based on the classifier
         self.callback_url = os.environ['SDK_CALLBACK_URL']
         self.shared_folder = config['scratch']
 
+        self.full_attribute_array = np.load("/kb/module/data/full_attribute_array.npy")
+        self.full_classification_array = np.load("/kb/module/data/full_classification_array.npy")
+
+        pickle_in = open("/kb/module/data/attribute_list.pickle", "rb")
+        self.attribute_list = pickle.load(pickle_in)
+
+        self.class_list = ['anaerobic', 'aerobic', 'facultative']
+
+        self.train_index = []
+        self.test_index = []
+
+        self.splits = 10
+
+        global output 
+        output = {'jack': 4098, 'sape': 4139} #random dict
+
         #END_CONSTRUCTOR
         pass
 
+    """
+    def classiferTest(self, classifier, classifier_name, print_cfm):
+        # so in this method we need to be returning a classifier instead of all the confusion matrices?
+        # how do you return a classifier?
+
+        if print_cfm:
+            print(classifier_name)
+        train_score = numpy.zeros(self.splits)
+        validate_score = numpy.zeros(self.splits)
+        cnf_matrix = numpy.zeros(shape=(3, 3))
+        cnf_matrix_f = numpy.zeros(shape=(3, 3))
+        for c in range(self.splits):
+            X_train = self.full_attribute_array[self.train_index[c]]
+            y_train = self.full_classification_array[self.train_index[c]]
+            X_test = self.full_attribute_array[self.test_index[c]]
+            y_test = self.full_classification_array[self.test_index[c]]
+            classifier.fit(X_train, y_train)
+            train_score[c] = classifier.score(X_train, y_train)
+            validate_score[c] = classifier.score(X_test, y_test)
+            y_pred = classifier.predict(X_test)
+            cnf = confusion_matrix(y_test, y_pred)
+            cnf_f = cnf.astype('float') / cnf.sum(axis=1)[:, numpy.newaxis]
+            for i in range(len(cnf)):
+                for j in range(len(cnf)):
+                    cnf_matrix[i][j] += cnf[i][j]
+                    cnf_matrix_f[i][j] += cnf_f[i][j]
+
+        print("%6.3f\t%6.3f\t%6.3f\t%6.3f" % (
+        numpy.average(train_score), numpy.std(train_score), numpy.average(validate_score), numpy.std(validate_score)))
+
+        if print_cfm:
+            cnf_av = cnf_matrix / self.splits
+            print()
+            print(cnf_av[0][0], cnf_av[0][1], cnf_av[0][2], )
+            print(cnf_av[1][0], cnf_av[1][1], cnf_av[1][2], )
+            print(cnf_av[2][0], cnf_av[2][1], cnf_av[2][2], )
+            print()
+            print(self.class_list[0])
+            TP = cnf_av[0][0]
+            TN = cnf_av[1][2] + cnf_av[1][2] + cnf_av[2][1] + cnf_av[2][2]
+            FP = cnf_av[0][1] + cnf_av[0][2]
+            FN = cnf_av[1][0] + cnf_av[2][0]
+            self.cf_stats(TN, TP, FP, FN)
+
+            print(self.class_list[1])
+            TP = cnf_av[1][1]
+            TN = cnf_av[0][0] + cnf_av[0][2] + cnf_av[2][0] + cnf_av[2][2]
+            FP = cnf_av[1][0] + cnf_av[1][2]
+            FN = cnf_av[0][1] + cnf_av[2][1]
+            self.cf_stats(TN, TP, FP, FN)
+
+            print(self.class_list[2])
+            TP = cnf_av[2][2]
+            TN = cnf_av[0][0] + cnf_av[0][1] + cnf_av[1][0] + cnf_av[1][1]
+            FP = cnf_av[2][0] + cnf_av[2][1]
+            FN = cnf_av[0][1] + cnf_av[0][2]
+            self.cf_stats(TN, TP, FP, FN)
+
+            print(classifier)
+            print()
+            print("Confusion matrix")
+            for i in range(len(cnf_matrix)):
+                print(self.class_list[i], end="  \t")
+                for j in range(len(cnf_matrix[i])):
+                    print(cnf_matrix[i][j] / self.splits, end="\t")
+                print()
+            print()
+            for i in range(len(cnf_matrix_f)):
+                print(self.class_list[i], end="  \t")
+                for j in range(len(cnf_matrix_f[i])):
+                    print("%6.1f" % ((cnf_matrix_f[i][j] / self.splits) * 100.0), end="\t")
+                print()
+            print()
+            print("01", cnf_matrix[0][1])
+
+            # plot_confusion_matrix(cnf_matrix/10,class_list,'Confusion Matrix')
+            # plot_confusion_matrix(cnf_matrix_f/splits*100.0,class_list,'Confusion Matrix %',classifier_name)
+        return (
+        numpy.average(train_score), numpy.std(train_score), numpy.average(validate_score), numpy.std(validate_score))
+    """
+
+    """
     def classiferTest(classifier,classifier_name,print_cfm):
     # so in this method we need to be returning a classifier instead of all the confusion matrices?
     # how do you return a classifier?
@@ -143,9 +247,10 @@ This module build a classifier and predict phenotypes based on the classifier
             print()
             print("01",cnf_matrix[0][1])
 
-            ##plot_confusion_matrix(cnf_matrix/10,class_list,'Confusion Matrix')
-            plot_confusion_matrix(cnf_matrix_f/splits*100.0,class_list,'Confusion Matrix %',classifier_name)
+            #plot_confusion_matrix(cnf_matrix/10,class_list,'Confusion Matrix')
+            #plot_confusion_matrix(cnf_matrix_f/splits*100.0,class_list,'Confusion Matrix %',classifier_name)
         return (numpy.average(train_score),numpy.std(train_score),numpy.average(validate_score),numpy.std(validate_score))
+    """
 
     def build_classifier(self, ctx, params):
         """
@@ -163,16 +268,18 @@ This module build a classifier and predict phenotypes based on the classifier
         # return variables are: output
         #BEGIN build_classifier
 
+        print(params)
 
         # Add the block of code that reads in .txt file contain the annotations.
         # (Here my question is how to change this section so that it reads in the genomes files on the KBASE Narrative)
+        """
         organisams={}
         organism_id=[]
         attributes_full={}
         atributes_by_class={}
         class_set=set()
         class_counter = {'anaerobic':0, 'aerobic':0, 'facultative':0}
-        with open("/home/sagoyal/Downloads/cleanData.txt") as infile:
+        with open("/kb/module/data/cleanData.txt") as infile:
             for line in infile:
                 # data is tab delimited
                 data = line.rstrip().split("\t")
@@ -222,8 +329,10 @@ This module build a classifier and predict phenotypes based on the classifier
                     if attribute in attributes_full:
                         x_indx  = attribute_list.index(attribute)
                         full_attribute_array[y_indx,x_indx]=1
-        
+        """
+
         # create training and testing blocks and randomly split
+        """
         train_index=[]
         test_index=[]
         splits =10
@@ -231,20 +340,152 @@ This module build a classifier and predict phenotypes based on the classifier
         for train_idx, test_idx in skf.split(full_attribute_array,full_classification_array):
             train_index.append(train_idx)
             test_index.append(test_idx)
+        """
+        #print(self.attribute_list)
 
-        # test all classifiers so user can see results
+        skf = StratifiedKFold(n_splits=self.splits, random_state=0, shuffle=True)
+        for train_idx, test_idx in skf.split(self.full_attribute_array, self.full_classification_array):
+            self.train_index.append(train_idx)
+            self.test_index.append(test_idx)
+        #self.classiferTest(KNeighborsClassifier(),"Metabolism-KNeighborsClassifier",True)
+        """
+        test all classifiers so user can see results
         classiferTest(KNeighborsClassifier(),"Metabolism-KNeighborsClassifier",True)
         classiferTest(GaussianNB(),"Metabolism-GaussianNB",True)
         classiferTest(LogisticRegression(random_state=0),"Metabolism-LogisticRegression",True)
         classiferTest(DecisionTreeClassifier(random_state=0),"Metabolism-DecisionTreeClassifier",True)
         classiferTest(svm.LinearSVC(random_state=0),"Metabolism-SVM",True)
-
+        """
+        """
         # building the visual tree for the DecisionTreeClassifier
         tree = DecisionTreeClassifier(random_state=0,max_depth=3, criterion='entropy')
         tree.fit(full_attribute_array,full_classification_array)
         tree_code(tree, attribute_list, class_list) # <-- prints the tree to see the "decisions" that the classifier is making
+        """
+        print("Hello0")
+        print("Hello2")
 
-        #END build_classifier
+        classifier = KNeighborsClassifier() 
+        classifier_name = "Metabolism-KNeighborsClassifier" 
+        print_cfm = True
+
+        if print_cfm:
+            print(classifier_name)
+        train_score = numpy.zeros(self.splits)
+        validate_score = numpy.zeros(self.splits)
+        cnf_matrix = numpy.zeros(shape=(3, 3))
+        cnf_matrix_f = numpy.zeros(shape=(3, 3))
+        for c in range(self.splits):
+            X_train = self.full_attribute_array[self.train_index[c]]
+            y_train = self.full_classification_array[self.train_index[c]]
+            X_test = self.full_attribute_array[self.test_index[c]]
+            y_test = self.full_classification_array[self.test_index[c]]
+            classifier.fit(X_train, y_train)
+            train_score[c] = classifier.score(X_train, y_train)
+            validate_score[c] = classifier.score(X_test, y_test)
+            y_pred = classifier.predict(X_test)
+            cnf = confusion_matrix(y_test, y_pred)
+            cnf_f = cnf.astype('float') / cnf.sum(axis=1)[:, numpy.newaxis]
+            for i in range(len(cnf)):
+                for j in range(len(cnf)):
+                    cnf_matrix[i][j] += cnf[i][j]
+                    cnf_matrix_f[i][j] += cnf_f[i][j]
+
+        print("Hello1")
+        print("%6.3f\t%6.3f\t%6.3f\t%6.3f" % (
+        numpy.average(train_score), numpy.std(train_score), numpy.average(validate_score), numpy.std(validate_score)))
+
+        if print_cfm:
+            cnf_av = cnf_matrix / self.splits
+            print()
+            print(cnf_av[0][0], cnf_av[0][1], cnf_av[0][2], )
+            print(cnf_av[1][0], cnf_av[1][1], cnf_av[1][2], )
+            print(cnf_av[2][0], cnf_av[2][1], cnf_av[2][2], )
+            print()
+            print(self.class_list[0])
+            TP = cnf_av[0][0]
+            TN = cnf_av[1][2] + cnf_av[1][2] + cnf_av[2][1] + cnf_av[2][2]
+            FP = cnf_av[0][1] + cnf_av[0][2]
+            FN = cnf_av[1][0] + cnf_av[2][0]
+            #self.cf_stats(TN, TP, FP, FN)
+
+            AN = TN+FP
+            AP = TN+FN
+            PN = TN+FN
+            PP = TP+FP
+            Total = TN+TP+FP+FN
+            Recall = (TP/(TP+FN))
+            Precision = (TP/(TP+FP))
+            print("Accuracy:\t\t%6.3f"%((TP+TN)/Total))
+            print("Precision:\t\t%6.3f"%(Precision))
+            print("Recall:\t\t%6.3f"%(Recall))
+            print("F1 score::\t\t%6.3f"%(2*((Precision*Recall)/(Precision+Recall))))
+            print()
+
+            print(self.class_list[1])
+            TP = cnf_av[1][1]
+            TN = cnf_av[0][0] + cnf_av[0][2] + cnf_av[2][0] + cnf_av[2][2]
+            FP = cnf_av[1][0] + cnf_av[1][2]
+            FN = cnf_av[0][1] + cnf_av[2][1]
+            #self.cf_stats(TN, TP, FP, FN)
+            
+            AN = TN+FP
+            AP = TN+FN
+            PN = TN+FN
+            PP = TP+FP
+            Total = TN+TP+FP+FN
+            Recall = (TP/(TP+FN))
+            Precision = (TP/(TP+FP))
+            print("Accuracy:\t\t%6.3f"%((TP+TN)/Total))
+            print("Precision:\t\t%6.3f"%(Precision))
+            print("Recall:\t\t%6.3f"%(Recall))
+            print("F1 score::\t\t%6.3f"%(2*((Precision*Recall)/(Precision+Recall))))
+            print()
+
+            print(self.class_list[2])
+            TP = cnf_av[2][2]
+            TN = cnf_av[0][0] + cnf_av[0][1] + cnf_av[1][0] + cnf_av[1][1]
+            FP = cnf_av[2][0] + cnf_av[2][1]
+            FN = cnf_av[0][1] + cnf_av[0][2]
+            #self.cf_stats(TN, TP, FP, FN)
+            
+            AN = TN+FP
+            AP = TN+FN
+            PN = TN+FN
+            PP = TP+FP
+            Total = TN+TP+FP+FN
+            Recall = (TP/(TP+FN))
+            Precision = (TP/(TP+FP))
+            print("Accuracy:\t\t%6.3f"%((TP+TN)/Total))
+            print("Precision:\t\t%6.3f"%(Precision))
+            print("Recall:\t\t%6.3f"%(Recall))
+            print("F1 score::\t\t%6.3f"%(2*((Precision*Recall)/(Precision+Recall))))
+            print()
+            print(classifier)
+            print()
+
+            print("Confusion matrix")
+            for i in range(len(cnf_matrix)):
+                print(str(self.class_list[i]) + "  \t"),
+                for j in range(len(cnf_matrix[i])):
+                    print(str(cnf_matrix[i][j] / self.splits) + "\t"),
+                print()
+            print()
+            for i in range(len(cnf_matrix_f)):
+                print(str(self.class_list[i]) + "  \t"),
+                for j in range(len(cnf_matrix_f[i])):
+                    print(str("%6.1f" % ((cnf_matrix_f[i][j] / self.splits) * 100.0)) + "\t"),
+                print()
+            print()
+            print("01", cnf_matrix[0][1])
+
+            # plot_confusion_matrix(cnf_matrix/10,class_list,'Confusion Matrix')
+            # plot_confusion_matrix(cnf_matrix_f/splits*100.0,class_list,'Confusion Matrix %',classifier_name)
+        #return (numpy.average(train_score), numpy.std(train_score), numpy.average(validate_score), numpy.std(validate_score))
+
+        return("skipped everything?")
+
+        print("Hello2")
 
         # At some point might do deeper type checking...
         if not isinstance(output, dict):
@@ -253,6 +494,8 @@ This module build a classifier and predict phenotypes based on the classifier
         # return the results
         return [output]
 
+        #END build_classifier
+    """
     def plot_confusion_matrix(cm, classes, title,classifier_name):
         plt.rcParams.update({'font.size': 18})
         fig,ax= plt.subplots(figsize=(5,4))
@@ -263,6 +506,7 @@ This module build a classifier and predict phenotypes based on the classifier
         ax.set_title(title); 
         ax.xaxis.set_ticklabels(classes); ax.yaxis.set_ticklabels(classes);
         # fig.savefig(classifier_name+".png") this may not be necessary as not necessary to save png file
+    """
 
     def cf_stats(TN,TP,FP,FN):
         AN = TN+FP
@@ -315,16 +559,14 @@ This module build a classifier and predict phenotypes based on the classifier
 
         recurse(left, right, threshold, features, 0, 0)
 
-
+    """
     def predict_phenotype(self, ctx, params):
-        """
         :param params: instance of type "ClassifierPredictionInput" ->
            structure: parameter "workspace" of String, parameter
            "classifier_ref" of String, parameter "phenotype" of String
         :returns: instance of type "ClassifierPredictionOutput" -> structure:
            parameter "prediction_accuracy" of Double, parameter "predictions"
            of mapping from String to String
-        """
         # ctx is the context object
         # return variables are: output
         #BEGIN predict_phenotype
@@ -336,6 +578,8 @@ This module build a classifier and predict phenotypes based on the classifier
                              'output is not type dict as required.')
         # return the results
         return [output]
+    """
+
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK",
