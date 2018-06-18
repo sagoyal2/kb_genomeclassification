@@ -77,8 +77,28 @@ class kb_genomeclassificationTest(unittest.TestCase):
         return self.__class__.ctx
 
     def test_build_classifier(self):
-        print(self.getImpl().build_classifier(self.getContext(), {"gram negative", "xyz"}))
+        result = self.getImpl()
+
+        print(result.build_classifier(self.getContext(), {"gram negative", "xyz"}))
+        #print(result.classiferTest(KNeighborsClassifier(),"Metabolism-KNeighborsClassifier",True))
         print("done with test_build_classifier")
+
+        """
+        test all classifiers so user can see results
+        (however you will also import these classification types)
+        result.classiferTest(KNeighborsClassifier(),"Metabolism-KNeighborsClassifier",True)
+        result.classiferTest(GaussianNB(),"Metabolism-GaussianNB",True)
+        result.classiferTest(LogisticRegression(random_state=0),"Metabolism-LogisticRegression",True)
+        result.classiferTest(DecisionTreeClassifier(random_state=0),"Metabolism-DecisionTreeClassifier",True)
+        result.classiferTest(svm.LinearSVC(random_state=0),"Metabolism-SVM",True)
+        """
+
+
+        #print("done with test_build_classifier")
+
+        print(result.tree_code()) # <-- prints the tree to see the "decisions" that the classifier is making)
+        print("done with tree_code")
+
         #result.build_classifier(self.getContext(), {"gram negative", "xyz"})
         #result.classiferTest(KNeighborsClassifier(),"Metabolism-KNeighborsClassifier",True)
 
