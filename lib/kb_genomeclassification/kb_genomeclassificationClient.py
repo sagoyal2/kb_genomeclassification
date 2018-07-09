@@ -35,13 +35,18 @@ class kb_genomeclassification(object):
 
     def build_classifier(self, params, context=None):
         """
+        build_classifier: build_classifier
+        requried params:
+        ss
         :param params: instance of type "BuildClassifierInput" -> structure:
            parameter "phenotypeclass" of String, parameter "attribute" of
            String, parameter "workspace" of String, parameter
            "classifier_training_set" of mapping from String to type
            "ClassifierTrainingSet" (typedef string genome_id; typedef string
            phenotype;) -> structure: parameter "phenotype" of String,
-           parameter "genome_name" of String
+           parameter "genome_name" of String, parameter "classifier_out" of
+           String, parameter "target" of String, parameter "classifier" of
+           String
         :returns: instance of type "ClassifierOut" -> structure: parameter
            "classifier_ref" of String, parameter "phenotype" of String
         """

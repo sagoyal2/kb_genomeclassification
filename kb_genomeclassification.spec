@@ -20,6 +20,8 @@ module kb_genomeclassification {
         string workspace;
         mapping <string genome_id,ClassifierTrainingSet> classifier_training_set;
         string classifier_out;
+        string target;
+        string classifier;
     }BuildClassifierInput;
 
     typedef structure {
@@ -28,7 +30,13 @@ module kb_genomeclassification {
        string phenotype;
     }ClassifierOut;
 
+    /**
+    build_classifier: build_classifier
 
+    requried params:
+
+    ss
+    **/
     funcdef build_classifier(BuildClassifierInput params)
         returns (ClassifierOut output) authentication required;
 

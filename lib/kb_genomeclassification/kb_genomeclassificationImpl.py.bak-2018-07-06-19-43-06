@@ -66,23 +66,7 @@ from sklearn.model_selection import StratifiedKFold
 
 #fix later
 import seaborn as sns
-#import matplotlib as mpl
-#if os.environ.get('DISPLAY','') == '':
-#    print('no display found. Using non-interactive Agg backend')
-#    mpl.use('Agg')
-#import matplotlib.pyplot as plt
-
-#import matplotlib
-#matplotlib.use('Agg')
-#import matplotlib.pyplot as plt
-
 import matplotlib.pyplot as plt
-plt.switch_backend('agg')
-#plt.switch_backend('TkAgg')
-
-#import matplotlib
-#matplotlib.use('GTKAgg')  #I had to use GTKAgg for this to work, GTK threw errors
-#import matplotlib.pyplot as plt
 
 #%matplotlib inlines
 
@@ -104,8 +88,6 @@ from sklearn.tree import export_graphviz
 import graphviz
 import os
 import re
-import StringIO
-import io
 from io import open
 import sys
 from itertools import izip
@@ -456,7 +438,6 @@ This module build a classifier and predict phenotypes based on the classifier
             statistics_dict = {}
 
             neededIndex = [2, 3, self.list_name.__len__() - 2, self.list_name.__len__() -1]
-            #neededIndex = [self.list_name.__len__() - 2, self.list_name.__len__() -1]
             sub_list_name = [self.list_name[i] for i in neededIndex]
             sub_list_statistics = [self.list_statistics[i] for i in neededIndex]
 
@@ -507,8 +488,7 @@ This module build a classifier and predict phenotypes based on the classifier
         #ax.savefig(classifier_name+".png", format='png')
 
         fig = sns_plot.get_figure()
-        #fig.savefig(u"./pics/" + classifier_name +u".png", format=u'png')
-        fig.savefig(u"/kb/module/work/tmp/pics/" + classifier_name +u".png", format=u'png')
+        fig.savefig(u"./pics/" + classifier_name +u".png", format=u'png')
 
     def tree_code(self, optimized_tree, spacer_base=u"    "):
         """Produce psuedo-code for decision tree.
@@ -582,9 +562,7 @@ This module build a classifier and predict phenotypes based on the classifier
         plt.xlabel(u'Tree depth', fontsize=12)
         plt.ylabel(u'Accuracy', fontsize=12)
         plt.legend(loc=u'lower left')
-        #plt.savefig(u"./pics/"+ self.global_target +u"_gini_depth-met.png")
-        #fig.savefig(u"/kb/module/work/tmp/pics/" + classifier_name +u".png", format=u'png')
-        plt.savefig(u"/kb/module/work/tmp/pics/"+ self.global_target +u"_gini_depth-met.png")
+        plt.savefig(u"./pics/"+ self.global_target +u"_gini_depth-met.png")
 
         gini_best_index = np.argmax(val_av)
         print gini_best_index
@@ -608,8 +586,7 @@ This module build a classifier and predict phenotypes based on the classifier
         plt.xlabel(u'Tree depth', fontsize=12)
         plt.ylabel(u'Accuracy', fontsize=12)
         plt.legend(loc=u'lower left')
-        #plt.savefig(u"./pics/"+ self.global_target +u"_entropy_depth-met.png")
-        plt.savefig(u"/kb/module/work/tmp/pics/"+ self.global_target +u"_entropy_depth-met.png")
+        plt.savefig(u"./pics/"+ self.global_target +u"_entropy_depth-met.png")
 
         entropy_best_index = np.argmax(val_av)
         print entropy_best_index
@@ -633,7 +610,7 @@ This module build a classifier and predict phenotypes based on the classifier
     def parse_lookNice(self,name):
         import re
 
-        f = open(u"/kb/module/work/tmp/dotFolder/mydotTree.dot", u"r")
+        f = open(u"./dotFolder/mydotTree.dot", u"r")
         allStr = f.read()
         f.close()
         new_allStr = allStr.replace(u'\\n', u'')
@@ -649,20 +626,20 @@ This module build a classifier and predict phenotypes based on the classifier
             fourth_fix = re.sub(ur'(\w\s\[label="anaerobic")', ur'\1, color = "0.5176 0.2314 0.9020"', third_fix)
             fifth_fix = re.sub(ur'(\w\s\[label="aerobic")', ur'\1, color = "0.5725 0.6118 1.0000"', fourth_fix)
             sixth_fix = re.sub(ur'(\w\s\[label="facultative")', ur'\1, color = "0.5804 0.8824 0.8039"', fifth_fix)
-            f = open(u"/kb/module/work/tmp/dotFolder/niceTree.dot", u"w")
+            f = open(u"./dotFolder/niceTree.dot", u"w")
             f.write(sixth_fix)
             f.close()
 
-            os.system(u'dot -Tpng /kb/module/work/tmp/dotFolder/niceTree.dot >  '+ u"/kb/module/work/tmp/pics/"  + name + u'.png ')
+            os.system(u'dot -Tpng ./dotFolder/niceTree.dot >  ' + name + u'.png ')
 
         if self.class_list.__len__() == 2:
             fourth_fix = re.sub(ur'(\w\s\[label="N")', ur'\1, color = "0.5176 0.2314 0.9020"', third_fix)
             fifth_fix = re.sub(ur'(\w\s\[label="P")', ur'\1, color = "0.5725 0.6118 1.0000"', fourth_fix)
-            f = open(u"/kb/module/work/tmp/dotFolder/niceTree.dot", u"w")
+            f = open(u"./dotFolder/niceTree.dot", u"w")
             f.write(fifth_fix)
             f.close()
 
-            os.system(u'dot -Tpng /kb/module/work/tmp/dotFolder/niceTree.dot >  '+ u"/kb/module/work/tmp/pics/" + name + u'.png ')
+            os.system(u'dot -Tpng ./dotFolder/niceTree.dot >  ' + name + u'.png ')
 
     def printTree(self,tree, pass_name):
         """
@@ -673,27 +650,13 @@ This module build a classifier and predict phenotypes based on the classifier
         os.system('dot -Tpng mytree.dot >  ' + name + '.png ')
         """
 
-        #dotfile = io.open(u"/kb/module/work/tmp/dotFolder/mydotTree.dot", u'w')
-        not_dotfile = StringIO.StringIO()
-        export_graphviz(tree, out_file=not_dotfile, feature_names=self.attribute_list,
+        dotfile = open(u"./dotFolder/mydotTree.dot", u'w')
+        export_graphviz(tree, out_file=dotfile, feature_names=self.attribute_list,
                         class_names=self.class_list)
-        #dotfile.close()
-
-        #print(type(dotfile))
-        #print(dotfile.getvalue())
-        contents = not_dotfile.getvalue()
-        not_dotfile.close()
-
-        dotfile = open(u"/kb/module/work/tmp/dotFolder/mydotTree.dot", u'w')
-        dotfile.write(contents)
         dotfile.close()
 
         self.parse_lookNice(pass_name)
         #os.system('dot -Tpng ./mytree.dot >  ' + name + '.png ')
-
-    def _valid_params(self, params):
-
-        pass
 
     #END_CLASS_HEADER
 
@@ -763,9 +726,6 @@ This module build a classifier and predict phenotypes based on the classifier
 
     def build_classifier(self, ctx, params):
         """
-        build_classifier: build_classifier
-        requried params:
-        ss
         :param params: instance of type "BuildClassifierInput" -> structure:
            parameter "phenotypeclass" of String, parameter "attribute" of
            String, parameter "workspace" of String, parameter
@@ -773,7 +733,6 @@ This module build a classifier and predict phenotypes based on the classifier
            "ClassifierTrainingSet" (typedef string genome_id; typedef string
            phenotype;) -> structure: parameter "phenotype" of String,
            parameter "genome_name" of String, parameter "classifier_out" of
-           String, parameter "target" of String, parameter "classifier" of
            String
         :returns: instance of type "ClassifierOut" -> structure: parameter
            "classifier_ref" of String, parameter "phenotype" of String
@@ -781,18 +740,8 @@ This module build a classifier and predict phenotypes based on the classifier
         # ctx is the context object
         # return variables are: output
         #BEGIN build_classifier
-
-        os.makedirs("/kb/module/work/tmp/pics/")
-        os.makedirs("/kb/module/work/tmp/dotFolder/")
-
         print 'fdsafds'
         print params
-
-        
-        self._valid_params(params)
-
-        classifier = params.get('classifier')
-        target = params.get('target')
 
         # Add the block of code that reads in .txt file contain the annotations.
         # (Here my question is how to change this section so that it reads in the genomes files on the KBASE Narrative)
@@ -803,27 +752,24 @@ This module build a classifier and predict phenotypes based on the classifier
             self.train_index.append(train_idx)
             self.test_index.append(test_idx)
 
-        if classifier == u"Default":
+        if params == u"Default":
             self.classiferTest(KNeighborsClassifier(),target+u"_KNeighborsClassifier",True)
             self.classiferTest(GaussianNB(),target+u"_GaussianNB",True)
             self.classiferTest(LogisticRegression(random_state=0),target+u"_LogisticRegression",True)
             self.classiferTest(DecisionTreeClassifier(random_state=0),target+u"_DecisionTreeClassifier",True)
             self.classiferTest(svm.LinearSVC(random_state=0),target+u"_SVM",True)
             self.classiferTest(MLPClassifier(random_state=0),target+u"_NeuralNetwork", True)
+
         else:
             if target == u"Metabolism":
-                self.classiferTest(self.whichClassifier(classifier), unicode(u"Metabolism_") + classifier, True)
+                self.classiferTest(self.whichClassifier(params), unicode(u"Metabolism_") + params, True)
             elif target == u"Gram_Stain":
-                self.classiferTest(self.whichClassifier(classifier), unicode(u"Gram_Stain_") + classifier, True)
+                self.classiferTest(self.whichClassifier(params), unicode(u"Gram_Stain_") + params, True)
             else:
                 print u"ERROR check spelling?"
 
 
         self.to_HTML_Statistics()
-        
-        #self.tune_Decision_Tree()
-        #self.tree_code("doesn't matter")
-
         #END build_classifier
 
         # At some point might do deeper type checking...

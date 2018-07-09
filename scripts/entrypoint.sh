@@ -1,6 +1,7 @@
 #!/bin/bash
 
 . /kb/deployment/user-env.sh
+#export PATH=/opt/conda/bin:$PATH
 
 python ./scripts/prepare_deploy_cfg.py ./deploy.cfg ./work/config.properties
 

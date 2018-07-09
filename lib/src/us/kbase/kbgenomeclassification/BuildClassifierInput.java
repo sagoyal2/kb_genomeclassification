@@ -22,7 +22,10 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "phenotypeclass",
     "attribute",
     "workspace",
-    "classifier_training_set"
+    "classifier_training_set",
+    "classifier_out",
+    "target",
+    "classifier"
 })
 public class BuildClassifierInput {
 
@@ -34,6 +37,12 @@ public class BuildClassifierInput {
     private java.lang.String workspace;
     @JsonProperty("classifier_training_set")
     private Map<String, ClassifierTrainingSet> classifierTrainingSet;
+    @JsonProperty("classifier_out")
+    private java.lang.String classifierOut;
+    @JsonProperty("target")
+    private java.lang.String target;
+    @JsonProperty("classifier")
+    private java.lang.String classifier;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("phenotypeclass")
@@ -96,6 +105,51 @@ public class BuildClassifierInput {
         return this;
     }
 
+    @JsonProperty("classifier_out")
+    public java.lang.String getClassifierOut() {
+        return classifierOut;
+    }
+
+    @JsonProperty("classifier_out")
+    public void setClassifierOut(java.lang.String classifierOut) {
+        this.classifierOut = classifierOut;
+    }
+
+    public BuildClassifierInput withClassifierOut(java.lang.String classifierOut) {
+        this.classifierOut = classifierOut;
+        return this;
+    }
+
+    @JsonProperty("target")
+    public java.lang.String getTarget() {
+        return target;
+    }
+
+    @JsonProperty("target")
+    public void setTarget(java.lang.String target) {
+        this.target = target;
+    }
+
+    public BuildClassifierInput withTarget(java.lang.String target) {
+        this.target = target;
+        return this;
+    }
+
+    @JsonProperty("classifier")
+    public java.lang.String getClassifier() {
+        return classifier;
+    }
+
+    @JsonProperty("classifier")
+    public void setClassifier(java.lang.String classifier) {
+        this.classifier = classifier;
+    }
+
+    public BuildClassifierInput withClassifier(java.lang.String classifier) {
+        this.classifier = classifier;
+        return this;
+    }
+
     @JsonAnyGetter
     public Map<java.lang.String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -108,7 +162,7 @@ public class BuildClassifierInput {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((("BuildClassifierInput"+" [phenotypeclass=")+ phenotypeclass)+", attribute=")+ attribute)+", workspace=")+ workspace)+", classifierTrainingSet=")+ classifierTrainingSet)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((("BuildClassifierInput"+" [phenotypeclass=")+ phenotypeclass)+", attribute=")+ attribute)+", workspace=")+ workspace)+", classifierTrainingSet=")+ classifierTrainingSet)+", classifierOut=")+ classifierOut)+", target=")+ target)+", classifier=")+ classifier)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }
