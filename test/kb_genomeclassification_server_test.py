@@ -79,6 +79,9 @@ class kb_genomeclassificationTest(unittest.TestCase):
     def getContext(self):
         return self.__class__.ctx
 
+    # def test_download_shock(self):
+
+
     def test_build_classifier(self):
         #result = self.getImpl() #impl_kb_genomeclassification = kb_genomeclassification(u"Metabolism")
         print("this first part is about to begin")
@@ -87,12 +90,28 @@ class kb_genomeclassificationTest(unittest.TestCase):
 
         print("this first part is done")
 
-        params = {'target': 'Metabolism',
-                  'classifier': 'KNeighborsClassifier'}
+        wsName = self.getWsName()
+
+        print(wsName)
+
+        params = {'target': 'Gram_Stain', #Metabolism Gram_Stain
+                  'classifier': 'KNeighborsClassifier',
+                  'input_ws': wsName} #Default KNeighborsClassifier
+
+        print("here is wsName:")
+        print(params.get('input_ws'))
 
         # params = {'target': 'Metabolism'}
         #print(result.build_classifier(self.getContext(), {"gram negative", "xyz"})) #impl_kb_genomeclassification.build_classifier(u"Metabolism")
-        self.serviceImpl.build_classifier(self.getContext(), params)
+        
+
+        #self.serviceImpl.build_classifier(self.getContext(), params)
+
+        #cls.cfg[u'which_target'] = u"Metabolism"
+
+        self.getImpl().build_classifier(self.getContext(), params)
+
+        # kb_genomeclassification("Gram_Stain").build_classifier(self.getContext(), params)
 
         print("done with test_build_classifier")
 

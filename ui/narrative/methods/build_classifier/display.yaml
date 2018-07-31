@@ -27,7 +27,12 @@ suggestions:
 # Configure the display and description of parameters
 #
 parameters :
-    classifier_training_set :
+    shock_id :
+        ui-name : |
+            File Name
+        short-hint : |
+            File Name
+    list_name :
         ui-name : |
             Classifier Training Set
         short-hint : |

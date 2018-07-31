@@ -22,6 +22,8 @@ module kb_genomeclassification {
         string classifier_out;
         string target;
         string classifier;
+        string shock_id;
+        string list_name;
     }BuildClassifierInput;
 
     typedef structure {

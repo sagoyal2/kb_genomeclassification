@@ -11,7 +11,18 @@
     },
     "parameters": [
         {
-        "id": "classifier_training_set",
+          "id": "shock_id",
+          "optional" : false,
+          "advanced" : false,
+          "allow_multiple" : false,
+          "default_values" : [ "" ],
+          "field_type" : "file",
+          "text_options" : {
+            "valid_ws_types" : [ ]
+          }
+        },
+        {
+        "id": "list_name",
         "optional": true,
         "advanced": false,
         "allow_multiple": false,
@@ -75,8 +86,13 @@
                     "target_property": "workspace"
                 },
                 {
-                    "input_parameter": "classifier_training_set",
-                    "target_property": "classifier_training_set"
+                    "input_parameter": "list_name",
+                    "target_property": "list_name"
+
+                },
+                {
+                    "input_parameter": "shock_id",
+                    "target_property": "shock_id"
 
                 },
                 {

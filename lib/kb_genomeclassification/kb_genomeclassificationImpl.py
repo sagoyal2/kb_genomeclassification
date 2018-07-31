@@ -1,50 +1,14 @@
 # -*- coding: utf-8 -*-
 #BEGIN_HEADER
 # The header block is where all import statments should live
-"""
-import os
-from Bio import SeqIO
-from pprint import pprint, pformat
-from AssemblyUtil.AssemblyUtilClient import AssemblyUtil
-from KBaseReport.KBaseReportClient import KBaseReport
-
-    #here are some more imports for sklearn
-#from sklearn import train_test_split
-#from sklearn.grid_search import train_test_split
-from sklearn.model_selection import train_test_split
-from sklearn.feature_selection import SelectKBest
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import classification_report
-from sklearn import feature_selection
-from sklearn.metrics import recall_score
-from sklearn.model_selection import StratifiedKFold
-#from sklearn.model_selection import StratifiedKFold 
-#from sklearn import StratifiedKFold
-#from sklearn.grid_search import StratifiedKFold
-
-#fix later
-import seaborn; seaborn.set()
-#import matplotlib.pyplot as plt
-
-#%matplotlib inlines    
-
-    #here are imports for specific classifiers
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import GaussianNB
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn import svm
-from sklearn.neural_network import MLPClassifier
-
-import numpy
-import numpy as np
-import pickle
-"""
 
 # The header block is where all import statments should live
 #from __future__ import division
 #from __future__ import absolute_import
+from __future__ import division
+
 import os
+import uuid
 #from Bio import SeqIO
 #from pprint import pprint, pformat
 #from AssemblyUtil.AssemblyUtilClient import AssemblyUtil
@@ -110,6 +74,37 @@ from io import open
 import sys
 from itertools import izip
 
+#below are necessary for running in narrative
+import time
+import json
+import os
+import sys
+import re
+import requests
+import numpy as np
+import pprint
+import scipy.spatial.distance as ssd
+from matplotlib import pyplot as plt
+#from scipy.cluster.hierarchy import dendrogram, linkage
+#from biokbase.narrative.jobs.appmanager import AppManager
+#from requests.packages.urllib3.exceptions import InsecurePlatformWarning
+#requests.packages.urllib3.disable_warnings(InsecurePlatformWarning)
+#from biokbase.narrative.jobs.appmanager import AppManager
+import itertools
+
+from biokbase.workspace.client import Workspace
+from biokbase.workspace.client import Workspace as workspaceService
+
+import pandas as pd
+
+from KBaseReport.KBaseReportClient import KBaseReport
+from KBaseReportPy.KBaseReportPyClient import KBaseReportPy 
+
+from DataFileUtil.DataFileUtilClient import DataFileUtil
+
+import xlrd
+
+
 #END_HEADER
 
 
@@ -135,108 +130,6 @@ This module build a classifier and predict phenotypes based on the classifier
 
     #BEGIN_CLASS_HEADER
     # Class variables and functions can be defined in this block
-
-    """
-    def classiferTest(self, classifier, classifier_name, print_cfm):
-        # so in this method we need to be returning a classifier instead of all the confusion matrices?
-        # how do you return a classifier?
-
-        if print_cfm:
-            print(self.classifier_name)
-        train_score = numpy.zeros(self.splits)
-        validate_score = numpy.zeros(self.splits)
-        cnf_matrix = numpy.zeros(shape=(3, 3))
-        cnf_matrix_f = numpy.zeros(shape=(3, 3))
-        for c in range(self.splits):
-            X_train = self.full_attribute_array[self.train_index[c]]
-            y_train = self.full_classification_array[self.train_index[c]]
-            X_test = self.full_attribute_array[self.test_index[c]]
-            y_test = self.full_classification_array[self.test_index[c]]
-            classifier.fit(X_train, y_train)
-            train_score[c] = classifier.score(X_train, y_train)
-            validate_score[c] = classifier.score(X_test, y_test)
-            y_pred = classifier.predict(X_test)
-            cnf = confusion_matrix(y_test, y_pred)
-            cnf_f = cnf.astype('float') / cnf.sum(axis=1)[:, numpy.newaxis]
-            for i in range(len(cnf)):
-                for j in range(len(cnf)):
-                    cnf_matrix[i][j] += cnf[i][j]
-                    cnf_matrix_f[i][j] += cnf_f[i][j]
-
-        pickle_out = open("/kb/module/work/tmp/" + str(self.classifier_name) + ".pickle", "wb")
-        pickle.dump(classifier.fit(self.full_attribute_array, self.full_classification_array), pickle_out, protocol=2)
-        pickle_out.close()
-
-        print("%6.3f\t%6.3f\t%6.3f\t%6.3f" % (
-        numpy.average(train_score), numpy.std(train_score), numpy.average(validate_score), numpy.std(validate_score)))
-
-        if print_cfm:
-            cnf_av = cnf_matrix / self.splits
-            print()
-            print(cnf_av[0][0], cnf_av[0][1], cnf_av[0][2], )
-            print(cnf_av[1][0], cnf_av[1][1], cnf_av[1][2], )
-            print(cnf_av[2][0], cnf_av[2][1], cnf_av[2][2], )
-            print()
-            print(self.class_list[0])
-            TP = cnf_av[0][0]
-            TN = cnf_av[1][2] + cnf_av[1][2] + cnf_av[2][1] + cnf_av[2][2]
-            FP = cnf_av[0][1] + cnf_av[0][2]
-            FN = cnf_av[1][0] + cnf_av[2][0]
-            self.cf_stats(TN, TP, FP, FN)
-
-            print(self.class_list[1])
-            TP = cnf_av[1][1]
-            TN = cnf_av[0][0] + cnf_av[0][2] + cnf_av[2][0] + cnf_av[2][2]
-            FP = cnf_av[1][0] + cnf_av[1][2]
-            FN = cnf_av[0][1] + cnf_av[2][1]
-            self.cf_stats(TN, TP, FP, FN)
-
-            print(self.class_list[2])
-            TP = cnf_av[2][2]
-            TN = cnf_av[0][0] + cnf_av[0][1] + cnf_av[1][0] + cnf_av[1][1]
-            FP = cnf_av[2][0] + cnf_av[2][1]
-            FN = cnf_av[0][1] + cnf_av[0][2]
-            self.cf_stats(TN, TP, FP, FN)
-
-            print(classifier)
-            print()
-
-            print("Confusion matrix")
-            for i in range(len(cnf_matrix)):
-                print(self.class_list[i], end="  \t")
-                for j in range(len(cnf_matrix[i])):
-                    print(cnf_matrix[i][j] / self.splits, end="\t")
-                print()
-            print()
-            for i in range(len(cnf_matrix_f)):
-                print(self.class_list[i], end="  \t")
-                for j in range(len(cnf_matrix_f[i])):
-                    print("%6.1f" % ((cnf_matrix_f[i][j] / self.splits) * 100.0), end="\t")
-                print()
-            print()
-            print("01", cnf_matrix[0][1])
-            
-
-            print("Confusion matrix")
-            for i in range(len(cnf_matrix)):
-                print(str(self.class_list[i]) + "  \t"),
-                for j in range(len(cnf_matrix[i])):
-                    print(str(cnf_matrix[i][j] / self.splits) + "\t"),
-                print()
-            print()
-            for i in range(len(cnf_matrix_f)):
-                print(str(self.class_list[i]) + "  \t"),
-                for j in range(len(cnf_matrix_f[i])):
-                    print(str("%6.1f" % ((cnf_matrix_f[i][j] / self.splits) * 100.0)) + "\t"),
-                print()
-            print()
-            print("01", cnf_matrix[0][1])
-
-
-            # plot_confusion_matrix(cnf_matrix/10,class_list,'Confusion Matrix')
-            # plot_confusion_matrix(cnf_matrix_f/splits*100.0,class_list,'Confusion Matrix %',classifier_name)
-        return ( numpy.average(train_score), numpy.std(train_score), numpy.average(validate_score), numpy.std(validate_score))
-    """
 
     def classiferTest(self, classifier, classifier_name, print_cfm):
         # so in this method we need to be returning a classifier instead of all the confusion matrices?
@@ -270,10 +163,23 @@ This module build a classifier and predict phenotypes based on the classifier
                     cnf_matrix_f[i][j] += cnf_f[i][j]
 
         if print_cfm:
-            pickle_out = open(u"/kb/module/work/tmp/" + unicode(classifier_name) + u".pickle", u"wb")
+            pickle_out = open(u"/kb/module/work/tmp/forDATA/" + unicode(classifier_name) + u".pickle", u"wb")
+            
             #pickle_out = open("/kb/module/work/tmp/" + str(self.classifier_name) + ".pickle", "wb")
+            
+
             pickle.dump(classifier.fit(self.full_attribute_array, self.full_classification_array), pickle_out, protocol = 2)
             pickle_out.close()
+
+            """
+            current_pickle = pickle.dumps(classifier.fit(self.full_attribute_array, self.full_classification_array), protocol=0)
+            pickled = codecs.encode(current_pickle, "base64").decode()
+
+            with open(u"/kb/module/work/tmp/" + unicode(classifier_name) + u".txt", u"w") as f:
+                for line in pickled:
+                    f.write(line)
+            """
+        
 
         list_forDict = []
 
@@ -318,27 +224,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         if self.class_list.__len__() == 2:
             if print_cfm:
-                """
-                Total = cnf[0][0] + cnf[0][1] + cnf[1][0] + cnf[1][1]
-                TP = cnf[0][0] + cnf[1][1]
 
-                FP_A = cnf[1][0]
-                FN_A = cnf[0][1]
-                TP_A = cnf[0][0]
-                TN_A = cnf[1][1]
-                AP = cnf[0][0] + cnf[0][1]
-                AN = Total - AP
-
-                print()
-                print(newclass_list[0])
-                print("Accuracy:\t\t%6.3f" % ((TP_A + TN_A) / Total))
-                print("Misclassification Rate:\t%6.3f" % ((FN_A) / (FN_A + FP_A)))
-                print("True Positive Rate:\t%6.3f" % (TP_A / (TP_A + FN_A)))
-                print("False Positive Rate:\t%6.3f" % (FP_A / (FP_A + TN_A)))
-                print("Specificity:\t\t%6.3f" % (TN_A / (TN_A + FP_A)))
-                print("Precision:\t\t%6.3f" % (TP_A / (TP_A + FP_A)))
-                print()
-                """
                 TP = cnf[0][0]
                 TN = cnf[1][1]
                 FP = cnf[0][1]
@@ -372,21 +258,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         return (numpy.average(train_score), numpy.std(train_score), numpy.average(validate_score), numpy.std(validate_score))
 
-    """
-    def cf_stats(self,TN,TP,FP,FN):
-        AN = TN+FP
-        AP = TN+FN
-        PN = TN+FN
-        PP = TP+FP
-        Total = TN+TP+FP+FN
-        Recall = (TP/(TP+FN))
-        Precision = (TP/(TP+FP))
-        print("Accuracy:\t\t%6.3f"%((TP+TN)/Total))
-        print("Precision:\t\t%6.3f"%(Precision))
-        print("Recall:\t\t%6.3f"%(Recall))
-        print("F1 score::\t\t%6.3f"%(2*((Precision*Recall)/(Precision+Recall))))
-        print()
-    """
+
     def whichClassifier(self, name):
         if name == u"KNeighborsClassifier":
             return KNeighborsClassifier()
@@ -421,6 +293,8 @@ This module build a classifier and predict phenotypes based on the classifier
 
         list_return=[((TP + TN) / Total), (Precision), (Recall), (2 * ((Precision * Recall) / (Precision + Recall)))]
 
+
+
         return list_return
 
     def to_HTML_Statistics(self, additional = False):
@@ -450,7 +324,22 @@ This module build a classifier and predict phenotypes based on the classifier
                 my_index = [u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::']
 
             df = pd.DataFrame(data, index=my_index)
-            df.to_html(u'/kb/module/work/tmp/newStatistics.html')
+
+            df.to_html(u'/kb/module/work/tmp/forHTML/newStatistics.html')
+
+            df['Max'] = df.idxmax(1)
+            self.best_classifier_str = df['Max'].iloc[-1]
+
+
+            file = open(u'/kb/module/work/tmp/forHTML/newStatistics.html', u'r')
+            allHTML = file.read()
+            file.close()
+
+            new_allHTML = re.sub(r'NaN', r'', allHTML)
+
+            file = open(u'/kb/module/work/tmp/forHTML/newStatistics.html', u'w')
+            file.write(new_allHTML)
+            file.close
 
         if additional:
             statistics_dict = {}
@@ -474,7 +363,21 @@ This module build a classifier and predict phenotypes based on the classifier
                 my_index = [u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::']
 
             df = pd.DataFrame(data, index=my_index)
-            df.to_html(u'/kb/module/work/tmp/postStatistics.html')
+            df.to_html(u'/kb/module/work/tmp/forHTML/postStatistics.html')
+
+            df['Max'] = df.idxmax(1)
+            self.best_classifier_str = df['Max'].iloc[-1]
+
+            file = open(u'/kb/module/work/tmp/forHTML/postStatistics.html', u'r')
+            allHTML = file.read()
+            file.close()
+
+            new_allHTML = re.sub(r'NaN', r'', allHTML)
+
+            file = open(u'/kb/module/work/tmp/forHTML/postStatistics.html', u'w')
+            file.write(new_allHTML)
+            file.close
+
 
         #df.to_html('statistics' + str(self.counter) + '.html')
 
@@ -497,7 +400,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         plt.rcParams.update({u'font.size': 18})
         fig = plt.figure()
-        ax = fig.add_subplot(figsize=(5,4))
+        ax = fig.add_subplot(figsize=(5,5))
         sns.set(font_scale=1.5)
         sns_plot = sns.heatmap(cm, annot=True, ax = ax, cmap=u"Blues"); #annot=True to annotate cells
         ax = sns_plot
@@ -508,7 +411,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         fig = sns_plot.get_figure()
         #fig.savefig(u"./pics/" + classifier_name +u".png", format=u'png')
-        fig.savefig(u"/kb/module/work/tmp/pics/" + classifier_name +u".png", format=u'png')
+        fig.savefig(u"/kb/module/work/tmp/forHTML/" + classifier_name +u".png", format=u'png')
 
     def tree_code(self, optimized_tree, spacer_base=u"    "):
         """Produce psuedo-code for decision tree.
@@ -584,7 +487,7 @@ This module build a classifier and predict phenotypes based on the classifier
         plt.legend(loc=u'lower left')
         #plt.savefig(u"./pics/"+ self.global_target +u"_gini_depth-met.png")
         #fig.savefig(u"/kb/module/work/tmp/pics/" + classifier_name +u".png", format=u'png')
-        plt.savefig(u"/kb/module/work/tmp/pics/"+ self.global_target +u"_gini_depth-met.png")
+        plt.savefig(u"/kb/module/work/tmp/forHTML/"+ self.global_target +u"_gini_depth-met.png")
 
         gini_best_index = np.argmax(val_av)
         print gini_best_index
@@ -609,15 +512,15 @@ This module build a classifier and predict phenotypes based on the classifier
         plt.ylabel(u'Accuracy', fontsize=12)
         plt.legend(loc=u'lower left')
         #plt.savefig(u"./pics/"+ self.global_target +u"_entropy_depth-met.png")
-        plt.savefig(u"/kb/module/work/tmp/pics/"+ self.global_target +u"_entropy_depth-met.png")
+        plt.savefig(u"/kb/module/work/tmp/forHTML/"+ self.global_target +u"_entropy_depth-met.png")
 
         entropy_best_index = np.argmax(val_av)
         print entropy_best_index
         entropy_best = np.amax(val_av)
 
 
-        gini_best_index = 4
-        entropy_best_index = 3
+        #gini_best_index = 4
+        #entropy_best_index = 3
 
         self.classiferTest(DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini'), self.global_target + u"_DecisionTreeClassifier(gini)", True)
         self.classiferTest(DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy'), self.global_target + u"_DecisionTreeClassifier(entropy)", True)
@@ -653,7 +556,7 @@ This module build a classifier and predict phenotypes based on the classifier
             f.write(sixth_fix)
             f.close()
 
-            os.system(u'dot -Tpng /kb/module/work/tmp/dotFolder/niceTree.dot >  '+ u"/kb/module/work/tmp/pics/"  + name + u'.png ')
+            os.system(u'dot -Tpng /kb/module/work/tmp/dotFolder/niceTree.dot >  '+ u"/kb/module/work/tmp/forHTML/"  + name + u'.png ')
 
         if self.class_list.__len__() == 2:
             fourth_fix = re.sub(ur'(\w\s\[label="N")', ur'\1, color = "0.5176 0.2314 0.9020"', third_fix)
@@ -662,7 +565,302 @@ This module build a classifier and predict phenotypes based on the classifier
             f.write(fifth_fix)
             f.close()
 
-            os.system(u'dot -Tpng /kb/module/work/tmp/dotFolder/niceTree.dot >  '+ u"/kb/module/work/tmp/pics/" + name + u'.png ')
+            os.system(u'dot -Tpng /kb/module/work/tmp/dotFolder/niceTree.dot >  '+ u"/kb/module/work/tmp/forHTML/" + name + u'.png ')
+
+    def html_report_1(self):
+        
+        file = open(u"/kb/module/work/tmp/forHTML/nice_html1.html", u"w")
+
+        html_string = u"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        .column {
+            float: left;
+            width: 50%;
+            padding: 10px;
+        }
+
+        /* Clearfix (clear floats) */
+        .row::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+        </style>
+        </head>
+        <body>
+
+        <h1 style="text-align:center;">Metabolic Respiration Classifier</h1>
+
+        <p style="text-align:center; font-size:160%;">  Prediction of respiration type based on classifiers depicted in the form of confusion matrices.  A.) K-Nearest-Neighbors Classifier B. ) Naive Gaussian Bayes Classifier C.) , Logistic Regression Classifier and the D.) Decision Tree Classifier E.) Linear SVM, F.) Neural Network</p>
+        <h2> Disclaimer:No feature selection and parameter optimization was not done</h2>
+        """
+
+        file.write(html_string)
+
+        if self.classifier == u"Default":
+            next_str = u"""
+        <div class="row">
+          <div class="column">
+              <p style="text-align:left; font-size:160%;">K-Nearest-Neighbors Classifier</p>
+            <img src=" """+self.global_target +"""_KNeighborsClassifier.png" alt="Snow" style="width:100%">
+              <!-- <figcaption>Fig.1 - Trulli, Puglia, Italy.</figcaption> -->
+          </div>
+          <div class="column">
+              <p style="text-align:left; font-size:160%;">Logistic Regression Classifier</p>
+            <img src=" """+ self.global_target +"""_LogisticRegression.png" alt="Snow" style="width:100%">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="column">
+              <p style="text-align:left; font-size:160%;">Naive Gaussian Bayes Classifier</p>
+            <img src=" """+ self.global_target +"""_GaussianNB.png" alt="Snow" style="width:100%">
+          </div>
+          <div class="column">
+              <p style="text-align:left; font-size:160%;">Linear SVM Classifier</p>
+            <img src=" """+ self.global_target +"""_SVM.png" alt="Snow" style="width:100%">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="column">
+              <p style="text-align:left; font-size:160%;">Decision Tree Classifier</p>
+            <img src=" """+ self.global_target +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
+          </div>
+          <div class="column">
+              <p style="text-align:left; font-size:160%;">Neural Network Classifier</p>
+            <img src=" """+ self.global_target +"""_NeuralNetwork.png" alt="Snow" style="width:100%">
+          </div>
+        </div>
+            """
+            file.write(next_str)
+
+            next_str = u"""
+            <p style="font-size:160%;">Comparison of statistics in the form of Accuracy, Precision, Recall and F1 Score calculated against the confusion matrices of respiration type for the classifiers</p>
+            """
+            file.write(next_str)
+
+            another_file = open(u"/kb/module/work/tmp/forHTML/newStatistics.html", u"r")
+            all_str = another_file.read()
+            another_file.close()
+
+            file.write(all_str)
+
+        else:
+            next_str = u"""
+            <div class="row">
+          <div class="column">
+            <p style="text-align:left; font-size:160%;">""" + self.classifier + """</p>
+            <img src=" """+ self.global_target +"""_""" + self.classifier + """.png" alt="Snow" style="width:100%">
+          </div>
+          <div class="column">
+            """
+            file.write(next_str)
+
+            next_str = u"""
+            <p style="font-size:160%;">Comparison of statistics in the form of Accuracy, Precision, Recall and F1 Score calculated against the confusion matrices of respiration type for the classifiers</p>
+            """
+            file.write(next_str)
+
+            another_file = open(u"/kb/module/work/tmp/forHTML/newStatistics.html", u"r")
+            all_str = another_file.read()
+            another_file.close()
+
+            file.write(all_str)
+
+            next_str = u"""
+            </div>
+            </div>
+            """
+            file.write(next_str)
+
+
+        next_str = u"""
+         <p style="text-align:center; font-size:100%;">  Based on these results it would be in your best interest to use the """ + self.best_classifier_str + """ as your model as
+         it produced the strongest F1 score </p>
+        """
+
+        file.write(next_str)
+
+        next_str = u"""
+        <a href="nice_html2.html">Second html page</a>
+        """
+
+        file.write(next_str)
+
+        file.close()
+
+    def html_report_2(self):
+        file = open(u"/kb/module/work/tmp/forHTML/nice_html2.html", u"w")
+
+        html_string = u"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        .column {
+            float: left;
+            width: 50%;
+            padding: 10px;
+        }
+
+        /* Clearfix (clear floats) */
+        .row::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+        </style>
+        </head>
+        <body>
+
+        <h1 style="text-align:center;">Metabolic Respiration Classifier - Decision Tree Tuning</h1>
+
+        <!-- <h2>Maybe we can add some more text here later?</h2> -->
+        <!--<p>How to create side-by-side images with the CSS float property:</p> -->
+
+        <p style="text-align:center; font-size:160%;">  Comparison of level of Accuracy between respiration Training versus Testing data sets based on  the Gini Criterion and the Entropy Criterion for 11 levels of Tree Depth </p>
+        <p style="text-align:center; font-size:100%;">  (Below is the training and test accuracy at each tree depth. The Decision Criterion was Gini and Entropy) </p>
+        """
+
+        file.write(html_string)
+
+        next_str = u"""
+
+        <div class="row">
+          <div class="column">
+              <p style="text-align:left; font-size:160%;">Training vs Testing Score on Gini Criterion </p>
+            <img src=" """+ self.global_target +"""_gini_depth-met.png" alt="Snow" style="width:100%">
+              <!-- <figcaption>Fig.1 - Trulli, Puglia, Italy.</figcaption> -->
+          </div>
+          <div class="column">
+              <p style="text-align:left; font-size:160%;">Training vs Testing Score on Entropy Criterion</p>
+            <img src=" """+ self.global_target +"""_entropy_depth-met.png" alt="Snow" style="width:100%">
+          </div>
+        </div>
+
+        <p style="text-align:center; font-size:160%;">  Comparison of respiration tuned Gini and Entropy based Decision Tree Classifiers depicted in the form of confusion matrices. A.) Decision Tree Classifier B.) Decision Tree Classifier-Gini C.) Decision Tree Classifier-Entropy D.) Naive Gaussian Bayes Classifier </p>
+        <p style="text-align:center; font-size:100%;">  The original Decision Tree Classifier model was chosen as a base comparision and Logistic Regression model was chosen since it showed the best average F1 Score </p>
+
+        <div class="row">
+          <div class="column">
+              <p style="text-align:left; font-size:160%;"> Decision Tree Classifier </p>
+            <img src=" """+ self.global_target +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
+          </div>
+          <div class="column">
+              <p style="text-align:left; font-size:160%;"> Logistic Regression Classifier </p>
+            <img src=" """+ self.global_target +"""_LogisticRegression.png" alt="Snow" style="width:100%">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="column">
+              <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Gini </p>
+            <img src=" """+ self.global_target +"""_DecisionTreeClassifier(gini).png" alt="Snow" style="width:100%">
+          </div>
+          <div class="column">
+              <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Entropy </p>
+            <img src=" """+ self.global_target +"""_DecisionTreeClassifier(entropy).png" alt="Snow" style="width:100%">
+          </div>
+        </div>
+        """
+        file.write(next_str)
+
+        next_str= u"""
+        <p style="font-size:160%;">Comparison of statistics in the form of Accuracy, Precision, Recall and F1 Score calculated against the confusion matrices of respiration type for the classifiers</p>
+        """
+        file.write(next_str)
+
+        another_file = open(u"/kb/module/work/tmp/forHTML/postStatistics.html", u"r")
+        all_str = another_file.read()
+        another_file.close()
+
+        file.write(all_str)
+
+        next_str= u"""
+        <p style="font-size:160%;"> Below is a tree created that displays a visual for how genomes were classified.</p>
+        <p style="font-size:100%;"> READ: if __functional__role__ is absent (true) then move left otherwise if __functional__role__ is present (false) move right</p>
+
+        <img src="NAMEmyTreeLATER.png" alt="Snow" style="width:100%">
+
+        </body>
+        </html>
+        """
+        file.write(next_str)
+
+        file.close()
+
+    def html_report_3(self):
+        file = open(u"/kb/module/work/tmp/forHTML/nice_html3.html", u"w")
+
+        html_string = u"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        .column {
+            float: left;
+            width: 50%;
+            padding: 10px;
+        }
+
+        /* Clearfix (clear floats) */
+        .row::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+        </style>
+        </head>
+        <body>
+
+        <h1 style="text-align:center;">Prediction of Classifications</h1>
+        """
+        file.write(html_string)
+
+        another_file = open(u'/kb/module/work/tmp/results.html', u"r")
+        all_str = another_file.read()
+        another_file.close()
+
+        file.write(all_str)
+
+        next_str= u"""
+        </body>
+        </html>
+        """
+        file.write(next_str)
+
+        file.close()
 
     def printTree(self,tree, pass_name):
         """
@@ -691,9 +889,108 @@ This module build a classifier and predict phenotypes based on the classifier
         self.parse_lookNice(pass_name)
         #os.system('dot -Tpng ./mytree.dot >  ' + name + '.png ')
 
+    def create_report(self):
+        uuid_string = str(uuid.uuid4())
+
+        report_params = {
+            'direct_html_link_index': 0,
+            'file_links': output_zip_files,
+            'html_links': [u"/kb/module/work/tmp/forHTML/nice_html1.html", u"/kb/module/work/tmp/forHTML/nice_html2.html"],
+            'workspace_name': ws,
+            'report_object_name': 'kb_classifier_report_' + uuid_string
+        }
+
+        kbase_report_client = KBaseReport(self.callback_url, token=token)
+        output = kbase_report_client.create_extended_report(report_params)
+        return output
+
+    def get_mainAttributes(self,my_input, for_predict = False):
+        current_ws = os.environ['KB_WORKSPACE_ID']
+        ws = biokbase.narrative.clients.get("workspace")
+        ws_client = Workspace()
+
+        listOfNames = [] #make this self.listOfNames
+        
+        if for_predict:
+            master_Role = [] #make this self.master_Role
+
+        name_and_roles = {}
+
+        #my_input = 'all' # change this to something that is passed in the input
+
+        if my_input == 'all':
+            wsgenomes = ws_client.list_objects({"workspaces":[current_ws],"type":"KBaseGenomes.Genome"});
+            for genome in wsgenomes:
+                listOfNames.append(str(genome[1]))
+
+        else:
+            listOfNames = my_input.split(',')
+
+        for current_gName in listOfNames:
+            listOfFunctionalRoles = []
+            try:
+                functionList = ws.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['cdss']
+                for function in range(len (functionList)):
+                    if str(functionList[function]['functions'][0]).lower() != 'hypothetical protein':
+                        listOfFunctionalRoles.append(str(functionList[function]['functions'][0]))
+                
+            except:
+                functionList = ws.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['features']
+                for function in range(len (functionList)):
+                    if str(functionList[function]['function']).lower() != 'hypothetical protein':
+                        listOfFunctionalRoles.append(str(functionList[function]['function']))
+                    
+            name_and_roles[current_gName] = listOfFunctionalRoles
+        
+        if for_predict:    
+            master_pre_Role = list(itertools.chain(*name_and_roles.values()))
+            master_Role = list(set(master_pre_Role))
+
+
+        data_dict = {}
+
+        for current_gName in listOfNames:
+            arrayofONEZERO = []
+            
+            current_Roles = name_and_roles[current_gName]
+            
+            for individual_role in master_Role:
+                if individual_role in current_Roles:
+                    arrayofONEZERO.append(1)
+                else:
+                    arrayofONEZERO.append(0)
+                    
+            data_dict[current_gName] = arrayofONEZERO
+
+        my_all_attributes = pd.DataFrame.from_dict(data_dict, orient='index', columns = master_Role)
+
+        return my_all_attributes
+
+    def get_mainClassification(self, file_path):
+        #figure out how to read in xls file
+        my_all_classifications = pd.read_excel(file_path) #replace with location of file
+        my_all_classifications.set_index('Genome_ID', inplace=True)
+
+        return my_all_classifications
+
     def _valid_params(self, params):
 
         pass
+
+    def _make_dir(self):
+        dir_path = os.path.join(self.scratch, str(uuid.uuid4()))
+        # if os # exists
+        os.mkdir(dir_path)
+
+        return dir_path
+
+    def _download_shock(self, shock_id):
+        dir_path = self._make_dir()
+
+        file_path = self.dfu.shock_to_file({'shock_id': shock_id,
+                                            'file_path': dir_path})['file_path']
+
+        return file_path
 
     #END_CLASS_HEADER
 
@@ -723,7 +1020,14 @@ This module build a classifier and predict phenotypes based on the classifier
 
         self.classifier_name = ""
         """
-        which_target = u"Metabolism"
+        #which_target = u"Metabolism"
+
+        self.workspaceURL = config.get('workspace-url')
+        self.scratch = os.path.abspath(config.get('scratch'))
+        self.callback_url = os.environ['SDK_CALLBACK_URL']
+        self.dfu = DataFileUtil(self.callback_url)
+
+        which_target = u"Gram_Stain"
 
         print "I am right here"
 
@@ -754,6 +1058,13 @@ This module build a classifier and predict phenotypes based on the classifier
 
         self.list_statistics = []
 
+        self.classifier = ""
+        self.target = ""
+
+        self.best_classifier_str = ""
+
+        self.my_mapping = {}
+
         global output 
         output = {'jack': 4098, 'sape': 4139} #random dict
 
@@ -782,17 +1093,109 @@ This module build a classifier and predict phenotypes based on the classifier
         # return variables are: output
         #BEGIN build_classifier
 
+        # Add the block of code that reads in .txt file contain the annotations.
+        # (Here my question is how to change this section so that it reads in the genomes files on the KBASE Narrative)
+        """
+        organisams={}
+        organism_id=[]
+        attributes_full={}
+        atributes_by_class={}
+        class_set=set()
+        class_counter = {'anaerobic':0, 'aerobic':0, 'facultative':0}
+        with open("/kb/module/data/cleanData.txt") as infile:
+            for line in infile:
+                # data is tab delimited
+                data = line.rstrip().split("\t")
+                # first column contains organism name
+                organism_id.append(data[0])
+                # second column contains metabolic class
+                organisams[data[0]]={"class":data[1],"roles":[]}
+                class_set.add(data[1].replace("'", ""))
+                classtype=data[1].replace("'", "")
+                class_counter[classtype]+=1
+                for i in range(2,len(data)):
+                    attribute = data[i].replace("'", "")
+                    if(attribute not in organisams[data[0].replace("'", "")]["roles"]):
+                        organisams[data[0]]["roles"].append(attribute)
+                        if not attribute in attributes_full:
+                            attributes_full[attribute]=0
+                            atributes_by_class[attribute]={'anaerobic':0, 'aerobic':0, 'facultative':0}
+                        attributes_full[attribute]+=1
+                        atributes_by_class[attribute][classtype]+=1
+
+        print(len(organisams))
+        print(len(attributes_full))
+        print(class_set)
+        print(class_counter)
+
+        # Add in block of code that creates one dimensional array is constructed for the organisms and all of the functional roles.
+        import numpy
+        attribute_list = list(attributes_full.keys())
+        organisam_list = list(organisams.keys())
+        class_list = list(class_set)
+        full_classification_array = numpy.array(["" for x in range(len(organisam_list))])
+
+        print(class_list)
+        print(len(attributes_full))
+        print(len(organisam_list))
+        print(len(full_classification_array))
+
+        full_attribute_array = numpy.zeros(shape=(len(organisam_list),len(attribute_list)))
+
+        # Add in block of code used to create the functional role data matrix; full_attribute_array
+
+        for y_indx in range(len(organisam_list)):
+            organisam = organisam_list[y_indx]
+            if organisam in organisams:
+                full_classification_array[y_indx] = class_list.index(organisams[organisam]["class"])
+                for attribute in organisams[organisam]["roles"]:
+                    if attribute in attributes_full:
+                        x_indx  = attribute_list.index(attribute)
+                        full_attribute_array[y_indx,x_indx]=1
+        
+
+        --------------------------------------------------------------
+
+        file_path = self._download_shock(params.get('shock_id'))
+
+        all_attributes = self.get_mainAttributes(params.get('list_name'))
+        all_classifications = self.get_mainClassification(file_path)
+
+        full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
+
+        #should include self??
+        class_list = list(set(full_dataFrame['Classification']))
+
+        #create a mapping
+        #self.my_mapping = {}
+        for current_class,num in zip(class_list, range(0, len(class_list))):
+            self.my_mapping[current_class] = num
+
+        for index in final.index:
+            full_dataFrame.at[index, 'Classification'] = self.my_mapping[full_dataFrame.at[index, 'Classification']]
+
+        all_classifications = full_dataFrame['Classification']
+
+        """
+
         os.makedirs("/kb/module/work/tmp/pics/")
         os.makedirs("/kb/module/work/tmp/dotFolder/")
+        os.makedirs("/kb/module/work/tmp/forHTML/")
+        os.makedirs("/kb/module/work/tmp/forDATA/")
 
         print 'fdsafds'
         print params
 
+        token = ctx['token']
+        # wsClient = workspaceService(self.workspaceURL, token=token)
         
         self._valid_params(params)
 
         classifier = params.get('classifier')
         target = params.get('target')
+
+        self.classifier = params.get('classifier')
+        self.target = params.get('target')
 
         # Add the block of code that reads in .txt file contain the annotations.
         # (Here my question is how to change this section so that it reads in the genomes files on the KBASE Narrative)
@@ -820,9 +1223,84 @@ This module build a classifier and predict phenotypes based on the classifier
 
 
         self.to_HTML_Statistics()
-        
+        self.html_report_1()
+
         #self.tune_Decision_Tree()
-        #self.tree_code("doesn't matter")
+        
+
+        #self.tree_code("doesn't matter") #<-- don't use rn
+
+        #self.html_report_2()
+
+        uuid_string = str(uuid.uuid4())
+
+        output_directory = '/kb/module/work/tmp/forHTML'
+
+        report_shock_id = self.dfu.file_to_shock({'file_path': output_directory,
+                                                  'pack': 'zip'})['shock_id']
+
+
+        htmloutput1 = {
+        'description' : 'htmloutuput1description',
+        'name' : 'htmloutput1name',
+        'label' : 'htmloutput1label',
+        'shock_id': report_shock_id,
+        }
+
+        htmloutput2 = {
+        'description' : 'htmloutuput2description',
+        'name' : 'htmloutput2name',
+        'label' : 'htmloutput2label',
+        'URL' : '/kb/module/work/tmp/forHTML/nice_html2.html'
+        }
+
+        fileoutput1 = {
+        'description' : 'htmloutuput2description', 
+        'name' : 'htmloutput2name',
+        'label' : 'htmloutput2label',
+        'URL' : "/kb/module/work/tmp/forDATA/" + self.best_classifier_str + u".pickle"
+        }
+
+        report_params = {'message': '',
+                         'workspace_name': params.get('input_ws'),
+                         #'objects_created': objects_created,
+                         'html_links': [htmloutput1],
+                         'direct_html_link_index': 0,
+                         'html_window_height': 333,
+                         'report_object_name': 'kb_classifier_report_' + str(uuid.uuid4())}
+
+        kbase_report_client = KBaseReport(self.callback_url)
+        output = kbase_report_client.create_extended_report(report_params)
+
+        report_output = {'report_name': output['name'], 'report_ref': output['ref']}
+
+        print('I hope I am working now')
+
+        print(report_output.get('report_name'))
+        print(report_output.get('report_ref'))
+
+        return report_output
+
+        """report_params = {
+                                    'direct_html_link_index': 0,
+                                    #'file_links': [fileoutput1],
+                                    'html_links': [htmloutput1], #, htmloutput2],
+                                    'workspace_name': params['input_ws'],
+                                    'report_object_name': 'kb_classifier_report_' + uuid_string
+                                }
+                        
+                                kbase_report_client = KBaseReport(self.callback_url, token=token)
+                                output = kbase_report_client.create_extended_report(report_params)
+                                
+                                return output"""
+
+
+        ## Report generation goes here
+        """
+        output = report
+
+        return 
+        """
 
         #END build_classifier
 
@@ -845,6 +1323,49 @@ This module build a classifier and predict phenotypes based on the classifier
         # ctx is the context object
         # return variables are: output
         #BEGIN predict_phenotype
+
+        classifier_name_rn = self.best_classifier_str
+        #this can be passed in as a key value that the user can select
+
+        with open(u"/kb/module/work/tmp/" + unicode(classifier_name_rn) + u".txt", u"r") as f:
+            still_str = f.read()
+
+        after_classifier = pickle.loads(codecs.decode(still_str.encode(), "base64"))
+        #should be able to run regular commands like... after_classifier.predict(insert_X)
+
+        """
+        all_attributes = self.get_mainAttributes('all', for_predict = True)
+        #again here we need to edit how to feed in the inputs
+        """
+
+        after_classifier_result = after_classifier.predict(all_attributes) #replace with all_attributes
+    
+        after_classifier_result_forDF = []
+
+        for current_result in after_classifier_result:
+            after_classifier_result_forDF.extend(self.my_mapping.keys()[self.my_mapping.values().index(current_result)])
+
+        after_classifier_df = pd.DataFrame(after_classifier_result_forDF, index=all_attributes.index)
+
+
+        allProbs = after_classifier.predict_proba(self.full_attribute_array)
+        maxEZ = np.amax(allProbs, axis=1)
+        maxEZ_df = pd.DataFrame(maxEZ, index=all_attributes.index)
+
+        predict_table_pd = pd.concat([after_classifier_df, maxEZ_df], axis=1)
+        predict_table_pd.to_html(u'/kb/module/work/tmp/forHTML/results.html')
+
+        #you can also save down table as text file or csv
+        """
+        #txt
+        np.savetxt(r'/kb/module/work/tmp/np.txt', predict_table_pd.values, fmt='%d')
+
+        #csv
+        predict_table_pd.to_csv(r'/kb/module/work/tmp/pandas.txt', header=None, index=None, sep=' ', mode='a')        
+        """
+
+        self.html_report_3()
+
         #END predict_phenotype
 
         # At some point might do deeper type checking...
@@ -853,6 +1374,7 @@ This module build a classifier and predict phenotypes based on the classifier
                              'output is not type dict as required.')
         # return the results
         return [output]
+
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK",
