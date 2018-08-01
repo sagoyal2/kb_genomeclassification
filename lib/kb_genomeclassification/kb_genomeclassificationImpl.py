@@ -1174,7 +1174,6 @@ This module build a classifier and predict phenotypes based on the classifier
         self.callback_url = os.environ['SDK_CALLBACK_URL']
         self.dfu = DataFileUtil(self.callback_url)
         
-        
         """
         which_target = u"Gram_Stain"
 
@@ -1193,14 +1192,15 @@ This module build a classifier and predict phenotypes based on the classifier
 
         pickle_in = open(u"/kb/module/data/attribute_list.pickle", u"rb")
         self.attribute_list = pickle.load(pickle_in)
-        """    
-        
+        """
         
         self.train_index = []
         self.test_index = []
 
         self.splits = 10
-        self.global_target = which_target
+        #self.global_target = which_target
+
+        self.global_target = ''
 
         self.saved_name = u""
         self.list_name = []
@@ -1355,6 +1355,8 @@ This module build a classifier and predict phenotypes based on the classifier
 
         classifier = params.get('classifier')
         target = params.get('phenotypeclass')
+
+        self.global_target = target
 
         self.classifier = params.get('classifier')
         self.target = params.get('phenotypeclass')
