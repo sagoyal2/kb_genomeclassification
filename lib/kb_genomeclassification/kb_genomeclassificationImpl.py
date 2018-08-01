@@ -132,8 +132,24 @@ This module build a classifier and predict phenotypes based on the classifier
     # Class variables and functions can be defined in this block
 
     def classiferTest(self, classifier, classifier_name, print_cfm):
-        # so in this method we need to be returning a classifier instead of all the confusion matrices?
-        # how do you return a classifier?
+        """
+        args: 
+        ---classifier which is a sklearn object that has methods #LogisticRegression()
+        ---classifier_name is a string and is what is the name given to what the classifer is being saved as
+        ---print_cfm is boolean (False when running through tuning and you don't want to print out all results on the
+                                console - True otherwise) you might need to rethink this value when implementing and saving classifiers
+
+        does: 
+        ---calculates the numerical value of the the classifiers
+        ---saves down pickled versions of classifiers (probably make a separate method)
+            ---saves down base64 versions of classifiers
+        ---creates the text fields and values to be placed into the statistics table
+        ---calls the plot_confusion_matrix function
+
+        return:
+        --- (numpy.average(train_score), numpy.std(train_score), numpy.average(validate_score), numpy.std(validate_score))
+            ---return statement is only used when you repeatedly loop through this function during tuning
+        """
 
         self.saved_name = classifier_name
 
@@ -175,11 +191,30 @@ This module build a classifier and predict phenotypes based on the classifier
             current_pickle = pickle.dumps(classifier.fit(self.full_attribute_array, self.full_classification_array), protocol=0)
             pickled = codecs.encode(current_pickle, "base64").decode()
 
+            
             with open(u"/kb/module/work/tmp/" + unicode(classifier_name) + u".txt", u"w") as f:
                 for line in pickled:
                     f.write(line)
             """
-        
+
+        pickled = "this is what the pickled string would be"
+
+        classifier_object= {
+        'classifier_id' : '',
+        'classifier_type' : classifier_name, # Neural network
+        'classifier_name' : classifier_name,
+        'classifier_data' : pickled, 
+        'classifier_description' : 'this is my description',
+        'lib_name' : 'sklearn',
+        'attribute_type' : 'functional_roles',
+        'number_of_attributes' : self.class_list.__len__(),
+        'attribute_data' : '', #self.master_Role,
+        'class_list_mapping' : '', #self.my_mapping,
+        'number_of_genomes' : 0,
+        'training_set_ref' : ''
+        }
+
+        print classifier_object
 
         list_forDict = []
 
@@ -260,6 +295,15 @@ This module build a classifier and predict phenotypes based on the classifier
 
 
     def whichClassifier(self, name):
+        """
+        args:
+        ---name which is a string that the user will pass in as to which classifier (sklearn) classifier they want
+        does:
+        ---matches string with sklearn classifier
+        return:
+        ---sklearn classifier
+        """
+
         if name == u"KNeighborsClassifier":
             return KNeighborsClassifier()
         elif name == u"GaussianNB":
@@ -276,6 +320,24 @@ This module build a classifier and predict phenotypes based on the classifier
             return u"ERROR THIS SHOULD NOT HAVE REACHED HERE"
 
     def cf_stats(self, TN, TP, FP, FN):
+        """
+        args:
+        ---TN int for True Negative
+        ---TP int for True Positive
+        ---FP int for False Positive
+        ---FN int for False Negative
+        does: 
+        ---calculates statistics as a way to measure and evaluate the performance of the classifiers
+        return:
+        ---list_return=[((TP + TN) / Total), (Precision), (Recall), (2 * ((Precision * Recall) / (Precision + Recall)))]
+            ---((TP + TN) / Total)) == Accuracy
+            --- Precision
+            --- Recall
+            ---(2 * ((Precision * Recall) / (Precision + Recall))) == F1 Score
+
+        ---
+        """
+
         AN = TN + FP
         AP = TN + FN
         PN = TN + FN
@@ -298,6 +360,15 @@ This module build a classifier and predict phenotypes based on the classifier
         return list_return
 
     def to_HTML_Statistics(self, additional = False):
+        """
+        args:
+        ---additional is a boolean and is used to indicate if this method is being called to make html2
+        does:
+        ---the statistics that were calculated and stored into lists are converted into a dataframe table --> html page
+        return:
+        ---N/A but instead creates an html file in tmp
+        """
+
 
         #self.counter = self.counter + 1
 
@@ -382,7 +453,18 @@ This module build a classifier and predict phenotypes based on the classifier
         #df.to_html('statistics' + str(self.counter) + '.html')
 
     def plot_confusion_matrix(self,cm, classes, title,classifier_name):
+        """
+        args:
+        ---cm is the "cnf_matrix" which is a numpy array of numerical values for the confusion matrix
+        ---classes is the class_list which is a list of the classes ie. [N,P] or [Aerobic, Anaerobic, Facultative]
+        ---title is a "heading" that appears on the image
+        ---classifier_name is the classifier name and is what the saved .png file name will be
+        does:
+        ---creates a confusion matrix .png file and saves it
+        return:
+        ---N/A but instead creates an .png file in tmp
 
+        """
         """
         plt.rcParams.update({'font.size': 18})
         #fig,ax= plt.subplots(figsize=(5,4))
@@ -414,11 +496,17 @@ This module build a classifier and predict phenotypes based on the classifier
         fig.savefig(u"/kb/module/work/tmp/forHTML/" + classifier_name +u".png", format=u'png')
 
     def tree_code(self, optimized_tree, spacer_base=u"    "):
-        """Produce psuedo-code for decision tree.
-        Notes
-        -----
-        based on http://stackoverflow.com/a/30104792.
         """
+        args:
+        ---optimized_tree this is a DecisionTree object that has been tuned
+        ---spacer_base is string physically acting as a spacer
+        does:
+        ---Produce psuedo-code for decision tree - based on http://stackoverflow.com/a/30104792.
+        ---calls printTree
+        return:
+        ---N/A but prints out a visual of what the DecisionTree object looks like on the inside
+        """
+
         tree = optimized_tree #DecisionTreeClassifier(random_state=0, max_depth=3, criterion='entropy')
         #tree = DecisionTreeClassifier(random_state=0, max_depth=3, criterion='entropy')
         print u"Hello"
@@ -461,7 +549,15 @@ This module build a classifier and predict phenotypes based on the classifier
         self.printTree(tree, u"NAMEmyTreeLATER")
 
     def tune_Decision_Tree(self):
-
+        """
+        args:
+        ---NA
+        does:
+        ---by looping through various parameters (1. depth 2. criterion) it selects best configuration
+        ---calls tree_code
+        return:
+        ---N/A but main function is just to figure out "workhorse"
+        """
         skf = StratifiedKFold(n_splits=self.splits, random_state=0, shuffle=True)
         for train_idx, test_idx in skf.split(self.full_attribute_array, self.full_classification_array):
             self.train_index.append(train_idx)
@@ -534,6 +630,15 @@ This module build a classifier and predict phenotypes based on the classifier
 
 
     def parse_lookNice(self,name):
+        """
+        args:
+        ---name is a string that is what you want the DecisionTree image saved as
+        does:
+        ---this cleans up the dot file to produce a more visually appealing tree figure using graphviz
+        return:
+        ---N/A but saves a .png of the name in the tmp folder
+        """
+
         import re
 
         f = open(u"/kb/module/work/tmp/dotFolder/mydotTree.dot", u"r")
@@ -568,7 +673,9 @@ This module build a classifier and predict phenotypes based on the classifier
             os.system(u'dot -Tpng /kb/module/work/tmp/dotFolder/niceTree.dot >  '+ u"/kb/module/work/tmp/forHTML/" + name + u'.png ')
 
     def html_report_1(self):
-        
+        """
+        does: creates an .html file that makes the frist report (first app).
+        """
         file = open(u"/kb/module/work/tmp/forHTML/nice_html1.html", u"w")
 
         html_string = u"""
@@ -703,6 +810,9 @@ This module build a classifier and predict phenotypes based on the classifier
         file.close()
 
     def html_report_2(self):
+        """
+        does: creates an .html file that makes the second report (first app). 
+        """
         file = open(u"/kb/module/work/tmp/forHTML/nice_html2.html", u"w")
 
         html_string = u"""
@@ -812,6 +922,9 @@ This module build a classifier and predict phenotypes based on the classifier
         file.close()
 
     def html_report_3(self):
+        """
+        does: creates an .html file that makes the first report (second app). 
+        """
         file = open(u"/kb/module/work/tmp/forHTML/nice_html3.html", u"w")
 
         html_string = u"""
@@ -864,6 +977,17 @@ This module build a classifier and predict phenotypes based on the classifier
 
     def printTree(self,tree, pass_name):
         """
+        args:
+        ---tree is a DecisionTree object that has already been tuned
+        ---pass_name is a string for what you want the tree named as (but this is not where the creation happens just pass)
+        does:
+        ---using graphviz feature it is able to geneate the dot file that has an "ugly" version of the tree inside
+        ---call the parse_lookNice 
+        return:
+        ---N/A just makes an "ugly" dot file.
+        """
+        
+        """
         export_graphviz(tree, out_file="mytree.dot", feature_names=self.attribute_list,
                         class_names=self.class_list)
         with open("mytree.dot") as f:
@@ -890,6 +1014,9 @@ This module build a classifier and predict phenotypes based on the classifier
         #os.system('dot -Tpng ./mytree.dot >  ' + name + '.png ')
 
     def create_report(self):
+        """
+        at the moment not being used
+        """
         uuid_string = str(uuid.uuid4())
 
         report_params = {
@@ -905,14 +1032,24 @@ This module build a classifier and predict phenotypes based on the classifier
         return output
 
     def get_mainAttributes(self,my_input, for_predict = False):
+        """
+        args:
+        ---my_input is either a list of the names of the genomes in format "name1,name2" or "all" meaning everything in workspace will get used
+        does:
+        ---creates a dataframe for the all the genomes given
+            ---Rows are "index" which is the name of the genome(same as my_input)
+            ---Colmuns are "master Role" which is a list of the all functional roles
+        return:
+        ---returns the dataframe which contains all_attributes (this is the X matrix for ML)
+        """
         current_ws = os.environ['KB_WORKSPACE_ID']
         ws = biokbase.narrative.clients.get("workspace")
         ws_client = Workspace()
 
         listOfNames = [] #make this self.listOfNames
         
-        if for_predict:
-            master_Role = [] #make this self.master_Role
+        #if not for_predict:
+        #    self.master_Role = [] #make this self.master_Role
 
         name_and_roles = {}
 
@@ -942,9 +1079,9 @@ This module build a classifier and predict phenotypes based on the classifier
                     
             name_and_roles[current_gName] = listOfFunctionalRoles
         
-        if for_predict:    
+        if not for_predict:    
             master_pre_Role = list(itertools.chain(*name_and_roles.values()))
-            master_Role = list(set(master_pre_Role))
+            self.master_Role = list(set(master_pre_Role))
 
 
         data_dict = {}
@@ -954,7 +1091,7 @@ This module build a classifier and predict phenotypes based on the classifier
             
             current_Roles = name_and_roles[current_gName]
             
-            for individual_role in master_Role:
+            for individual_role in self.master_Role:
                 if individual_role in current_Roles:
                     arrayofONEZERO.append(1)
                 else:
@@ -962,11 +1099,21 @@ This module build a classifier and predict phenotypes based on the classifier
                     
             data_dict[current_gName] = arrayofONEZERO
 
-        my_all_attributes = pd.DataFrame.from_dict(data_dict, orient='index', columns = master_Role)
+        my_all_attributes = pd.DataFrame.from_dict(data_dict, orient='index', columns = self.master_Role)
 
         return my_all_attributes
 
     def get_mainClassification(self, file_path):
+        """
+        args:
+        ---file_path is a path that holds the path of where the excel file is located (given as input by the user)
+        does:
+        ---with the excel file which has 2 columns: Genome_ID (same as my_input) and Classification 
+            ---it creates another dataframe with only classifications and rows as "index" which are genome names (my_input)
+        return:
+        ---the dataframe with all_classifications (essentially the Y variable for ML)
+        """
+
         #figure out how to read in xls file
         my_all_classifications = pd.read_excel(file_path) #replace with location of file
         my_all_classifications.set_index('Genome_ID', inplace=True)
@@ -1065,6 +1212,8 @@ This module build a classifier and predict phenotypes based on the classifier
 
         self.my_mapping = {}
 
+        self.master_Role = []
+
         global output 
         output = {'jack': 4098, 'sape': 4139} #random dict
 
@@ -1156,7 +1305,8 @@ This module build a classifier and predict phenotypes based on the classifier
         
 
         --------------------------------------------------------------
-
+        """
+        """
         file_path = self._download_shock(params.get('shock_id'))
 
         all_attributes = self.get_mainAttributes(params.get('list_name'))
@@ -1167,6 +1317,8 @@ This module build a classifier and predict phenotypes based on the classifier
         #should include self??
         class_list = list(set(full_dataFrame['Classification']))
 
+        self.class_list = class_list
+
         #create a mapping
         #self.my_mapping = {}
         for current_class,num in zip(class_list, range(0, len(class_list))):
@@ -1176,6 +1328,9 @@ This module build a classifier and predict phenotypes based on the classifier
             full_dataFrame.at[index, 'Classification'] = self.my_mapping[full_dataFrame.at[index, 'Classification']]
 
         all_classifications = full_dataFrame['Classification']
+
+        self.full_attribute_array = all_attributes
+        self.full_classification_array = all_classifications
 
         """
 
@@ -1193,10 +1348,10 @@ This module build a classifier and predict phenotypes based on the classifier
         self._valid_params(params)
 
         classifier = params.get('classifier')
-        target = params.get('target')
+        target = params.get('phenotypeclass')
 
         self.classifier = params.get('classifier')
-        self.target = params.get('target')
+        self.target = params.get('phenotypeclass')
 
         # Add the block of code that reads in .txt file contain the annotations.
         # (Here my question is how to change this section so that it reads in the genomes files on the KBASE Narrative)
@@ -1207,7 +1362,7 @@ This module build a classifier and predict phenotypes based on the classifier
             self.train_index.append(train_idx)
             self.test_index.append(test_idx)
 
-        if classifier == u"Default":
+        if classifier == u"run_all":
             self.classiferTest(KNeighborsClassifier(),target+u"_KNeighborsClassifier",True)
             self.classiferTest(GaussianNB(),target+u"_GaussianNB",True)
             self.classiferTest(LogisticRegression(random_state=0),target+u"_LogisticRegression",True)
@@ -1233,6 +1388,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         #self.html_report_2()
 
+        """
         uuid_string = str(uuid.uuid4())
 
         output_directory = '/kb/module/work/tmp/forHTML'
@@ -1277,10 +1433,11 @@ This module build a classifier and predict phenotypes based on the classifier
 
         print('I hope I am working now')
 
-        print(report_output.get('report_name'))
-        print(report_output.get('report_ref'))
+        print(report_output.get('report_name')) # kb_classifier_report_5920d1da-2a99-463b-94a5-6cb8721fca45
+        print(report_output.get('report_ref')) #19352/1/1
 
         return report_output
+        """
 
         """report_params = {
                                     'direct_html_link_index': 0,
@@ -1301,6 +1458,54 @@ This module build a classifier and predict phenotypes based on the classifier
         output = report
 
         return 
+        """
+
+        """
+
+        module KBaseClassifier {
+            /*
+            KBase GenomeClassifier
+            @id kb
+            */
+
+            typedef string Classifier_id;
+            typedef string training_set_ref;
+
+            /*
+            Classifier id
+            training_set_ref
+            */
+
+
+            /*
+            list<list_of_attributes> @optional  # e.g; list of kmers/functional roles
+            classifier_type  # Neural network
+            classifier_data  # base64 string
+            string attribute_type  #functional roles/ kmers
+            number_of_attributes  # 15000
+            lib_name # name of the machine learning library
+            class_list_mapping # defining each class
+            @optional classifier_id classifier_description training_set_ref attribute_data
+            */
+
+
+            typedef structure {
+                Classifier_id classifier_id;
+                string classifier_type;
+                string classifier_name;
+                string classifier_data ;
+                string classifier_description;
+                string lib_name;
+                string attribute_type;
+                int number_of_attributes;
+                list<string> attribute_data;
+                mapping<string,int> class_list_mapping;
+                int number_of_genomes;
+                training_set_ref training_set_ref;
+            } GenomeClassifier;
+
+
+        };
         """
 
         #END build_classifier
@@ -1335,7 +1540,7 @@ This module build a classifier and predict phenotypes based on the classifier
         #should be able to run regular commands like... after_classifier.predict(insert_X)
 
         """
-        all_attributes = self.get_mainAttributes('all', for_predict = True)
+        all_attributes = self.get_mainAttributes(params.get('list_name'), for_predict = True)
         #again here we need to edit how to feed in the inputs
         """
 
