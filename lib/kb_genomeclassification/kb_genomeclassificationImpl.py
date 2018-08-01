@@ -1045,8 +1045,10 @@ This module build a classifier and predict phenotypes based on the classifier
         
         #current_ws = os.environ['KB_WORKSPACE_ID']
         current_ws = my_current_ws
-        ws = biokbase.narrative.clients.get("workspace")
-        ws_client = Workspace()
+        #ws = biokbase.narrative.clients.get("workspace")
+        #ws_client = Workspace()
+
+        #ws_client = workspaceService(config["workspace-url"])
 
         listOfNames = [] #make this self.listOfNames
         
@@ -1058,7 +1060,7 @@ This module build a classifier and predict phenotypes based on the classifier
         #my_input = 'all' # change this to something that is passed in the input
 
         if my_input == 'all':
-            wsgenomes = ws_client.list_objects({"workspaces":[current_ws],"type":"KBaseGenomes.Genome"});
+            wsgenomes = self.ws_client.list_objects({"workspaces":[current_ws],"type":"KBaseGenomes.Genome"});
             for genome in wsgenomes:
                 listOfNames.append(str(genome[1]))
 
@@ -1175,6 +1177,7 @@ This module build a classifier and predict phenotypes based on the classifier
         self.scratch = os.path.abspath(config.get('scratch'))
         self.callback_url = os.environ['SDK_CALLBACK_URL']
         self.dfu = DataFileUtil(self.callback_url)
+        self.ws_client = workspaceService(self.workspaceURL)
         
         """
         which_target = u"Gram_Stain"

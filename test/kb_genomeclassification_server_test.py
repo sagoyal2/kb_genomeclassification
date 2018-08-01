@@ -81,7 +81,14 @@ class kb_genomeclassificationTest(unittest.TestCase):
 
     # def test_download_shock(self):
 
+    def test_workspace(self):
+        import biokbase.workspace.client
+        
+        current_ws = 'my_current_ws'
+        ws = biokbase.narrative.clients.get("workspace")
+        ws_client = Workspace()
 
+    """
     def test_build_classifier(self):
         #result = self.getImpl() #impl_kb_genomeclassification = kb_genomeclassification(u"Metabolism")
         print("this first part is about to begin")
@@ -122,7 +129,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         #print("done with tree_code")
 
 
-        """
+        
         test all classifiers so user can see results
         (however you will also import these classification types)
         result.classiferTest(KNeighborsClassifier(),"Metabolism_KNeighborsClassifier",True)
@@ -130,7 +137,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         result.classiferTest(LogisticRegression(random_state=0),"Metabolism_LogisticRegression",True)
         result.classiferTest(DecisionTreeClassifier(random_state=0),"Metabolism_DecisionTreeClassifier",True)
         result.classiferTest(svm.LinearSVC(random_state=0),"Metabolism_SVM",True)
-        """
+        
 
 
         #print("done with test_build_classifier")
@@ -139,3 +146,4 @@ class kb_genomeclassificationTest(unittest.TestCase):
         #result.classiferTest(KNeighborsClassifier(),"Metabolism-KNeighborsClassifier",True)
 
         #impl_kb_genomeclassification.tree_code() # <-- prints the tree to see the "decisions" that the classifier is making
+    """
