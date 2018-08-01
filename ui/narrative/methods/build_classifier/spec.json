@@ -33,6 +33,69 @@
         }
     },
     {
+            "id" : "target",
+            "optional" : false,
+            "advanced" : false,
+            "allow_multiple" : false,
+            "default_values" : [ "" ],
+            "field_type" : "text"
+
+    }
+    {
+       "id": "classifier_type",
+       "optional": false,
+       "advanced": false,
+       "allow_multiple": false,
+       "default_values": [ "Run all classifiers" ],
+       "field_type": "dropdown",
+       "dropdown_options": {
+           "options": [
+               {
+                 "value": "run_all",
+                 "display": "Run all classifiers",
+                 "id": "run_all",
+                 "ui_name": "Run all classifiers"
+               },
+               {
+                 "value": "KNeighborsClassifier",
+                 "display": "K Neighbors Classifier",
+                 "id": "KNeighborsClassifier",
+                 "ui_name": "K Neighbors Classifier"
+               },
+               {
+                 "value": "GaussianNB",
+                 "display": "Gaussian Naive Base",
+                 "id": "GaussianNB",
+                 "ui_name": "Gaussian Naive Base"
+               },
+               {
+                 "value": "NeuralNetwork",
+                 "display": "Neural Network",
+                 "id": "NeuralNetwork",
+                 "ui_name": "Neural Network"
+               },
+               {
+                 "value": "SVM",
+                 "display": "Support Vector Machine",
+                 "id": "SVM",
+                 "ui_name": "Support Vector Machine"
+               },
+               {
+                 "value": "DecisionTreeClassifier",
+                 "display": "Decision Tree Classifier",
+                 "id": "DecisionTreeClassifier",
+                 "ui_name": "Decision Tree Classifier"
+               },
+               {
+                 "value": "LogisticRegression",
+                 "display": "Logistic Regression",
+                 "id": "LogisticRegression",
+                 "ui_name": "Logistic Regression"
+               }
+            ]
+        }
+    },
+    {
        "id": "attribute",
        "optional": false,
        "advanced": false,
@@ -54,13 +117,36 @@
                  "ui_name": "Protein sequences"
                },
                {
-                 "value": "kmer",
-                 "display": "K-mers 18mer",
-                 "id": "kmer",
-                 "ui_name": "K-mers 18mer"
+                 "value": "dnakmer",
+                 "display": "DNA K-mers 18mer",
+                 "id": "dnakmer",
+                 "ui_name": "DNA K-mers 18mer"
+               },
+               {
+                 "value": "protkmer",
+                 "display": "Protein K-mers 18mer",
+                 "id": "protkmer",
+                 "ui_name": "Protein K-mers 18mer"
                }
             ]
         }
+    },
+    {
+         "field_type" : "checkbox",
+         "allow_multiple" : false,
+         "optional" : true,
+         "id" : "save_ts",
+         "advanced" : true,
+         "default_values" : [
+            "0"
+         ],
+          "checkbox_options" : {
+            "unchecked_value" : 0,
+            "checked_value" : 1
+          },
+          "text_options" : {
+            "valid_ws_types" : []
+          }
     },
     {
             "id" : "classifier_out",
@@ -70,7 +156,7 @@
             "default_values" : [ "" ],
             "field_type" : "text",
             "text_options" : {
-            "valid_ws_types" : [ "KBaseGenomes.Genome" ],
+            "valid_ws_types" : [ "KBaseClassifier.GenomeClassifier" ],
             "is_output_name":true
             }
     }
@@ -98,6 +184,22 @@
                 {
                     "input_parameter": "classifier_out",
                     "target_property": "classifier_out"
+
+                },
+                {
+                    "input_parameter": "classifier_type",
+                    "target_property": "classifier_type"
+
+                },
+                {
+                    "input_parameter": "target",
+                    "target_property": "target"
+
+                },
+                {
+
+                    "input_parameter": "save_ts",
+                    "target_property": "save_ts"
 
                 },
                 {

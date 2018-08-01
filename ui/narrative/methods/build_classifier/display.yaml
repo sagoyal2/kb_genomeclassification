@@ -37,6 +37,21 @@ parameters :
             Classifier Training Set
         short-hint : |
             Paste the list of traning set data
+    classifier_type :
+        ui-name : |
+            Select the Classification algorithm
+        short-hint : |
+            Select the Classifier algorithm, by deafult all classifier algorithms will run
+    target :
+        ui-name : |
+            Phenotype or Condition [e.g.; Gram type, Respiration]
+        short-hint : |
+            Phenotype or Condition you want to build the classifier for
+    save_ts :
+        ui-name : |
+            Save the training set data
+        short-hint : |
+            Save the training set data and link it to the classifier
     attribute :
         ui-name : |
             Select the attribute
