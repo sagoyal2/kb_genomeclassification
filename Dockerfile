@@ -1,37 +1,45 @@
-FROM kbase/kbase:sdkbase2.latest
-MAINTAINER KBase Developer
+FROM kbase/sdkbase2:latest
+# FROM kbase/sdkbase2:python #try this again
+
+# FROM kbase/kb_sdk_docs:latest
+# MAINTAINER KBase Developer
+
 # -----------------------------------------
 # In this section, you can install any system dependencies required
 # to run your App.  For instance, you could place an apt-get update or
 # install line here, a git checkout to download code, or run any other
 # installation scripts.
 
-# RUN apt-get update
+# RUN apt-get upgrade -y
+RUN apt-get update
 
-# Here we install a python coverage tool and an
-# https library that is out of date in the base image.
+RUN pip install pandas
+RUN pip install -U scikit-learn
+RUN pip install seaborn
+RUN python -mpip install matplotlib
+RUN pip install graphviz
+
+RUN pip install xlrd
+
+RUN pip install --upgrade pip
 
 RUN pip install coverage
-# put these in final product (below)
-RUN pip install -U scikit-learn
-#RUN pip install seaborn
-#RUN pip install matplotlib
 
-# update security libraries in the base image
-#RUN pip install cffi --upgrade \
-#    && pip install pyopenssl --upgrade \
-#    && pip install ndg-httpsclient --upgrade \
-#    && pip install pyasn1 --upgrade \
-#    && pip install requests --upgrade \
-#    && pip install 'requests[security]' --upgrade
+RUN apt-get install python-tk -y
+ENV DISPLAY :0
+
 
 # -----------------------------------------
 
+RUN apt-get install graphviz -y
+	
 COPY ./ /kb/module
 RUN mkdir -p /kb/module/work
 RUN chmod -R a+rw /kb/module
 
+
 WORKDIR /kb/module
+
 
 RUN make all
 

@@ -6,10 +6,13 @@ import time
 import requests
 
 from os import environ
+
+
 try:
     from ConfigParser import ConfigParser  # py2
 except:
     from configparser import ConfigParser  # py3
+
 
 from pprint import pprint  # noqa: F401
 
@@ -76,88 +79,63 @@ class kb_genomeclassificationTest(unittest.TestCase):
     def getContext(self):
         return self.__class__.ctx
 
-    def test_build_classifier(self):
-        result = self.getImpl()
+    # def test_download_shock(self):
 
-        print(result.build_classifier(self.getContext(), {"gram negative", "xyz"}))
-        #print(result.classiferTest(KNeighborsClassifier(),"Metabolism-KNeighborsClassifier",True))
+
+    def test_build_classifier(self):
+        #result = self.getImpl() #impl_kb_genomeclassification = kb_genomeclassification(u"Metabolism")
+        print("this first part is about to begin")
+
+        # result = 
+
+        print("this first part is done")
+
+        wsName = self.getWsName()
+
+        print(wsName)
+
+        params = {'target': 'Gram_Stain', #Metabolism Gram_Stain
+                  'classifier': 'KNeighborsClassifier',
+                  'input_ws': wsName} #Default KNeighborsClassifier
+
+        print("here is wsName:")
+        print(params.get('input_ws'))
+
+        # params = {'target': 'Metabolism'}
+        #print(result.build_classifier(self.getContext(), {"gram negative", "xyz"})) #impl_kb_genomeclassification.build_classifier(u"Metabolism")
+        
+
+        #self.serviceImpl.build_classifier(self.getContext(), params)
+
+        #cls.cfg[u'which_target'] = u"Metabolism"
+
+        self.getImpl().build_classifier(self.getContext(), params)
+
+        # kb_genomeclassification("Gram_Stain").build_classifier(self.getContext(), params)
+
         print("done with test_build_classifier")
+
+        #result.predict_phenotype(self.getContext(), {"unknown annotations"})
+        #print("done with predict_phenotype")
+
+        #print(result.tree_code()) # <-- prints the tree to see the "decisions" that the classifier is making)
+        #print("done with tree_code")
+
 
         """
         test all classifiers so user can see results
         (however you will also import these classification types)
-        result.classiferTest(KNeighborsClassifier(),"Metabolism-KNeighborsClassifier",True)
-        result.classiferTest(GaussianNB(),"Metabolism-GaussianNB",True)
-        result.classiferTest(LogisticRegression(random_state=0),"Metabolism-LogisticRegression",True)
-        result.classiferTest(DecisionTreeClassifier(random_state=0),"Metabolism-DecisionTreeClassifier",True)
-        result.classiferTest(svm.LinearSVC(random_state=0),"Metabolism-SVM",True)
+        result.classiferTest(KNeighborsClassifier(),"Metabolism_KNeighborsClassifier",True)
+        result.classiferTest(GaussianNB(),"Metabolism_GaussianNB",True)
+        result.classiferTest(LogisticRegression(random_state=0),"Metabolism_LogisticRegression",True)
+        result.classiferTest(DecisionTreeClassifier(random_state=0),"Metabolism_DecisionTreeClassifier",True)
+        result.classiferTest(svm.LinearSVC(random_state=0),"Metabolism_SVM",True)
         """
 
 
         #print("done with test_build_classifier")
 
-        print(result.tree_code()) # <-- prints the tree to see the "decisions" that the classifier is making)
-        print("done with tree_code")
-
         #result.build_classifier(self.getContext(), {"gram negative", "xyz"})
         #result.classiferTest(KNeighborsClassifier(),"Metabolism-KNeighborsClassifier",True)
 
         #impl_kb_genomeclassification.tree_code() # <-- prints the tree to see the "decisions" that the classifier is making
-
-
-    """
-    # NOTE: According to Python unittest naming rules test method names should start from 'test'. # noqa
-    def load_fasta_file(self, filename, obj_name, contents):
-        f = open(filename, 'w')
-        f.write(contents)
-        f.close()
-        assemblyUtil = AssemblyUtil(self.callback_url)
-        assembly_ref = assemblyUtil.save_assembly_from_fasta({'file': {'path': filename},
-                                                              'workspace_name': self.getWsName(),
-                                                              'assembly_name': obj_name
-                                                              })
-        return assembly_ref
-
-    # NOTE: According to Python unittest naming rules test method names should start from 'test'. # noqa
-    def test_filter_contigs_ok(self):
-
-        # First load a test FASTA file as an KBase Assembly
-        fasta_content = '>seq1 something soemthing asdf\n' \
-                        'agcttttcat\n' \
-                        '>seq2\n' \
-                        'agctt\n' \
-                        '>seq3\n' \
-                        'agcttttcatgg'
-
-        assembly_ref = self.load_fasta_file(os.path.join(self.scratch, 'test1.fasta'),
-                                            'TestAssembly',
-                                            fasta_content)
-
-        # Second, call your implementation
-        ret = self.getImpl().filter_contigs(self.getContext(),
-                                            {'workspace_name': self.getWsName(),
-                                             'assembly_input_ref': assembly_ref,
-                                             'min_length': 10
-                                             })
-
-        # Validate the returned data
-        self.assertEqual(ret[0]['n_initial_contigs'], 3)
-        self.assertEqual(ret[0]['n_contigs_removed'], 1)
-        self.assertEqual(ret[0]['n_contigs_remaining'], 2)
-
-    def test_filter_contigs_err1(self):
-        with self.assertRaises(ValueError) as errorContext:
-            self.getImpl().filter_contigs(self.getContext(),
-                                          {'workspace_name': self.getWsName(),
-                                           'assembly_input_ref': '1/fake/3',
-                                           'min_length': '-10'})
-        self.assertIn('min_length parameter cannot be negative', str(errorContext.exception))
-
-    def test_filter_contigs_err2(self):
-        with self.assertRaises(ValueError) as errorContext:
-            self.getImpl().filter_contigs(self.getContext(),
-                                          {'workspace_name': self.getWsName(),
-                                           'assembly_input_ref': '1/fake/3',
-                                           'min_length': 'ten'})
-        self.assertIn('Cannot parse integer from min_length parameter', str(errorContext.exception))
-    """

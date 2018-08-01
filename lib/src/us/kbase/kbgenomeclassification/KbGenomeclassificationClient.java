@@ -166,6 +166,11 @@ public class KbGenomeclassificationClient {
     /**
      * <p>Original spec-file function name: build_classifier</p>
      * <pre>
+     * *
+     * build_classifier: build_classifier
+     * requried params:
+     * ss
+     * *
      * </pre>
      * @param   params   instance of type {@link us.kbase.kbgenomeclassification.BuildClassifierInput BuildClassifierInput}
      * @return   parameter "output" of type {@link us.kbase.kbgenomeclassification.ClassifierOut ClassifierOut}
