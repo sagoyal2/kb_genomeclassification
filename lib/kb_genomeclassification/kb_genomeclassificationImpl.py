@@ -1031,7 +1031,7 @@ This module build a classifier and predict phenotypes based on the classifier
         output = kbase_report_client.create_extended_report(report_params)
         return output
 
-    def get_mainAttributes(self,my_input, for_predict = False):
+    def get_mainAttributes(self,my_input, my_current_ws, for_predict = False):
         """
         args:
         ---my_input is either a list of the names of the genomes in format "name1,name2" or "all" meaning everything in workspace will get used
@@ -1042,7 +1042,9 @@ This module build a classifier and predict phenotypes based on the classifier
         return:
         ---returns the dataframe which contains all_attributes (this is the X matrix for ML)
         """
-        current_ws = os.environ['KB_WORKSPACE_ID']
+        
+        #current_ws = os.environ['KB_WORKSPACE_ID']
+        current_ws = my_current_ws
         ws = biokbase.narrative.clients.get("workspace")
         ws_client = Workspace()
 
@@ -1315,7 +1317,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         file_path = self._download_shock(params.get('shock_id'))
 
-        all_attributes = self.get_mainAttributes(params.get('list_name'))
+        all_attributes = self.get_mainAttributes(params.get('list_name'), params.get('workspace'))
         all_classifications = self.get_mainClassification(file_path)
 
         full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
