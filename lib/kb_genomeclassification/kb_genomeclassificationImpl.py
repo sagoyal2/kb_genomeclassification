@@ -197,7 +197,7 @@ This module build a classifier and predict phenotypes based on the classifier
                     f.write(line)
             """
 
-        pickled = "this is what the pickled string would be"
+        #pickled = "this is what the pickled string would be"
 
         classifier_object= {
         'classifier_id' : '',
