@@ -76,6 +76,36 @@ class kb_genomeclassificationTest(unittest.TestCase):
     def getContext(self):
         return self.__class__.ctx
 
+    def test_build_classifier(self):
+        result = self.getImpl()
+
+        print(result.build_classifier(self.getContext(), {"gram negative", "xyz"}))
+        #print(result.classiferTest(KNeighborsClassifier(),"Metabolism-KNeighborsClassifier",True))
+        print("done with test_build_classifier")
+
+        """
+        test all classifiers so user can see results
+        (however you will also import these classification types)
+        result.classiferTest(KNeighborsClassifier(),"Metabolism-KNeighborsClassifier",True)
+        result.classiferTest(GaussianNB(),"Metabolism-GaussianNB",True)
+        result.classiferTest(LogisticRegression(random_state=0),"Metabolism-LogisticRegression",True)
+        result.classiferTest(DecisionTreeClassifier(random_state=0),"Metabolism-DecisionTreeClassifier",True)
+        result.classiferTest(svm.LinearSVC(random_state=0),"Metabolism-SVM",True)
+        """
+
+
+        #print("done with test_build_classifier")
+
+        print(result.tree_code()) # <-- prints the tree to see the "decisions" that the classifier is making)
+        print("done with tree_code")
+
+        #result.build_classifier(self.getContext(), {"gram negative", "xyz"})
+        #result.classiferTest(KNeighborsClassifier(),"Metabolism-KNeighborsClassifier",True)
+
+        #impl_kb_genomeclassification.tree_code() # <-- prints the tree to see the "decisions" that the classifier is making
+
+
+    """
     # NOTE: According to Python unittest naming rules test method names should start from 'test'. # noqa
     def load_fasta_file(self, filename, obj_name, contents):
         f = open(filename, 'w')
@@ -130,3 +160,4 @@ class kb_genomeclassificationTest(unittest.TestCase):
                                            'assembly_input_ref': '1/fake/3',
                                            'min_length': 'ten'})
         self.assertIn('Cannot parse integer from min_length parameter', str(errorContext.exception))
+    """

@@ -1,4 +1,4 @@
-FROM kbase/kbase:sdkbase.latest
+FROM kbase/kbase:sdkbase2.latest
 MAINTAINER KBase Developer
 # -----------------------------------------
 # In this section, you can install any system dependencies required
@@ -12,14 +12,18 @@ MAINTAINER KBase Developer
 # https library that is out of date in the base image.
 
 RUN pip install coverage
+# put these in final product (below)
+RUN pip install -U scikit-learn
+#RUN pip install seaborn
+#RUN pip install matplotlib
 
 # update security libraries in the base image
-RUN pip install cffi --upgrade \
-    && pip install pyopenssl --upgrade \
-    && pip install ndg-httpsclient --upgrade \
-    && pip install pyasn1 --upgrade \
-    && pip install requests --upgrade \
-    && pip install 'requests[security]' --upgrade
+#RUN pip install cffi --upgrade \
+#    && pip install pyopenssl --upgrade \
+#    && pip install ndg-httpsclient --upgrade \
+#    && pip install pyasn1 --upgrade \
+#    && pip install requests --upgrade \
+#    && pip install 'requests[security]' --upgrade
 
 # -----------------------------------------
 

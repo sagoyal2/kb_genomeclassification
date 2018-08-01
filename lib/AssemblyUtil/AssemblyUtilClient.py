@@ -22,7 +22,7 @@ class AssemblyUtil(object):
 
     def __init__(
             self, url=None, timeout=30 * 60, user_id=None,
-            password=None, token=None, ignore_authrc=False,
+            password=None, token= None, ignore_authrc=False,
             trust_all_ssl_certificates=False,
             auth_svc='https://kbase.us/services/authorization/Sessions/Login',
             service_ver='release',
@@ -33,7 +33,7 @@ class AssemblyUtil(object):
         self._service_ver = service_ver
         self._client = _BaseClient(
             url, timeout=timeout, user_id=user_id, password=password,
-            token=token, ignore_authrc=ignore_authrc,
+            token= token, ignore_authrc=ignore_authrc,
             trust_all_ssl_certificates=trust_all_ssl_certificates,
             auth_svc=auth_svc,
             async_job_check_time_ms=async_job_check_time_ms,
