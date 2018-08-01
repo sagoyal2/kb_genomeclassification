@@ -94,9 +94,9 @@ class kb_genomeclassificationTest(unittest.TestCase):
 
         print(wsName)
 
-        params = {'target': 'Gram_Stain', #Metabolism Gram_Stain
+        params = {'phenotypeclass': 'Gram_Stain', #Metabolism Gram_Stain
                   'classifier': 'KNeighborsClassifier',
-                  'input_ws': wsName} #Default KNeighborsClassifier
+                  'input_ws': wsName} #run_all KNeighborsClassifier
 
         print("here is wsName:")
         print(params.get('input_ws'))
