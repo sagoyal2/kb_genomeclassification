@@ -37,12 +37,12 @@ parameters :
             Classifier Training Set
         short-hint : |
             Paste the list of traning set data
-    classifier_type :
+    classifier :
         ui-name : |
             Select the Classification algorithm
         short-hint : |
             Select the Classifier algorithm, by deafult all classifier algorithms will run
-    target :
+    phenotypeclass :
         ui-name : |
             Phenotype or Condition [e.g.; Gram type, Respiration]
         short-hint : |

@@ -33,16 +33,16 @@
         }
     },
     {
-            "id" : "target",
+            "id" : "phenotypeclass",
             "optional" : false,
             "advanced" : false,
             "allow_multiple" : false,
             "default_values" : [ "" ],
             "field_type" : "text"
 
-    }
+    },
     {
-       "id": "classifier_type",
+       "id": "classifier",
        "optional": false,
        "advanced": false,
        "allow_multiple": false,
@@ -187,13 +187,13 @@
 
                 },
                 {
-                    "input_parameter": "classifier_type",
-                    "target_property": "classifier_type"
+                    "input_parameter": "classifier",
+                    "target_property": "classifier"
 
                 },
                 {
-                    "input_parameter": "target",
-                    "target_property": "target"
+                    "input_parameter": "phenotypeclass",
+                    "target_property": "phenotypeclass"
 
                 },
                 {

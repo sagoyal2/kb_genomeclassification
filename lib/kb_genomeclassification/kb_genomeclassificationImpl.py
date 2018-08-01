@@ -125,8 +125,8 @@ This module build a classifier and predict phenotypes based on the classifier
     # the latter method is running.
     ######################################### noqa
     VERSION = "0.0.1"
-    GIT_URL = "https://github.com/sagoyal2/kb_genomeclassification.git"
-    GIT_COMMIT_HASH = "5d29f72316e734318056ee489aad956f14e2af2e"
+    GIT_URL = "https://github.com/janakagithub/kb_genomeclassification.git"
+    GIT_COMMIT_HASH = "dfacec004ff813cba1e24b28c43c274d0ec04cae"
 
     #BEGIN_CLASS_HEADER
     # Class variables and functions can be defined in this block
@@ -1085,7 +1085,8 @@ This module build a classifier and predict phenotypes based on the classifier
            phenotype;) -> structure: parameter "phenotype" of String,
            parameter "genome_name" of String, parameter "classifier_out" of
            String, parameter "target" of String, parameter "classifier" of
-           String
+           String, parameter "shock_id" of String, parameter "list_name" of
+           String, parameter "save_ts" of Long
         :returns: instance of type "ClassifierOut" -> structure: parameter
            "classifier_ref" of String, parameter "phenotype" of String
         """
@@ -1374,7 +1375,6 @@ This module build a classifier and predict phenotypes based on the classifier
                              'output is not type dict as required.')
         # return the results
         return [output]
-
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK",

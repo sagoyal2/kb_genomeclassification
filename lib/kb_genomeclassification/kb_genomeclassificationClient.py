@@ -46,7 +46,8 @@ class kb_genomeclassification(object):
            phenotype;) -> structure: parameter "phenotype" of String,
            parameter "genome_name" of String, parameter "classifier_out" of
            String, parameter "target" of String, parameter "classifier" of
-           String
+           String, parameter "shock_id" of String, parameter "list_name" of
+           String, parameter "save_ts" of Long
         :returns: instance of type "ClassifierOut" -> structure: parameter
            "classifier_ref" of String, parameter "phenotype" of String
         """

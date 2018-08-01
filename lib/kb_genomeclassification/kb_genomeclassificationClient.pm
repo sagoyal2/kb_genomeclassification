@@ -130,6 +130,9 @@ BuildClassifierInput is a reference to a hash where the following keys are defin
 	classifier_out has a value which is a string
 	target has a value which is a string
 	classifier has a value which is a string
+	shock_id has a value which is a string
+	list_name has a value which is a string
+	save_ts has a value which is an int
 ClassifierTrainingSet is a reference to a hash where the following keys are defined:
 	phenotype has a value which is a string
 	genome_name has a value which is a string
@@ -153,6 +156,9 @@ BuildClassifierInput is a reference to a hash where the following keys are defin
 	classifier_out has a value which is a string
 	target has a value which is a string
 	classifier has a value which is a string
+	shock_id has a value which is a string
+	list_name has a value which is a string
+	save_ts has a value which is an int
 ClassifierTrainingSet is a reference to a hash where the following keys are defined:
 	phenotype has a value which is a string
 	genome_name has a value which is a string
@@ -463,6 +469,9 @@ classifier_training_set has a value which is a reference to a hash where the key
 classifier_out has a value which is a string
 target has a value which is a string
 classifier has a value which is a string
+shock_id has a value which is a string
+list_name has a value which is a string
+save_ts has a value which is an int
 
 </pre>
 
@@ -478,6 +487,9 @@ classifier_training_set has a value which is a reference to a hash where the key
 classifier_out has a value which is a string
 target has a value which is a string
 classifier has a value which is a string
+shock_id has a value which is a string
+list_name has a value which is a string
+save_ts has a value which is an int
 
 
 =end text
