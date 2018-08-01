@@ -1173,7 +1173,9 @@ This module build a classifier and predict phenotypes based on the classifier
         self.scratch = os.path.abspath(config.get('scratch'))
         self.callback_url = os.environ['SDK_CALLBACK_URL']
         self.dfu = DataFileUtil(self.callback_url)
-
+        
+        
+        """
         which_target = u"Gram_Stain"
 
         print "I am right here"
@@ -1191,7 +1193,9 @@ This module build a classifier and predict phenotypes based on the classifier
 
         pickle_in = open(u"/kb/module/data/attribute_list.pickle", u"rb")
         self.attribute_list = pickle.load(pickle_in)
-
+        """    
+        
+        
         self.train_index = []
         self.test_index = []
 
