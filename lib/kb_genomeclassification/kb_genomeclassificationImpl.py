@@ -1044,7 +1044,11 @@ This module build a classifier and predict phenotypes based on the classifier
         """
         
         #current_ws = os.environ['KB_WORKSPACE_ID']
+        print my_input
+
         current_ws = my_current_ws
+
+        print current_ws
         #ws = biokbase.narrative.clients.get("workspace")
         #ws_client = Workspace()
 
@@ -1070,13 +1074,13 @@ This module build a classifier and predict phenotypes based on the classifier
         for current_gName in listOfNames:
             listOfFunctionalRoles = []
             try:
-                functionList = ws.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['cdss']
+                functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['cdss']
                 for function in range(len (functionList)):
                     if str(functionList[function]['functions'][0]).lower() != 'hypothetical protein':
                         listOfFunctionalRoles.append(str(functionList[function]['functions'][0]))
                 
             except:
-                functionList = ws.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['features']
+                functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['features']
                 for function in range(len (functionList)):
                     if str(functionList[function]['function']).lower() != 'hypothetical protein':
                         listOfFunctionalRoles.append(str(functionList[function]['function']))
