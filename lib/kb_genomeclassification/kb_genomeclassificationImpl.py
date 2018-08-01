@@ -1339,7 +1339,7 @@ This module build a classifier and predict phenotypes based on the classifier
         for current_class,num in zip(class_list, range(0, len(class_list))):
             self.my_mapping[current_class] = num
 
-        for index in final.index:
+        for index in full_dataFrame.index:
             full_dataFrame.at[index, 'Classification'] = self.my_mapping[full_dataFrame.at[index, 'Classification']]
 
         all_classifications = full_dataFrame['Classification']
