@@ -187,10 +187,10 @@ This module build a classifier and predict phenotypes based on the classifier
             pickle.dump(classifier.fit(self.full_attribute_array, self.full_classification_array), pickle_out, protocol = 2)
             pickle_out.close()
 
-            """
+            
             current_pickle = pickle.dumps(classifier.fit(self.full_attribute_array, self.full_classification_array), protocol=0)
             pickled = codecs.encode(current_pickle, "base64").decode()
-
+            """
             
             with open(u"/kb/module/work/tmp/" + unicode(classifier_name) + u".txt", u"w") as f:
                 for line in pickled:
@@ -1306,7 +1306,9 @@ This module build a classifier and predict phenotypes based on the classifier
 
         --------------------------------------------------------------
         """
-        """
+        
+        print params
+
         file_path = self._download_shock(params.get('shock_id'))
 
         all_attributes = self.get_mainAttributes(params.get('list_name'))
@@ -1332,7 +1334,7 @@ This module build a classifier and predict phenotypes based on the classifier
         self.full_attribute_array = all_attributes
         self.full_classification_array = all_classifications
 
-        """
+        
 
         os.makedirs("/kb/module/work/tmp/pics/")
         os.makedirs("/kb/module/work/tmp/dotFolder/")
