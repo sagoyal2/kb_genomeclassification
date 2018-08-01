@@ -127,6 +127,9 @@ BuildClassifierInput is a reference to a hash where the following keys are defin
 	attribute has a value which is a string
 	workspace has a value which is a string
 	classifier_training_set has a value which is a reference to a hash where the key is a string and the value is a kb_genomeclassification.ClassifierTrainingSet
+	classifier_out has a value which is a string
+	target has a value which is a string
+	classifier has a value which is a string
 ClassifierTrainingSet is a reference to a hash where the following keys are defined:
 	phenotype has a value which is a string
 	genome_name has a value which is a string
@@ -147,6 +150,9 @@ BuildClassifierInput is a reference to a hash where the following keys are defin
 	attribute has a value which is a string
 	workspace has a value which is a string
 	classifier_training_set has a value which is a reference to a hash where the key is a string and the value is a kb_genomeclassification.ClassifierTrainingSet
+	classifier_out has a value which is a string
+	target has a value which is a string
+	classifier has a value which is a string
 ClassifierTrainingSet is a reference to a hash where the following keys are defined:
 	phenotype has a value which is a string
 	genome_name has a value which is a string
@@ -159,7 +165,11 @@ ClassifierOut is a reference to a hash where the following keys are defined:
 
 =item Description
 
+build_classifier: build_classifier
 
+requried params:
+
+ss
 
 =back
 
@@ -450,6 +460,9 @@ phenotypeclass has a value which is a string
 attribute has a value which is a string
 workspace has a value which is a string
 classifier_training_set has a value which is a reference to a hash where the key is a string and the value is a kb_genomeclassification.ClassifierTrainingSet
+classifier_out has a value which is a string
+target has a value which is a string
+classifier has a value which is a string
 
 </pre>
 
@@ -462,6 +475,9 @@ phenotypeclass has a value which is a string
 attribute has a value which is a string
 workspace has a value which is a string
 classifier_training_set has a value which is a reference to a hash where the key is a string and the value is a kb_genomeclassification.ClassifierTrainingSet
+classifier_out has a value which is a string
+target has a value which is a string
+classifier has a value which is a string
 
 
 =end text
