@@ -140,12 +140,9 @@ This module build a classifier and predict phenotypes based on the classifier
         --- (numpy.average(train_score), numpy.std(train_score), numpy.average(validate_score), numpy.std(validate_score))
             ---return statement is only used when you repeatedly loop through this function during tuning
         """
-
-        self.saved_name = classifier_name
-
         if print_cfm:
             print classifier_name
-            self.list_name.extend([self.saved_name])
+            self.list_name.extend([classifier_name])
         train_score = numpy.zeros(splits)
         validate_score = numpy.zeros(splits)
         matrix_size = self.class_list.__len__()
@@ -395,7 +392,7 @@ This module build a classifier and predict phenotypes based on the classifier
             df.to_html(u'/kb/module/work/tmp/forHTML/newStatistics.html')
 
             df['Max'] = df.idxmax(1)
-            self.best_classifier_str = df['Max'].iloc[-1]
+            best_classifier_str = df['Max'].iloc[-1]
 
 
             file = open(u'/kb/module/work/tmp/forHTML/newStatistics.html', u'r')
@@ -407,6 +404,8 @@ This module build a classifier and predict phenotypes based on the classifier
             file = open(u'/kb/module/work/tmp/forHTML/newStatistics.html', u'w')
             file.write(new_allHTML)
             file.close
+
+            return best_classifier_str
 
         if additional:
             statistics_dict = {}
@@ -433,7 +432,7 @@ This module build a classifier and predict phenotypes based on the classifier
             df.to_html(u'/kb/module/work/tmp/forHTML/postStatistics.html')
 
             df['Max'] = df.idxmax(1)
-            self.best_classifier_str = df['Max'].iloc[-1]
+            best_classifier_str = df['Max'].iloc[-1]
 
             file = open(u'/kb/module/work/tmp/forHTML/postStatistics.html', u'r')
             allHTML = file.read()
@@ -444,6 +443,8 @@ This module build a classifier and predict phenotypes based on the classifier
             file = open(u'/kb/module/work/tmp/forHTML/postStatistics.html', u'w')
             file.write(new_allHTML)
             file.close
+
+            return best_classifier_str
 
 
         #df.to_html('statistics' + str(self.counter) + '.html')
@@ -671,7 +672,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
             os.system(u'dot -Tpng /kb/module/work/tmp/dotFolder/niceTree.dot >  '+ u"/kb/module/work/tmp/forHTML/" + name + u'.png ')
 
-    def html_report_1(self, classifier):
+    def html_report_1(self, classifier, best_classifier_str):
         """
         does: creates an .html file that makes the frist report (first app).
         """
@@ -794,7 +795,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
 
         next_str = u"""
-         <p style="text-align:center; font-size:100%;">  Based on these results it would be in your best interest to use the """ + unicode(self.best_classifier_str) + """ as your model as
+         <p style="text-align:center; font-size:100%;">  Based on these results it would be in your best interest to use the """ + unicode(best_classifier_str) + """ as your model as
          it produced the strongest F1 score </p>
         """
 
@@ -1210,15 +1211,10 @@ This module build a classifier and predict phenotypes based on the classifier
         #self.global_target = which_target
 
         self.global_target = ''
-
-        self.saved_name = u""
+        
         self.list_name = []
 
-        self.counter = 0
-
         self.list_statistics = []
-
-        self.best_classifier_str = ""
 
         #global output 
         #output = {'jack': 4098, 'sape': 4139} #random dict
@@ -1341,8 +1337,8 @@ This module build a classifier and predict phenotypes based on the classifier
 
 
 
-        self.to_HTML_Statistics()
-        self.html_report_1(classifier)
+        best_classifier_str = self.to_HTML_Statistics()
+        self.html_report_1(classifier, best_classifier_str)
 
         #self.tune_Decision_Tree(splits, train_index, test_index)
 
@@ -1428,7 +1424,7 @@ This module build a classifier and predict phenotypes based on the classifier
         # return variables are: output
         #BEGIN predict_phenotype
 
-        classifier_name_rn = self.best_classifier_str
+        classifier_name_rn = best_classifier_str
         #this can be passed in as a key value that the user can select
 
         with open(u"/kb/module/work/tmp/" + unicode(classifier_name_rn) + u".txt", u"r") as f:
