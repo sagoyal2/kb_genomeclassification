@@ -121,7 +121,7 @@ This module build a classifier and predict phenotypes based on the classifier
     #BEGIN_CLASS_HEADER
     # Class variables and functions can be defined in this block
 
-    def classifierTest(self, classifier, classifier_name, splits, train_index, test_index, print_cfm):
+    def classifierTest(self, classifier, classifier_name, my_mapping, master_Role,  splits, train_index, test_index, print_cfm):
         """
         args: 
         ---classifier which is a sklearn object that has methods #LogisticRegression()
@@ -204,8 +204,8 @@ This module build a classifier and predict phenotypes based on the classifier
         'lib_name' : 'sklearn',
         'attribute_type' : 'functional_roles',
         'number_of_attributes' : self.class_list.__len__(),
-        'attribute_data' : self.master_Role, #self.master_Role,
-        'class_list_mapping' : self.my_mapping, #self.my_mapping,
+        'attribute_data' : master_Role, #master_Role,
+        'class_list_mapping' : my_mapping, #my_mapping,
         'number_of_genomes' : 0,
         'training_set_ref' : ''
         }
@@ -570,7 +570,7 @@ This module build a classifier and predict phenotypes based on the classifier
         val_std = numpy.zeros(12)
         for d in xrange(1, 12):
             val[d] = d
-            (test_av[d], test_std[d], val_av[d], val_std[d]) = self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=d), u"DecisionTreeClassifier", splits, train_index, test_index, False)
+            (test_av[d], test_std[d], val_av[d], val_std[d]) = self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=d), u"DecisionTreeClassifier", my_mapping, master_Role, splits, train_index, test_index, False)
 
         fig, ax = plt.subplots(figsize=(6, 6))
         plt.errorbar(val[1:], test_av[1:], yerr=test_std[1:], fmt=u'o', label=u'Training set')
@@ -596,7 +596,7 @@ This module build a classifier and predict phenotypes based on the classifier
         val_std = numpy.zeros(12)
         for d in xrange(1, 12):
             val[d] = d
-            (test_av[d], test_std[d], val_av[d], val_std[d]) = self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=d, criterion=u'entropy'), u"DecisionTreeClassifier",splits, train_index, test_index, False)
+            (test_av[d], test_std[d], val_av[d], val_std[d]) = self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=d, criterion=u'entropy'), u"DecisionTreeClassifier", my_mapping, master_Role, splits, train_index, test_index, False)
 
         fig, ax = plt.subplots(figsize=(6, 6))
         plt.errorbar(val[1:], test_av[1:], yerr=test_std[1:], fmt=u'o', label=u'Training set')
@@ -617,8 +617,8 @@ This module build a classifier and predict phenotypes based on the classifier
         #gini_best_index = 4
         #entropy_best_index = 3
 
-        self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini'), self.global_target + u"_DecisionTreeClassifier(gini)",splits, train_index, test_index,True)
-        self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy'), self.global_target + u"_DecisionTreeClassifier(entropy)",splits, train_index, test_index,True)
+        self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini'), self.global_target + u"_DecisionTreeClassifier(gini)", my_mapping, master_Role, splits, train_index, test_index,True)
+        self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy'), self.global_target + u"_DecisionTreeClassifier(entropy)", my_mapping, master_Role, splits, train_index, test_index,True)
 
         self.to_HTML_Statistics(additional=True)
 
@@ -671,7 +671,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
             os.system(u'dot -Tpng /kb/module/work/tmp/dotFolder/niceTree.dot >  '+ u"/kb/module/work/tmp/forHTML/" + name + u'.png ')
 
-    def html_report_1(self):
+    def html_report_1(self, classifier):
         """
         does: creates an .html file that makes the frist report (first app).
         """
@@ -715,7 +715,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         file.write(html_string)
 
-        if self.classifier == u"Default":
+        if classifier == u"Default":
             next_str = u"""
         <div class="row">
           <div class="column">
@@ -768,8 +768,8 @@ This module build a classifier and predict phenotypes based on the classifier
             next_str = u"""
             <div class="row">
           <div class="column">
-            <p style="text-align:left; font-size:160%;">""" + self.classifier + """</p>
-            <img src=" """+ self.global_target +"""_""" + self.classifier + """.png" alt="Snow" style="width:100%">
+            <p style="text-align:left; font-size:160%;">""" + classifier + """</p>
+            <img src=" """+ self.global_target +"""_""" + classifier + """.png" alt="Snow" style="width:100%">
           </div>
           <div class="column">
             """
@@ -1055,8 +1055,8 @@ This module build a classifier and predict phenotypes based on the classifier
 
         listOfNames = [] #make this self.listOfNames
         
-        #if not for_predict:
-        #    self.master_Role = [] #make this self.master_Role
+        if not for_predict:
+            master_Role = [] #make this master_Role
 
         name_and_roles = {}
 
@@ -1090,7 +1090,7 @@ This module build a classifier and predict phenotypes based on the classifier
         
         if not for_predict:    
             master_pre_Role = list(itertools.chain(*name_and_roles.values()))
-            self.master_Role = list(set(master_pre_Role))
+            master_Role = list(set(master_pre_Role))
 
 
         data_dict = {}
@@ -1100,7 +1100,7 @@ This module build a classifier and predict phenotypes based on the classifier
             
             current_Roles = name_and_roles[current_gName]
             
-            for individual_role in self.master_Role:
+            for individual_role in master_Role:
                 if individual_role in current_Roles:
                     arrayofONEZERO.append(1)
                 else:
@@ -1108,9 +1108,9 @@ This module build a classifier and predict phenotypes based on the classifier
                     
             data_dict[current_gName] = arrayofONEZERO
 
-        my_all_attributes = pd.DataFrame.from_dict(data_dict, orient='index', columns = self.master_Role)
+        my_all_attributes = pd.DataFrame.from_dict(data_dict, orient='index', columns = master_Role)
 
-        return my_all_attributes
+        return my_all_attributes, master_Role
 
     def get_mainClassification(self, file_path):
         """
@@ -1217,17 +1217,10 @@ This module build a classifier and predict phenotypes based on the classifier
 
         self.list_statistics = []
 
-        self.classifier = ""
-        self.target = ""
-
         self.best_classifier_str = ""
 
-        self.my_mapping = {}
-
-        self.master_Role = []
-
-        global output 
-        output = {'jack': 4098, 'sape': 4139} #random dict
+        #global output 
+        #output = {'jack': 4098, 'sape': 4139} #random dict
 
         #END_CONSTRUCTOR
         pass
@@ -1254,70 +1247,6 @@ This module build a classifier and predict phenotypes based on the classifier
         # ctx is the context object
         # return variables are: output
         #BEGIN build_classifier
-
-        # Add the block of code that reads in .txt file contain the annotations.
-        # (Here my question is how to change this section so that it reads in the genomes files on the KBASE Narrative)
-        """
-        organisams={}
-        organism_id=[]
-        attributes_full={}
-        atributes_by_class={}
-        class_set=set()
-        class_counter = {'anaerobic':0, 'aerobic':0, 'facultative':0}
-        with open("/kb/module/data/cleanData.txt") as infile:
-            for line in infile:
-                # data is tab delimited
-                data = line.rstrip().split("\t")
-                # first column contains organism name
-                organism_id.append(data[0])
-                # second column contains metabolic class
-                organisams[data[0]]={"class":data[1],"roles":[]}
-                class_set.add(data[1].replace("'", ""))
-                classtype=data[1].replace("'", "")
-                class_counter[classtype]+=1
-                for i in range(2,len(data)):
-                    attribute = data[i].replace("'", "")
-                    if(attribute not in organisams[data[0].replace("'", "")]["roles"]):
-                        organisams[data[0]]["roles"].append(attribute)
-                        if not attribute in attributes_full:
-                            attributes_full[attribute]=0
-                            atributes_by_class[attribute]={'anaerobic':0, 'aerobic':0, 'facultative':0}
-                        attributes_full[attribute]+=1
-                        atributes_by_class[attribute][classtype]+=1
-
-        print(len(organisams))
-        print(len(attributes_full))
-        print(class_set)
-        print(class_counter)
-
-        # Add in block of code that creates one dimensional array is constructed for the organisms and all of the functional roles.
-        import numpy
-        attribute_list = list(attributes_full.keys())
-        organisam_list = list(organisams.keys())
-        class_list = list(class_set)
-        full_classification_array = numpy.array(["" for x in range(len(organisam_list))])
-
-        print(class_list)
-        print(len(attributes_full))
-        print(len(organisam_list))
-        print(len(full_classification_array))
-
-        full_attribute_array = numpy.zeros(shape=(len(organisam_list),len(attribute_list)))
-
-        # Add in block of code used to create the functional role data matrix; full_attribute_array
-
-        for y_indx in range(len(organisam_list)):
-            organisam = organisam_list[y_indx]
-            if organisam in organisams:
-                full_classification_array[y_indx] = class_list.index(organisams[organisam]["class"])
-                for attribute in organisams[organisam]["roles"]:
-                    if attribute in attributes_full:
-                        x_indx  = attribute_list.index(attribute)
-                        full_attribute_array[y_indx,x_indx]=1
-        
-
-        --------------------------------------------------------------
-        """
         
         print params
 
@@ -1326,7 +1255,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         #current_ws janakakbase:narrative_1533153056355
 
-        all_attributes = self.get_mainAttributes(params.get('list_name'), params.get('workspace'))
+        all_attributes, master_Role = self.get_mainAttributes(params.get('list_name'), params.get('workspace'))
         all_classifications = self.get_mainClassification(file_path)
 
         full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
@@ -1339,12 +1268,12 @@ This module build a classifier and predict phenotypes based on the classifier
         self.class_list = class_list
 
         #create a mapping
-        #self.my_mapping = {}
+        my_mapping = {}
         for current_class,num in zip(class_list, range(0, len(class_list))):
-            self.my_mapping[current_class] = num
+            my_mapping[current_class] = num
 
         for index in full_dataFrame.index:
-            full_dataFrame.at[index, 'Classification'] = self.my_mapping[full_dataFrame.at[index, 'Classification']]
+            full_dataFrame.at[index, 'Classification'] = my_mapping[full_dataFrame.at[index, 'Classification']]
 
         all_classifications = full_dataFrame['Classification']
 
@@ -1379,9 +1308,6 @@ This module build a classifier and predict phenotypes based on the classifier
 
         self.global_target = target
 
-        self.classifier = params.get('classifier')
-        self.target = params.get('phenotypeclass')
-
         # Add the block of code that reads in .txt file contain the annotations.
         # (Here my question is how to change this section so that it reads in the genomes files on the KBASE Narrative)
 
@@ -1397,17 +1323,17 @@ This module build a classifier and predict phenotypes based on the classifier
             test_index.append(test_idx)
 
         if classifier == u"run_all":
-            self.classifierTest(KNeighborsClassifier(),target+u"_KNeighborsClassifier", splits, train_index, test_index,True)
-            self.classifierTest(GaussianNB(),target+u"_GaussianNB", splits, train_index, test_index,True)
-            self.classifierTest(LogisticRegression(random_state=0),target+u"_LogisticRegression", splits, train_index, test_index,True)
-            self.classifierTest(DecisionTreeClassifier(random_state=0),target+u"_DecisionTreeClassifier", splits, train_index, test_index,True)
-            self.classifierTest(svm.LinearSVC(random_state=0),target+u"_SVM", splits, train_index, test_index,True)
-            self.classifierTest(MLPClassifier(random_state=0),target+u"_NeuralNetwork", splits, train_index, test_index, True)
+            self.classifierTest(KNeighborsClassifier(),target+u"_KNeighborsClassifier", my_mapping, master_Role, splits, train_index, test_index,True)
+            self.classifierTest(GaussianNB(),target+u"_GaussianNB", my_mapping, master_Role, splits, train_index, test_index,True)
+            self.classifierTest(LogisticRegression(random_state=0),target+u"_LogisticRegression", my_mapping, master_Role, splits, train_index, test_index,True)
+            self.classifierTest(DecisionTreeClassifier(random_state=0),target+u"_DecisionTreeClassifier", my_mapping, master_Role, splits, train_index, test_index,True)
+            self.classifierTest(svm.LinearSVC(random_state=0),target+u"_SVM", my_mapping, master_Role, splits, train_index, test_index,True)
+            self.classifierTest(MLPClassifier(random_state=0),target+u"_NeuralNetwork", my_mapping, master_Role, splits, train_index, test_index, True)
         else:
             if target == u"Metabolism":
-                self.classifierTest(self.whichClassifier(classifier), unicode(u"Metabolism_") + classifier, splits, train_index, test_index, True)
+                self.classifierTest(self.whichClassifier(classifier), unicode(u"Metabolism_") + classifier, my_mapping, master_Role, splits, train_index, test_index, True)
             elif target == u"Gram_Stain":
-                self.classifierTest(self.whichClassifier(classifier), unicode(u"Gram_Stain_") + classifier, splits, train_index, test_index, True)
+                self.classifierTest(self.whichClassifier(classifier), unicode(u"Gram_Stain_") + classifier, my_mapping, master_Role, splits, train_index, test_index, True)
             else:
                 print u"ERROR check spelling?"
             
@@ -1416,7 +1342,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
 
         self.to_HTML_Statistics()
-        self.html_report_1()
+        self.html_report_1(classifier)
 
         #self.tune_Decision_Tree(splits, train_index, test_index)
         
@@ -1475,17 +1401,17 @@ This module build a classifier and predict phenotypes based on the classifier
         print(report_output.get('report_name')) # kb_classifier_report_5920d1da-2a99-463b-94a5-6cb8721fca45
         print(report_output.get('report_ref')) #19352/1/1
 
-        return report_output
+        #return report_output
         
 
         #END build_classifier
 
         # At some point might do deeper type checking...
-        if not isinstance(output, dict):
+        if not isinstance(report_output, dict):
             raise ValueError('Method build_classifier return value ' +
                              'output is not type dict as required.')
         # return the results
-        return [output]
+        return [report_output]
 
     def predict_phenotype(self, ctx, params):
         """
@@ -1519,7 +1445,7 @@ This module build a classifier and predict phenotypes based on the classifier
         after_classifier_result_forDF = []
 
         for current_result in after_classifier_result:
-            after_classifier_result_forDF.extend(self.my_mapping.keys()[self.my_mapping.values().index(current_result)])
+            after_classifier_result_forDF.extend(my_mapping.keys()[my_mapping.values().index(current_result)])
 
         after_classifier_df = pd.DataFrame(after_classifier_result_forDF, index=all_attributes.index)
 
