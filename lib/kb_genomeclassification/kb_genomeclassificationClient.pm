@@ -137,8 +137,8 @@ ClassifierTrainingSet is a reference to a hash where the following keys are defi
 	phenotype has a value which is a string
 	genome_name has a value which is a string
 ClassifierOut is a reference to a hash where the following keys are defined:
-	classifier_ref has a value which is a string
-	phenotype has a value which is a string
+	report_name has a value which is a string
+	report_ref has a value which is a string
 
 </pre>
 
@@ -163,8 +163,8 @@ ClassifierTrainingSet is a reference to a hash where the following keys are defi
 	phenotype has a value which is a string
 	genome_name has a value which is a string
 ClassifierOut is a reference to a hash where the following keys are defined:
-	classifier_ref has a value which is a string
-	phenotype has a value which is a string
+	report_name has a value which is a string
+	report_ref has a value which is a string
 
 
 =end text
@@ -174,8 +174,6 @@ ClassifierOut is a reference to a hash where the following keys are defined:
 build_classifier: build_classifier
 
 requried params:
-
-ss
 
 =back
 
@@ -510,8 +508,8 @@ save_ts has a value which is an int
 
 <pre>
 a reference to a hash where the following keys are defined:
-classifier_ref has a value which is a string
-phenotype has a value which is a string
+report_name has a value which is a string
+report_ref has a value which is a string
 
 </pre>
 
@@ -520,8 +518,8 @@ phenotype has a value which is a string
 =begin text
 
 a reference to a hash where the following keys are defined:
-classifier_ref has a value which is a string
-phenotype has a value which is a string
+report_name has a value which is a string
+report_ref has a value which is a string
 
 
 =end text

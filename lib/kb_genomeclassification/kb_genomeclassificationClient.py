@@ -37,7 +37,6 @@ class kb_genomeclassification(object):
         """
         build_classifier: build_classifier
         requried params:
-        ss
         :param params: instance of type "BuildClassifierInput" -> structure:
            parameter "phenotypeclass" of String, parameter "attribute" of
            String, parameter "workspace" of String, parameter
@@ -49,7 +48,7 @@ class kb_genomeclassification(object):
            String, parameter "shock_id" of String, parameter "list_name" of
            String, parameter "save_ts" of Long
         :returns: instance of type "ClassifierOut" -> structure: parameter
-           "classifier_ref" of String, parameter "phenotype" of String
+           "report_name" of String, parameter "report_ref" of String
         """
         return self._client.call_method(
             'kb_genomeclassification.build_classifier',

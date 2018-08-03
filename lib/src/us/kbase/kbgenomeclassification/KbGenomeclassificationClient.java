@@ -169,7 +169,6 @@ public class KbGenomeclassificationClient {
      * *
      * build_classifier: build_classifier
      * requried params:
-     * ss
      * *
      * </pre>
      * @param   params   instance of type {@link us.kbase.kbgenomeclassification.BuildClassifierInput BuildClassifierInput}
