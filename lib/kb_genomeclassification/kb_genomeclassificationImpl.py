@@ -9,6 +9,7 @@ from __future__ import division
 
 import os
 import uuid
+import codecs
 #from Bio import SeqIO
 #from pprint import pprint, pformat
 #from AssemblyUtil.AssemblyUtilClient import AssemblyUtil
@@ -120,7 +121,7 @@ This module build a classifier and predict phenotypes based on the classifier
     #BEGIN_CLASS_HEADER
     # Class variables and functions can be defined in this block
 
-    def classiferTest(self, classifier, classifier_name, print_cfm):
+    def classifierTest(self, classifier, classifier_name, splits, train_index, test_index, print_cfm):
         """
         args: 
         ---classifier which is a sklearn object that has methods #LogisticRegression()
@@ -145,17 +146,17 @@ This module build a classifier and predict phenotypes based on the classifier
         if print_cfm:
             print classifier_name
             self.list_name.extend([self.saved_name])
-        train_score = numpy.zeros(self.splits)
-        validate_score = numpy.zeros(self.splits)
+        train_score = numpy.zeros(splits)
+        validate_score = numpy.zeros(splits)
         matrix_size = self.class_list.__len__()
 
         cnf_matrix = numpy.zeros(shape=(matrix_size, matrix_size))
         cnf_matrix_f = numpy.zeros(shape=(matrix_size, matrix_size))
-        for c in xrange(self.splits):
-            X_train = self.full_attribute_array[self.train_index[c]]
-            y_train = self.full_classification_array[self.train_index[c]]
-            X_test = self.full_attribute_array[self.test_index[c]]
-            y_test = self.full_classification_array[self.test_index[c]]
+        for c in xrange(splits):
+            X_train = self.full_attribute_array[train_index[c]]
+            y_train = self.full_classification_array[train_index[c]]
+            X_test = self.full_attribute_array[test_index[c]]
+            y_test = self.full_classification_array[test_index[c]]
             classifier.fit(X_train, y_train)
             train_score[c] = classifier.score(X_train, y_train)
             validate_score[c] = classifier.score(X_test, y_test)
@@ -215,7 +216,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         if self.class_list.__len__() == 3:
             if print_cfm:
-                cnf_av = cnf_matrix / self.splits
+                cnf_av = cnf_matrix / splits
                 print
                 print cnf_av[0][0], cnf_av[0][1], cnf_av[0][2]
                 print cnf_av[1][0], cnf_av[1][1], cnf_av[1][2]
@@ -250,7 +251,7 @@ This module build a classifier and predict phenotypes based on the classifier
                 self.list_statistics.append(list_forDict)
 
                 # self.plot_confusion_matrix(cnf_matrix/10,class_list,'Confusion Matrix')
-                self.plot_confusion_matrix(cnf_matrix_f/self.splits*100.0,self.class_list,u'Confusion Matrix',classifier_name)
+                self.plot_confusion_matrix(cnf_matrix_f/splits*100.0,self.class_list,u'Confusion Matrix',classifier_name)
 
         if self.class_list.__len__() == 2:
             if print_cfm:
@@ -263,7 +264,7 @@ This module build a classifier and predict phenotypes based on the classifier
                 list_forDict.extend(self.cf_stats(TN, TP, FP, FN))
                 self.list_statistics.append(list_forDict)
 
-                self.plot_confusion_matrix(cnf_matrix_f/self.splits*100.0,self.class_list,u'Confusion Matrix',classifier_name)
+                self.plot_confusion_matrix(cnf_matrix_f/splits*100.0,self.class_list,u'Confusion Matrix',classifier_name)
 
         if print_cfm:
             print classifier
@@ -272,13 +273,13 @@ This module build a classifier and predict phenotypes based on the classifier
             for i in xrange(len(cnf_matrix)):
                 print self.class_list[i],; sys.stdout.write(u"  \t")
                 for j in xrange(len(cnf_matrix[i])):
-                    print cnf_matrix[i][j] / self.splits,; sys.stdout.write(u"\t")
+                    print cnf_matrix[i][j] / splits,; sys.stdout.write(u"\t")
                 print
             print
             for i in xrange(len(cnf_matrix_f)):
                 print self.class_list[i],; sys.stdout.write(u"  \t")
                 for j in xrange(len(cnf_matrix_f[i])):
-                    print u"%6.1f" % ((cnf_matrix_f[i][j] / self.splits) * 100.0),; sys.stdout.write(u"\t")
+                    print u"%6.1f" % ((cnf_matrix_f[i][j] / splits) * 100.0),; sys.stdout.write(u"\t")
                 print
             print
             print u"01", cnf_matrix[0][1]
@@ -543,7 +544,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         self.printTree(tree, u"NAMEmyTreeLATER")
 
-    def tune_Decision_Tree(self):
+    def tune_Decision_Tree(self, splits, train_index, test_index):
         """
         args:
         ---NA
@@ -553,10 +554,13 @@ This module build a classifier and predict phenotypes based on the classifier
         return:
         ---N/A but main function is just to figure out "workhorse"
         """
-        skf = StratifiedKFold(n_splits=self.splits, random_state=0, shuffle=True)
+
+        """
+        skf = StratifiedKFold(n_splits=splits, random_state=0, shuffle=True)
         for train_idx, test_idx in skf.split(self.full_attribute_array, self.full_classification_array):
             self.train_index.append(train_idx)
             self.test_index.append(test_idx)
+        """
 
         #below code is for gini-criterion
         val = numpy.zeros(12)
@@ -566,7 +570,7 @@ This module build a classifier and predict phenotypes based on the classifier
         val_std = numpy.zeros(12)
         for d in xrange(1, 12):
             val[d] = d
-            (test_av[d], test_std[d], val_av[d], val_std[d]) = self.classiferTest(DecisionTreeClassifier(random_state=0, max_depth=d), u"DecisionTreeClassifier", False)
+            (test_av[d], test_std[d], val_av[d], val_std[d]) = self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=d), u"DecisionTreeClassifier", splits, train_index, test_index, False)
 
         fig, ax = plt.subplots(figsize=(6, 6))
         plt.errorbar(val[1:], test_av[1:], yerr=test_std[1:], fmt=u'o', label=u'Training set')
@@ -592,7 +596,7 @@ This module build a classifier and predict phenotypes based on the classifier
         val_std = numpy.zeros(12)
         for d in xrange(1, 12):
             val[d] = d
-            (test_av[d], test_std[d], val_av[d], val_std[d]) = self.classiferTest(DecisionTreeClassifier(random_state=0, max_depth=d, criterion=u'entropy'), u"DecisionTreeClassifier",False)
+            (test_av[d], test_std[d], val_av[d], val_std[d]) = self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=d, criterion=u'entropy'), u"DecisionTreeClassifier",splits, train_index, test_index, False)
 
         fig, ax = plt.subplots(figsize=(6, 6))
         plt.errorbar(val[1:], test_av[1:], yerr=test_std[1:], fmt=u'o', label=u'Training set')
@@ -613,8 +617,8 @@ This module build a classifier and predict phenotypes based on the classifier
         #gini_best_index = 4
         #entropy_best_index = 3
 
-        self.classiferTest(DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini'), self.global_target + u"_DecisionTreeClassifier(gini)", True)
-        self.classiferTest(DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy'), self.global_target + u"_DecisionTreeClassifier(entropy)", True)
+        self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini'), self.global_target + u"_DecisionTreeClassifier(gini)",splits, train_index, test_index,True)
+        self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy'), self.global_target + u"_DecisionTreeClassifier(entropy)",splits, train_index, test_index,True)
 
         self.to_HTML_Statistics(additional=True)
 
@@ -1170,7 +1174,7 @@ This module build a classifier and predict phenotypes based on the classifier
         self.train_index = []
         self.test_index = []
 
-        self.splits = 10
+        splits = 10
 
         self.classifier_name = ""
         """
@@ -1201,12 +1205,7 @@ This module build a classifier and predict phenotypes based on the classifier
         pickle_in = open(u"/kb/module/data/attribute_list.pickle", u"rb")
         self.attribute_list = pickle.load(pickle_in)
         """
-        
-        self.train_index = []
-        self.test_index = []
 
-        #self.splits = 10
-        self.splits = 2
         #self.global_target = which_target
 
         self.global_target = ''
@@ -1322,8 +1321,8 @@ This module build a classifier and predict phenotypes based on the classifier
         
         print params
 
-        file_path = self._download_shock(params.get('shock_id'))
-        #file_path = '/kb/module/data/newTrialRun.xlsx'
+        #file_path = self._download_shock(params.get('shock_id'))
+        file_path = '/kb/module/data/newTrialRun.xlsx'
 
         #current_ws janakakbase:narrative_1533153056355
 
@@ -1386,35 +1385,40 @@ This module build a classifier and predict phenotypes based on the classifier
         # Add the block of code that reads in .txt file contain the annotations.
         # (Here my question is how to change this section so that it reads in the genomes files on the KBASE Narrative)
 
+        train_index = []
+        test_index = []
+        
+        splits = 2 #10
 
-        skf = StratifiedKFold(n_splits=self.splits, random_state=0, shuffle=True)
+
+        skf = StratifiedKFold(n_splits=splits, random_state=0, shuffle=True)
         for train_idx, test_idx in skf.split(self.full_attribute_array, self.full_classification_array):
-            self.train_index.append(train_idx)
-            self.test_index.append(test_idx)
+            train_index.append(train_idx)
+            test_index.append(test_idx)
 
         if classifier == u"run_all":
-            self.classiferTest(KNeighborsClassifier(),target+u"_KNeighborsClassifier",True)
-            self.classiferTest(GaussianNB(),target+u"_GaussianNB",True)
-            self.classiferTest(LogisticRegression(random_state=0),target+u"_LogisticRegression",True)
-            self.classiferTest(DecisionTreeClassifier(random_state=0),target+u"_DecisionTreeClassifier",True)
-            self.classiferTest(svm.LinearSVC(random_state=0),target+u"_SVM",True)
-            self.classiferTest(MLPClassifier(random_state=0),target+u"_NeuralNetwork", True)
+            self.classifierTest(KNeighborsClassifier(),target+u"_KNeighborsClassifier", splits, train_index, test_index,True)
+            self.classifierTest(GaussianNB(),target+u"_GaussianNB", splits, train_index, test_index,True)
+            self.classifierTest(LogisticRegression(random_state=0),target+u"_LogisticRegression", splits, train_index, test_index,True)
+            self.classifierTest(DecisionTreeClassifier(random_state=0),target+u"_DecisionTreeClassifier", splits, train_index, test_index,True)
+            self.classifierTest(svm.LinearSVC(random_state=0),target+u"_SVM", splits, train_index, test_index,True)
+            self.classifierTest(MLPClassifier(random_state=0),target+u"_NeuralNetwork", splits, train_index, test_index, True)
         else:
             if target == u"Metabolism":
-                self.classiferTest(self.whichClassifier(classifier), unicode(u"Metabolism_") + classifier, True)
+                self.classifierTest(self.whichClassifier(classifier), unicode(u"Metabolism_") + classifier, splits, train_index, test_index, True)
             elif target == u"Gram_Stain":
-                self.classiferTest(self.whichClassifier(classifier), unicode(u"Gram_Stain_") + classifier, True)
+                self.classifierTest(self.whichClassifier(classifier), unicode(u"Gram_Stain_") + classifier, splits, train_index, test_index, True)
             else:
                 print u"ERROR check spelling?"
             
-            #self.classiferTest(self.whichClassifier(classifier), unicode(target + u"_") + classifier, True)
+            #self.classifierTest(self.whichClassifier(classifier), unicode(target + u"_") + classifier, True)
 
 
 
         self.to_HTML_Statistics()
         self.html_report_1()
 
-        #self.tune_Decision_Tree()
+        #self.tune_Decision_Tree(splits, train_index, test_index)
         
 
         #self.tree_code("doesn't matter") #<-- don't use rn
