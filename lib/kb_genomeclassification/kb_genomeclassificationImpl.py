@@ -802,7 +802,7 @@ This module build a classifier and predict phenotypes based on the classifier
         file.write(next_str)
 
         next_str = u"""
-        <a href="nice_html2.html">Second html page</a>
+        <a href="html2.html">Second html page</a>
         """
 
         file.write(next_str)
@@ -813,7 +813,7 @@ This module build a classifier and predict phenotypes based on the classifier
         """
         does: creates an .html file that makes the second report (first app).
         """
-        file = open(u"/kb/module/work/tmp/forHTML/nice_html2.html", u"w")
+        file = open(u"/kb/module/work/tmp/forHTML/html2.html", u"w")
 
         html_string = u"""
         <!DOCTYPE html>
@@ -1246,8 +1246,8 @@ This module build a classifier and predict phenotypes based on the classifier
 
         print params
 
-        #file_path = self._download_shock(params.get('shock_id'))
-        file_path = '/kb/module/data/newTrialRun.xlsx'
+        file_path = self._download_shock(params.get('shock_id'))
+        #file_path = '/kb/module/data/newTrialRun.xlsx'
 
         #current_ws janakakbase:narrative_1533153056355
 
@@ -1360,17 +1360,18 @@ This module build a classifier and predict phenotypes based on the classifier
         'description' : 'htmloutuput1description',
         'name' : 'html1.html',
         'label' : 'htmloutput1label',
-        'shock_id': report_shock_id,
+        'shock_id': report_shock_id
+        }
+
+        
+        htmloutput2 = {
+        'description' : 'htmloutuput2description',
+        'name' : 'html2.html',
+        'label' : 'htmloutput2label',
+        'shock_id': report_shock_id
         }
 
         """
-        htmloutput2 = {
-        'description' : 'htmloutuput2description',
-        'name' : 'htmloutput2name',
-        'label' : 'htmloutput2label',
-        'URL' : '/kb/module/work/tmp/forHTML/nice_html2.html'
-        }
-
         fileoutput1 = {
         'description' : 'htmloutuput2description',
         'name' : 'htmloutput2name',
@@ -1382,7 +1383,7 @@ This module build a classifier and predict phenotypes based on the classifier
         report_params = {'message': '',
                          'workspace_name': params.get('workspace'),#params.get('input_ws'),
                          #'objects_created': objects_created,
-                         'html_links': [htmloutput1],
+                         'html_links': [htmloutput1, htmloutput2],
                          'direct_html_link_index': 0,
                          'html_window_height': 333,
                          'report_object_name': 'kb_classifier_report_' + str(uuid.uuid4())}
