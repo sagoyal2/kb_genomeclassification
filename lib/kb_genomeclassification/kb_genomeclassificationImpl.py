@@ -201,7 +201,7 @@ This module build a classifier and predict phenotypes based on the classifier
         'lib_name' : 'sklearn',
         'attribute_type' : 'functional_roles',
         'number_of_attributes' : self.class_list.__len__(),
-        'attribute_data' : master_Role, #master_Role,
+        'attribute_data' : 'master_Role go here',#master_Role, #master_Role,
         'class_list_mapping' : my_mapping, #my_mapping,
         'number_of_genomes' : 0,
         'training_set_ref' : ''
@@ -716,7 +716,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         file.write(html_string)
 
-        if classifier == u"Default":
+        if classifier == u"run_all":
             next_str = u"""
         <div class="row">
           <div class="column">
@@ -1129,9 +1129,68 @@ This module build a classifier and predict phenotypes based on the classifier
         my_all_classifications = pd.read_excel(file_path) #replace with location of file
         my_all_classifications.set_index('Genome_ID', inplace=True)
 
+        print "Below is my_all_classifications"
+
         print my_all_classifications
 
         return my_all_classifications
+
+    def get_wholeClassification(self, file_path, my_current_ws, for_predict = False):
+
+        file_input = pd.read_excel(file_path) #replace with location of file
+        listOfNames = file_input['Genome_ID']
+
+        current_ws = my_current_ws
+
+        print current_ws
+        
+        if not for_predict:
+            master_Role = [] #make this master_Role
+
+
+        name_and_roles = {}
+
+        for current_gName in listOfNames:
+            listOfFunctionalRoles = []
+            try:
+                functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['cdss']
+                for function in range(len (functionList)):
+                    if str(functionList[function]['functions'][0]).lower() != 'hypothetical protein':
+                        listOfFunctionalRoles.append(str(functionList[function]['functions'][0]))
+
+            except:
+                functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['features']
+                for function in range(len (functionList)):
+                    if str(functionList[function]['function']).lower() != 'hypothetical protein':
+                        listOfFunctionalRoles.append(str(functionList[function]['function']))
+
+            name_and_roles[current_gName] = listOfFunctionalRoles
+
+            print "I have arrived inside the desired for loop!!"
+
+        if not for_predict:
+            master_pre_Role = list(itertools.chain(*name_and_roles.values()))
+            master_Role = list(set(master_pre_Role))
+
+
+        data_dict = {}
+
+        for current_gName in listOfNames:
+            arrayofONEZERO = []
+
+            current_Roles = name_and_roles[current_gName]
+
+            for individual_role in master_Role:
+                if individual_role in current_Roles:
+                    arrayofONEZERO.append(1)
+                else:
+                    arrayofONEZERO.append(0)
+
+            data_dict[current_gName] = arrayofONEZERO
+
+        my_all_attributes = pd.DataFrame.from_dict(data_dict, orient='index', columns = master_Role)
+
+        return my_all_attributes, master_Role
 
     def _valid_params(self, params):
 
@@ -1248,14 +1307,23 @@ This module build a classifier and predict phenotypes based on the classifier
 
         file_path = self._download_shock(params.get('shock_id'))
         #file_path = '/kb/module/data/newTrialRun.xlsx'
+        #file_path = '/kb/module/data/prodTrial.xlsx'
 
         #current_ws janakakbase:narrative_1533153056355
 
+        """
         all_attributes, master_Role = self.get_mainAttributes(params.get('list_name'), params.get('workspace'))
         all_classifications = self.get_mainClassification(file_path)
 
         full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
+        """
 
+        all_attributes, master_Role = self.get_wholeClassification(file_path, params.get('workspace'))
+        all_classifications = self.get_mainClassification(file_path)
+
+        full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
+
+        print "Below is full_dataFrame"
         print full_dataFrame
 
         #should include self??
@@ -1276,6 +1344,7 @@ This module build a classifier and predict phenotypes based on the classifier
         self.full_attribute_array = all_attributes
         self.full_classification_array = all_classifications
 
+        print "Below is full_attribute_array and full_classification_array"
         print self.full_attribute_array
         print self.full_classification_array
 
@@ -1283,6 +1352,7 @@ This module build a classifier and predict phenotypes based on the classifier
         self.full_attribute_array = self.full_attribute_array.values.astype(int)
         self.full_classification_array = self.full_classification_array.values.astype(int)
 
+        print "Below is full_attribute_array and full_classification_array round 2"
         print self.full_attribute_array
         print self.full_classification_array
 
@@ -1352,26 +1422,29 @@ This module build a classifier and predict phenotypes based on the classifier
 
         output_directory = '/kb/module/work/tmp/forHTML'
 
-        report_shock_id = self.dfu.file_to_shock({'file_path': output_directory,
+        report_shock_id1 = self.dfu.file_to_shock({'file_path': output_directory,
                                                   'pack': 'zip'})['shock_id']
+
+        #report_shock_id2 = self.dfu.file_to_shock({'file_path': output_directory,
+        #                                          'pack': 'zip'})['shock_id']
 
 
         htmloutput1 = {
         'description' : 'htmloutuput1description',
         'name' : 'html1.html',
         'label' : 'htmloutput1label',
-        'shock_id': report_shock_id
+        'shock_id': report_shock_id1
         }
 
-        
+        """
         htmloutput2 = {
         'description' : 'htmloutuput2description',
         'name' : 'html2.html',
         'label' : 'htmloutput2label',
-        'shock_id': report_shock_id
+        'shock_id': report_shock_id2
         }
 
-        """
+        
         fileoutput1 = {
         'description' : 'htmloutuput2description',
         'name' : 'htmloutput2name',
@@ -1383,7 +1456,7 @@ This module build a classifier and predict phenotypes based on the classifier
         report_params = {'message': '',
                          'workspace_name': params.get('workspace'),#params.get('input_ws'),
                          #'objects_created': objects_created,
-                         'html_links': [htmloutput1, htmloutput2],
+                         'html_links': [htmloutput1],
                          'direct_html_link_index': 0,
                          'html_window_height': 333,
                          'report_object_name': 'kb_classifier_report_' + str(uuid.uuid4())}
