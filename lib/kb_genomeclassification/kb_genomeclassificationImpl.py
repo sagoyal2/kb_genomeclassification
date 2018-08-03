@@ -88,7 +88,7 @@ from biokbase.workspace.client import Workspace as workspaceService
 import pandas as pd
 
 from KBaseReport.KBaseReportClient import KBaseReport
-from KBaseReportPy.KBaseReportPyClient import KBaseReportPy 
+#from KBaseReportPy.KBaseReportPyClient import KBaseReportPy 
 
 from DataFileUtil.DataFileUtilClient import DataFileUtil
 
@@ -178,8 +178,8 @@ This module build a classifier and predict phenotypes based on the classifier
             pickle_out.close()
 
             
-            current_pickle = pickle.dumps(classifier.fit(self.full_attribute_array, self.full_classification_array), protocol=0)
-            pickled = codecs.encode(current_pickle, "base64").decode()
+            #current_pickle = pickle.dumps(classifier.fit(self.full_attribute_array, self.full_classification_array), protocol=0)
+            #pickled = codecs.encode(current_pickle, "base64").decode()
             
 
             """
@@ -189,7 +189,7 @@ This module build a classifier and predict phenotypes based on the classifier
                     f.write(line)
             """
 
-        #pickled = "this is what the pickled string would be"
+        pickled = "this is what the pickled string would be"
 
         print ""
         print "This is printing out the classifier_object that needs to be saved down dump"
@@ -1425,7 +1425,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         #self.html_report_2()
 
-        """
+        
         uuid_string = str(uuid.uuid4())
 
         output_directory = '/kb/module/work/tmp/forHTML'
@@ -1441,6 +1441,7 @@ This module build a classifier and predict phenotypes based on the classifier
         'shock_id': report_shock_id,
         }
 
+        """
         htmloutput2 = {
         'description' : 'htmloutuput2description',
         'name' : 'htmloutput2name',
@@ -1454,9 +1455,10 @@ This module build a classifier and predict phenotypes based on the classifier
         'label' : 'htmloutput2label',
         'URL' : "/kb/module/work/tmp/forDATA/" + self.best_classifier_str + u".pickle"
         }
+        """
 
         report_params = {'message': '',
-                         'workspace_name': params.get('input_ws'),
+                         'workspace_name': params.get('workspace'),#params.get('input_ws'),
                          #'objects_created': objects_created,
                          'html_links': [htmloutput1],
                          'direct_html_link_index': 0,
@@ -1468,13 +1470,13 @@ This module build a classifier and predict phenotypes based on the classifier
 
         report_output = {'report_name': output['name'], 'report_ref': output['ref']}
 
-        print('I hope I am working now')
+        print('I hope I am working now - this means that I am past the report generation')
 
         print(report_output.get('report_name')) # kb_classifier_report_5920d1da-2a99-463b-94a5-6cb8721fca45
         print(report_output.get('report_ref')) #19352/1/1
 
         return report_output
-        """
+        
 
         #END build_classifier
 
