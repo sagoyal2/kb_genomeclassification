@@ -30,23 +30,12 @@ from sklearn.model_selection import StratifiedKFold
 
 #fix later
 import seaborn as sns
-#import matplotlib as mpl
-#if os.environ.get('DISPLAY','') == '':
-#    print('no display found. Using non-interactive Agg backend')
-#    mpl.use('Agg')
-#import matplotlib.pyplot as plt
 
-#import matplotlib
-#matplotlib.use('Agg')
-#import matplotlib.pyplot as plt
 
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
 #plt.switch_backend('TkAgg')
 
-#import matplotlib
-#matplotlib.use('GTKAgg')  #I had to use GTKAgg for this to work, GTK threw errors
-#import matplotlib.pyplot as plt
 
 #%matplotlib inlines
 
@@ -190,6 +179,8 @@ This module build a classifier and predict phenotypes based on the classifier
             
             current_pickle = pickle.dumps(classifier.fit(self.full_attribute_array, self.full_classification_array), protocol=0)
             pickled = codecs.encode(current_pickle, "base64").decode()
+            
+
             """
             
             with open(u"/kb/module/work/tmp/" + unicode(classifier_name) + u".txt", u"w") as f:
@@ -198,6 +189,10 @@ This module build a classifier and predict phenotypes based on the classifier
             """
 
         #pickled = "this is what the pickled string would be"
+
+        print ""
+        print "This is printing out the classifier_object that needs to be saved down dump"
+        print ""
 
         classifier_object= {
         'classifier_id' : '',
@@ -208,8 +203,8 @@ This module build a classifier and predict phenotypes based on the classifier
         'lib_name' : 'sklearn',
         'attribute_type' : 'functional_roles',
         'number_of_attributes' : self.class_list.__len__(),
-        'attribute_data' : '', #self.master_Role,
-        'class_list_mapping' : '', #self.my_mapping,
+        'attribute_data' : self.master_Role, #self.master_Role,
+        'class_list_mapping' : self.my_mapping, #self.my_mapping,
         'number_of_genomes' : 0,
         'training_set_ref' : ''
         }
@@ -795,7 +790,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
 
         next_str = u"""
-         <p style="text-align:center; font-size:100%;">  Based on these results it would be in your best interest to use the """ + self.best_classifier_str + """ as your model as
+         <p style="text-align:center; font-size:100%;">  Based on these results it would be in your best interest to use the """ + unicode(self.best_classifier_str) + """ as your model as
          it produced the strongest F1 score </p>
         """
 
@@ -1086,6 +1081,8 @@ This module build a classifier and predict phenotypes based on the classifier
                         listOfFunctionalRoles.append(str(functionList[function]['function']))
                     
             name_and_roles[current_gName] = listOfFunctionalRoles
+
+            print "I have arrived inside the desired for loop!!"
         
         if not for_predict:    
             master_pre_Role = list(itertools.chain(*name_and_roles.values()))
@@ -1125,6 +1122,8 @@ This module build a classifier and predict phenotypes based on the classifier
         #figure out how to read in xls file
         my_all_classifications = pd.read_excel(file_path) #replace with location of file
         my_all_classifications.set_index('Genome_ID', inplace=True)
+
+        print my_all_classifications
 
         return my_all_classifications
 
@@ -1206,7 +1205,8 @@ This module build a classifier and predict phenotypes based on the classifier
         self.train_index = []
         self.test_index = []
 
-        self.splits = 10
+        #self.splits = 10
+        self.splits = 2
         #self.global_target = which_target
 
         self.global_target = ''
@@ -1323,11 +1323,16 @@ This module build a classifier and predict phenotypes based on the classifier
         print params
 
         file_path = self._download_shock(params.get('shock_id'))
+        #file_path = '/kb/module/data/newTrialRun.xlsx'
+
+        #current_ws janakakbase:narrative_1533153056355
 
         all_attributes = self.get_mainAttributes(params.get('list_name'), params.get('workspace'))
         all_classifications = self.get_mainClassification(file_path)
 
         full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
+
+        print full_dataFrame
 
         #should include self??
         class_list = list(set(full_dataFrame['Classification']))
@@ -1347,7 +1352,15 @@ This module build a classifier and predict phenotypes based on the classifier
         self.full_attribute_array = all_attributes
         self.full_classification_array = all_classifications
 
-        
+        print self.full_attribute_array
+        print self.full_classification_array
+
+
+        self.full_attribute_array = self.full_attribute_array.values.astype(int)
+        self.full_classification_array = self.full_classification_array.values.astype(int)
+
+        print self.full_attribute_array
+        print self.full_classification_array    
 
         os.makedirs("/kb/module/work/tmp/pics/")
         os.makedirs("/kb/module/work/tmp/dotFolder/")
@@ -1393,6 +1406,9 @@ This module build a classifier and predict phenotypes based on the classifier
                 self.classiferTest(self.whichClassifier(classifier), unicode(u"Gram_Stain_") + classifier, True)
             else:
                 print u"ERROR check spelling?"
+            
+            #self.classiferTest(self.whichClassifier(classifier), unicode(target + u"_") + classifier, True)
+
 
 
         self.to_HTML_Statistics()
@@ -1454,75 +1470,6 @@ This module build a classifier and predict phenotypes based on the classifier
         print(report_output.get('report_ref')) #19352/1/1
 
         return report_output
-        """
-
-        """report_params = {
-                                    'direct_html_link_index': 0,
-                                    #'file_links': [fileoutput1],
-                                    'html_links': [htmloutput1], #, htmloutput2],
-                                    'workspace_name': params['input_ws'],
-                                    'report_object_name': 'kb_classifier_report_' + uuid_string
-                                }
-                        
-                                kbase_report_client = KBaseReport(self.callback_url, token=token)
-                                output = kbase_report_client.create_extended_report(report_params)
-                                
-                                return output"""
-
-
-        ## Report generation goes here
-        """
-        output = report
-
-        return 
-        """
-
-        """
-
-        module KBaseClassifier {
-            /*
-            KBase GenomeClassifier
-            @id kb
-            */
-
-            typedef string Classifier_id;
-            typedef string training_set_ref;
-
-            /*
-            Classifier id
-            training_set_ref
-            */
-
-
-            /*
-            list<list_of_attributes> @optional  # e.g; list of kmers/functional roles
-            classifier_type  # Neural network
-            classifier_data  # base64 string
-            string attribute_type  #functional roles/ kmers
-            number_of_attributes  # 15000
-            lib_name # name of the machine learning library
-            class_list_mapping # defining each class
-            @optional classifier_id classifier_description training_set_ref attribute_data
-            */
-
-
-            typedef structure {
-                Classifier_id classifier_id;
-                string classifier_type;
-                string classifier_name;
-                string classifier_data ;
-                string classifier_description;
-                string lib_name;
-                string attribute_type;
-                int number_of_attributes;
-                list<string> attribute_data;
-                mapping<string,int> class_list_mapping;
-                int number_of_genomes;
-                training_set_ref training_set_ref;
-            } GenomeClassifier;
-
-
-        };
         """
 
         #END build_classifier
