@@ -88,7 +88,7 @@ from biokbase.workspace.client import Workspace as workspaceService
 import pandas as pd
 
 from KBaseReport.KBaseReportClient import KBaseReport
-#from KBaseReportPy.KBaseReportPyClient import KBaseReportPy 
+#from KBaseReportPy.KBaseReportPyClient import KBaseReportPy
 
 from DataFileUtil.DataFileUtilClient import DataFileUtil
 
@@ -116,20 +116,20 @@ This module build a classifier and predict phenotypes based on the classifier
     ######################################### noqa
     VERSION = "0.0.1"
     GIT_URL = "https://github.com/janakagithub/kb_genomeclassification.git"
-    GIT_COMMIT_HASH = "dfacec004ff813cba1e24b28c43c274d0ec04cae"
+    GIT_COMMIT_HASH = "511b3b0cbc447d38ea281a52806194aed7410016"
 
     #BEGIN_CLASS_HEADER
     # Class variables and functions can be defined in this block
 
     def classifierTest(self, classifier, classifier_name, splits, train_index, test_index, print_cfm):
         """
-        args: 
+        args:
         ---classifier which is a sklearn object that has methods #LogisticRegression()
         ---classifier_name is a string and is what is the name given to what the classifer is being saved as
         ---print_cfm is boolean (False when running through tuning and you don't want to print out all results on the
                                 console - True otherwise) you might need to rethink this value when implementing and saving classifiers
 
-        does: 
+        does:
         ---calculates the numerical value of the the classifiers
         ---saves down pickled versions of classifiers (probably make a separate method)
             ---saves down base64 versions of classifiers
@@ -170,20 +170,20 @@ This module build a classifier and predict phenotypes based on the classifier
 
         if print_cfm:
             pickle_out = open(u"/kb/module/work/tmp/forDATA/" + unicode(classifier_name) + u".pickle", u"wb")
-            
+
             #pickle_out = open("/kb/module/work/tmp/" + str(self.classifier_name) + ".pickle", "wb")
-            
+
 
             pickle.dump(classifier.fit(self.full_attribute_array, self.full_classification_array), pickle_out, protocol = 2)
             pickle_out.close()
 
-            
+
             #current_pickle = pickle.dumps(classifier.fit(self.full_attribute_array, self.full_classification_array), protocol=0)
             #pickled = codecs.encode(current_pickle, "base64").decode()
-            
+
 
             """
-            
+
             with open(u"/kb/module/work/tmp/" + unicode(classifier_name) + u".txt", u"w") as f:
                 for line in pickled:
                     f.write(line)
@@ -199,7 +199,7 @@ This module build a classifier and predict phenotypes based on the classifier
         'classifier_id' : '',
         'classifier_type' : classifier_name, # Neural network
         'classifier_name' : classifier_name,
-        'classifier_data' : pickled, 
+        'classifier_data' : pickled,
         'classifier_description' : 'this is my description',
         'lib_name' : 'sklearn',
         'attribute_type' : 'functional_roles',
@@ -322,7 +322,7 @@ This module build a classifier and predict phenotypes based on the classifier
         ---TP int for True Positive
         ---FP int for False Positive
         ---FN int for False Negative
-        does: 
+        does:
         ---calculates statistics as a way to measure and evaluate the performance of the classifiers
         return:
         ---list_return=[((TP + TN) / Total), (Precision), (Recall), (2 * ((Precision * Recall) / (Precision + Recall)))]
@@ -810,7 +810,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
     def html_report_2(self):
         """
-        does: creates an .html file that makes the second report (first app). 
+        does: creates an .html file that makes the second report (first app).
         """
         file = open(u"/kb/module/work/tmp/forHTML/nice_html2.html", u"w")
 
@@ -922,7 +922,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
     def html_report_3(self):
         """
-        does: creates an .html file that makes the first report (second app). 
+        does: creates an .html file that makes the first report (second app).
         """
         file = open(u"/kb/module/work/tmp/forHTML/nice_html3.html", u"w")
 
@@ -981,11 +981,11 @@ This module build a classifier and predict phenotypes based on the classifier
         ---pass_name is a string for what you want the tree named as (but this is not where the creation happens just pass)
         does:
         ---using graphviz feature it is able to geneate the dot file that has an "ugly" version of the tree inside
-        ---call the parse_lookNice 
+        ---call the parse_lookNice
         return:
         ---N/A just makes an "ugly" dot file.
         """
-        
+
         """
         export_graphviz(tree, out_file="mytree.dot", feature_names=self.attribute_list,
                         class_names=self.class_list)
@@ -1041,7 +1041,7 @@ This module build a classifier and predict phenotypes based on the classifier
         return:
         ---returns the dataframe which contains all_attributes (this is the X matrix for ML)
         """
-        
+
         #current_ws = os.environ['KB_WORKSPACE_ID']
         print my_input
 
@@ -1054,7 +1054,7 @@ This module build a classifier and predict phenotypes based on the classifier
         #ws_client = workspaceService(config["workspace-url"])
 
         listOfNames = [] #make this self.listOfNames
-        
+
         #if not for_predict:
         #    self.master_Role = [] #make this self.master_Role
 
@@ -1077,18 +1077,18 @@ This module build a classifier and predict phenotypes based on the classifier
                 for function in range(len (functionList)):
                     if str(functionList[function]['functions'][0]).lower() != 'hypothetical protein':
                         listOfFunctionalRoles.append(str(functionList[function]['functions'][0]))
-                
+
             except:
                 functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['features']
                 for function in range(len (functionList)):
                     if str(functionList[function]['function']).lower() != 'hypothetical protein':
                         listOfFunctionalRoles.append(str(functionList[function]['function']))
-                    
+
             name_and_roles[current_gName] = listOfFunctionalRoles
 
             print "I have arrived inside the desired for loop!!"
-        
-        if not for_predict:    
+
+        if not for_predict:
             master_pre_Role = list(itertools.chain(*name_and_roles.values()))
             self.master_Role = list(set(master_pre_Role))
 
@@ -1097,15 +1097,15 @@ This module build a classifier and predict phenotypes based on the classifier
 
         for current_gName in listOfNames:
             arrayofONEZERO = []
-            
+
             current_Roles = name_and_roles[current_gName]
-            
+
             for individual_role in self.master_Role:
                 if individual_role in current_Roles:
                     arrayofONEZERO.append(1)
                 else:
                     arrayofONEZERO.append(0)
-                    
+
             data_dict[current_gName] = arrayofONEZERO
 
         my_all_attributes = pd.DataFrame.from_dict(data_dict, orient='index', columns = self.master_Role)
@@ -1117,7 +1117,7 @@ This module build a classifier and predict phenotypes based on the classifier
         args:
         ---file_path is a path that holds the path of where the excel file is located (given as input by the user)
         does:
-        ---with the excel file which has 2 columns: Genome_ID (same as my_input) and Classification 
+        ---with the excel file which has 2 columns: Genome_ID (same as my_input) and Classification
             ---it creates another dataframe with only classifications and rows as "index" which are genome names (my_input)
         return:
         ---the dataframe with all_classifications (essentially the Y variable for ML)
@@ -1156,7 +1156,7 @@ This module build a classifier and predict phenotypes based on the classifier
     # be found
     def __init__(self, config):
         #BEGIN_CONSTRUCTOR
-        
+
         """
         # Any configuration parameters that are important should be parsed and
         # saved in the constructor.
@@ -1185,7 +1185,7 @@ This module build a classifier and predict phenotypes based on the classifier
         self.callback_url = os.environ['SDK_CALLBACK_URL']
         self.dfu = DataFileUtil(self.callback_url)
         self.ws_client = workspaceService(self.workspaceURL)
-        
+
         """
         which_target = u"Gram_Stain"
 
@@ -1226,7 +1226,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         self.master_Role = []
 
-        global output 
+        global output
         output = {'jack': 4098, 'sape': 4139} #random dict
 
         #END_CONSTRUCTOR
@@ -1237,7 +1237,6 @@ This module build a classifier and predict phenotypes based on the classifier
         """
         build_classifier: build_classifier
         requried params:
-        ss
         :param params: instance of type "BuildClassifierInput" -> structure:
            parameter "phenotypeclass" of String, parameter "attribute" of
            String, parameter "workspace" of String, parameter
@@ -1249,7 +1248,7 @@ This module build a classifier and predict phenotypes based on the classifier
            String, parameter "shock_id" of String, parameter "list_name" of
            String, parameter "save_ts" of Long
         :returns: instance of type "ClassifierOut" -> structure: parameter
-           "classifier_ref" of String, parameter "phenotype" of String
+           "report_name" of String, parameter "report_ref" of String
         """
         # ctx is the context object
         # return variables are: output
@@ -1314,11 +1313,11 @@ This module build a classifier and predict phenotypes based on the classifier
                     if attribute in attributes_full:
                         x_indx  = attribute_list.index(attribute)
                         full_attribute_array[y_indx,x_indx]=1
-        
+
 
         --------------------------------------------------------------
         """
-        
+
         print params
 
         #file_path = self._download_shock(params.get('shock_id'))
@@ -1359,7 +1358,7 @@ This module build a classifier and predict phenotypes based on the classifier
         self.full_classification_array = self.full_classification_array.values.astype(int)
 
         print self.full_attribute_array
-        print self.full_classification_array    
+        print self.full_classification_array
 
         os.makedirs("/kb/module/work/tmp/pics/")
         os.makedirs("/kb/module/work/tmp/dotFolder/")
@@ -1371,7 +1370,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         token = ctx['token']
         # wsClient = workspaceService(self.workspaceURL, token=token)
-        
+
         self._valid_params(params)
 
         classifier = params.get('classifier')
@@ -1387,7 +1386,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         train_index = []
         test_index = []
-        
+
         splits = 2 #10
 
 
@@ -1410,7 +1409,7 @@ This module build a classifier and predict phenotypes based on the classifier
                 self.classifierTest(self.whichClassifier(classifier), unicode(u"Gram_Stain_") + classifier, splits, train_index, test_index, True)
             else:
                 print u"ERROR check spelling?"
-            
+
             #self.classifierTest(self.whichClassifier(classifier), unicode(target + u"_") + classifier, True)
 
 
@@ -1419,13 +1418,13 @@ This module build a classifier and predict phenotypes based on the classifier
         self.html_report_1()
 
         #self.tune_Decision_Tree(splits, train_index, test_index)
-        
+
 
         #self.tree_code("doesn't matter") #<-- don't use rn
 
         #self.html_report_2()
 
-        
+
         uuid_string = str(uuid.uuid4())
 
         output_directory = '/kb/module/work/tmp/forHTML'
@@ -1450,7 +1449,7 @@ This module build a classifier and predict phenotypes based on the classifier
         }
 
         fileoutput1 = {
-        'description' : 'htmloutuput2description', 
+        'description' : 'htmloutuput2description',
         'name' : 'htmloutput2name',
         'label' : 'htmloutput2label',
         'URL' : "/kb/module/work/tmp/forDATA/" + self.best_classifier_str + u".pickle"
@@ -1465,18 +1464,18 @@ This module build a classifier and predict phenotypes based on the classifier
                          'html_window_height': 333,
                          'report_object_name': 'kb_classifier_report_' + str(uuid.uuid4())}
 
-        kbase_report_client = KBaseReport(self.callback_url)
-        output = kbase_report_client.create_extended_report(report_params)
+        kbase_report_client = KBaseReport(self.callback_url, token=token)
+        report_output = kbase_report_client.create_extended_report(report_params)
 
-        report_output = {'report_name': output['name'], 'report_ref': output['ref']}
+        output = {'report_name': report_output['name'], 'report_ref': report_output['ref']}
 
         print('I hope I am working now - this means that I am past the report generation')
 
-        print(report_output.get('report_name')) # kb_classifier_report_5920d1da-2a99-463b-94a5-6cb8721fca45
-        print(report_output.get('report_ref')) #19352/1/1
+        print(output.get('report_name')) # kb_classifier_report_5920d1da-2a99-463b-94a5-6cb8721fca45
+        print(output.get('report_ref')) #19352/1/1
 
-        return report_output
-        
+        return output
+
 
         #END build_classifier
 
@@ -1515,7 +1514,7 @@ This module build a classifier and predict phenotypes based on the classifier
         """
 
         after_classifier_result = after_classifier.predict(all_attributes) #replace with all_attributes
-    
+
         after_classifier_result_forDF = []
 
         for current_result in after_classifier_result:
@@ -1537,7 +1536,7 @@ This module build a classifier and predict phenotypes based on the classifier
         np.savetxt(r'/kb/module/work/tmp/np.txt', predict_table_pd.values, fmt='%d')
 
         #csv
-        predict_table_pd.to_csv(r'/kb/module/work/tmp/pandas.txt', header=None, index=None, sep=' ', mode='a')        
+        predict_table_pd.to_csv(r'/kb/module/work/tmp/pandas.txt', header=None, index=None, sep=' ', mode='a')
         """
 
         self.html_report_3()
