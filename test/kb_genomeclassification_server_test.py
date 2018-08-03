@@ -81,12 +81,28 @@ class kb_genomeclassificationTest(unittest.TestCase):
 
     # def test_download_shock(self):
 
+    """
     def test_workspace(self):
         import biokbase.workspace.client
-        
+
         current_ws = 'my_current_ws'
         ws = biokbase.narrative.clients.get("workspace")
         ws_client = Workspace()
+    """
+
+    def test_build_classifier(self):
+        params = {
+        "shock_id": "e1d6c965-f233-44fd-b15f-3737ca0c899e",
+        "list_name": "genBankGO,NC_003197,Shewanella_ondeisensis_MR-1_GenBank",
+        "phenotypeclass": "Gram_Stain",
+        "classifier": "DecisionTreeClassifier",
+        "attribute": "functional_roles",
+        "save_ts": 0,
+        "classifier_out": "GramOut",
+        "workspace" : "janakakbase:narrative_1533153056355"
+        }
+
+        self.getImpl().build_classifier(self.getContext(), params)
 
     """
     def test_build_classifier(self):
