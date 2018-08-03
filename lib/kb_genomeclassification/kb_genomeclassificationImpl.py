@@ -675,7 +675,7 @@ This module build a classifier and predict phenotypes based on the classifier
         """
         does: creates an .html file that makes the frist report (first app).
         """
-        file = open(u"/kb/module/work/tmp/forHTML/nice_html1.html", u"w")
+        file = open(u"/kb/module/work/tmp/forHTML/html1.html", u"w")
 
         html_string = u"""
         <!DOCTYPE html>
@@ -1435,7 +1435,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         htmloutput1 = {
         'description' : 'htmloutuput1description',
-        'name' : 'htmloutput1name',
+        'name' : 'html1.html',
         'label' : 'htmloutput1label',
         'shock_id': report_shock_id,
         }
