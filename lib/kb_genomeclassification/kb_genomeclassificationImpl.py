@@ -1474,8 +1474,6 @@ This module build a classifier and predict phenotypes based on the classifier
         print(output.get('report_name')) # kb_classifier_report_5920d1da-2a99-463b-94a5-6cb8721fca45
         print(output.get('report_ref')) #19352/1/1
 
-        return output
-
 
         #END build_classifier
 
