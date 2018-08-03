@@ -28,18 +28,17 @@ module kb_genomeclassification {
     }BuildClassifierInput;
 
     typedef structure {
-       string classifier_ref;
-
-       string phenotype;
+        string report_name;
+        string report_ref;
     }ClassifierOut;
 
     /**
     build_classifier: build_classifier
 
     requried params:
-
-    ss
     **/
+
+
     funcdef build_classifier(BuildClassifierInput params)
         returns (ClassifierOut output) authentication required;
 

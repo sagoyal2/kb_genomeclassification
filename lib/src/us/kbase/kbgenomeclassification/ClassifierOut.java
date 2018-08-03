@@ -19,44 +19,44 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
-    "classifier_ref",
-    "phenotype"
+    "report_name",
+    "report_ref"
 })
 public class ClassifierOut {
 
-    @JsonProperty("classifier_ref")
-    private String classifierRef;
-    @JsonProperty("phenotype")
-    private String phenotype;
+    @JsonProperty("report_name")
+    private String reportName;
+    @JsonProperty("report_ref")
+    private String reportRef;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-    @JsonProperty("classifier_ref")
-    public String getClassifierRef() {
-        return classifierRef;
+    @JsonProperty("report_name")
+    public String getReportName() {
+        return reportName;
     }
 
-    @JsonProperty("classifier_ref")
-    public void setClassifierRef(String classifierRef) {
-        this.classifierRef = classifierRef;
+    @JsonProperty("report_name")
+    public void setReportName(String reportName) {
+        this.reportName = reportName;
     }
 
-    public ClassifierOut withClassifierRef(String classifierRef) {
-        this.classifierRef = classifierRef;
+    public ClassifierOut withReportName(String reportName) {
+        this.reportName = reportName;
         return this;
     }
 
-    @JsonProperty("phenotype")
-    public String getPhenotype() {
-        return phenotype;
+    @JsonProperty("report_ref")
+    public String getReportRef() {
+        return reportRef;
     }
 
-    @JsonProperty("phenotype")
-    public void setPhenotype(String phenotype) {
-        this.phenotype = phenotype;
+    @JsonProperty("report_ref")
+    public void setReportRef(String reportRef) {
+        this.reportRef = reportRef;
     }
 
-    public ClassifierOut withPhenotype(String phenotype) {
-        this.phenotype = phenotype;
+    public ClassifierOut withReportRef(String reportRef) {
+        this.reportRef = reportRef;
         return this;
     }
 
@@ -72,7 +72,7 @@ public class ClassifierOut {
 
     @Override
     public String toString() {
-        return ((((((("ClassifierOut"+" [classifierRef=")+ classifierRef)+", phenotype=")+ phenotype)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((("ClassifierOut"+" [reportName=")+ reportName)+", reportRef=")+ reportRef)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }
