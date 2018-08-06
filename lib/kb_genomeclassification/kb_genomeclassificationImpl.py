@@ -1081,7 +1081,7 @@ This module build a classifier and predict phenotypes based on the classifier
         #ws_client = workspaceService(config["workspace-url"])
 
         listOfNames = [] #make this self.listOfNames
-        
+
         if not for_predict:
             master_Role = [] #make this master_Role
 
@@ -1169,7 +1169,7 @@ This module build a classifier and predict phenotypes based on the classifier
         current_ws = my_current_ws
 
         print current_ws
-        
+
         if not for_predict:
             master_Role = [] #make this master_Role
 
@@ -1294,12 +1294,12 @@ This module build a classifier and predict phenotypes based on the classifier
         """
 
         #global_target = which_target
-        
+
         self.list_name = []
 
         self.list_statistics = []
 
-        #global output 
+        #global output
         #output = {'jack': 4098, 'sape': 4139} #random dict
 
         #END_CONSTRUCTOR
@@ -1377,7 +1377,7 @@ This module build a classifier and predict phenotypes based on the classifier
         #self.full_attribute_array = self.full_attribute_array.values.astype(int)
         #self.full_classification_array = self.full_classification_array.values.astype(int)
 
-        all_attributes = all_attributes.values.astype(int) 
+        all_attributes = all_attributes.values.astype(int)
         all_classifications = all_classifications.values.astype(int)
 
         print "Below is full_attribute_array and full_classification_array round 2"
@@ -1410,7 +1410,7 @@ This module build a classifier and predict phenotypes based on the classifier
         folderhtml1 = "html1folder/"
         folderhtml2 = "html2folder/"
 
-        
+
         #global_target = target
 
         # Add the block of code that reads in .txt file contain the annotations.
@@ -1481,7 +1481,7 @@ This module build a classifier and predict phenotypes based on the classifier
         'shock_id': report_shock_id1
         }
 
-        
+
         htmloutput2 = {
         'description' : 'htmloutuput2description',
         'name' : 'html2.html',
@@ -1503,7 +1503,7 @@ This module build a classifier and predict phenotypes based on the classifier
                          #'objects_created': objects_created,
                          'html_links': [htmloutput1, htmloutput2],
                          'direct_html_link_index': 0,
-                         'html_window_height': 333,
+                         'html_window_height': 500,
                          'report_object_name': 'kb_classifier_report_' + str(uuid.uuid4())}
 
         kbase_report_client = KBaseReport(self.callback_url, token=token)
