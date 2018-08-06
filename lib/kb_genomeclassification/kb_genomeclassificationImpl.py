@@ -121,7 +121,7 @@ This module build a classifier and predict phenotypes based on the classifier
     #BEGIN_CLASS_HEADER
     # Class variables and functions can be defined in this block
 
-    def classifierTest(self, classifier, classifier_name, my_mapping, master_Role,  splits, train_index, test_index, print_cfm):
+    def classifierTest(self, classifier, classifier_type, classifier_name, my_mapping, master_Role,  splits, train_index, test_index,  all_attributes, all_classifications, class_list, print_cfm):
         """
         args:
         ---classifier which is a sklearn object that has methods #LogisticRegression()
@@ -140,20 +140,21 @@ This module build a classifier and predict phenotypes based on the classifier
         --- (numpy.average(train_score), numpy.std(train_score), numpy.average(validate_score), numpy.std(validate_score))
             ---return statement is only used when you repeatedly loop through this function during tuning
         """
+
         if print_cfm:
             print classifier_name
             self.list_name.extend([classifier_name])
         train_score = numpy.zeros(splits)
         validate_score = numpy.zeros(splits)
-        matrix_size = self.class_list.__len__()
+        matrix_size = class_list.__len__()
 
         cnf_matrix = numpy.zeros(shape=(matrix_size, matrix_size))
         cnf_matrix_f = numpy.zeros(shape=(matrix_size, matrix_size))
         for c in xrange(splits):
-            X_train = self.full_attribute_array[train_index[c]]
-            y_train = self.full_classification_array[train_index[c]]
-            X_test = self.full_attribute_array[test_index[c]]
-            y_test = self.full_classification_array[test_index[c]]
+            X_train = all_attributes[train_index[c]]
+            y_train = all_classifications[train_index[c]]
+            X_test = all_attributes[test_index[c]]
+            y_test = all_classifications[test_index[c]]
             classifier.fit(X_train, y_train)
             train_score[c] = classifier.score(X_train, y_train)
             validate_score[c] = classifier.score(X_test, y_test)
@@ -171,7 +172,7 @@ This module build a classifier and predict phenotypes based on the classifier
             #pickle_out = open("/kb/module/work/tmp/" + str(self.classifier_name) + ".pickle", "wb")
 
 
-            pickle.dump(classifier.fit(self.full_attribute_array, self.full_classification_array), pickle_out, protocol = 2)
+            pickle.dump(classifier.fit(all_attributes, all_classifications), pickle_out, protocol = 2)
             pickle_out.close()
 
 
@@ -194,13 +195,13 @@ This module build a classifier and predict phenotypes based on the classifier
 
         classifier_object= {
         'classifier_id' : '',
-        'classifier_type' : classifier_name, # Neural network
+        'classifier_type' : classifier_type, # Neural network
         'classifier_name' : classifier_name,
         'classifier_data' : pickled,
         'classifier_description' : 'this is my description',
         'lib_name' : 'sklearn',
         'attribute_type' : 'functional_roles',
-        'number_of_attributes' : self.class_list.__len__(),
+        'number_of_attributes' : class_list.__len__(),
         'attribute_data' : 'master_Role go here',#master_Role, #master_Role,
         'class_list_mapping' : my_mapping, #my_mapping,
         'number_of_genomes' : 0,
@@ -211,7 +212,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         list_forDict = []
 
-        if self.class_list.__len__() == 3:
+        if class_list.__len__() == 3:
             if print_cfm:
                 cnf_av = cnf_matrix / splits
                 print
@@ -219,7 +220,7 @@ This module build a classifier and predict phenotypes based on the classifier
                 print cnf_av[1][0], cnf_av[1][1], cnf_av[1][2]
                 print cnf_av[2][0], cnf_av[2][1], cnf_av[2][2]
                 print
-                print self.class_list[0]
+                print class_list[0]
                 TP = cnf_av[0][0]
                 TN = cnf_av[1][2] + cnf_av[1][2] + cnf_av[2][1] + cnf_av[2][2]
                 FP = cnf_av[0][1] + cnf_av[0][2]
@@ -227,7 +228,7 @@ This module build a classifier and predict phenotypes based on the classifier
                 list_forDict.extend([None])
                 list_forDict.extend(self.cf_stats(TN, TP, FP, FN))
 
-                print self.class_list[1]
+                print class_list[1]
                 TP = cnf_av[1][1]
                 TN = cnf_av[0][0] + cnf_av[0][2] + cnf_av[2][0] + cnf_av[2][2]
                 FP = cnf_av[1][0] + cnf_av[1][2]
@@ -235,7 +236,7 @@ This module build a classifier and predict phenotypes based on the classifier
                 list_forDict.extend([None, None])
                 list_forDict.extend(self.cf_stats(TN, TP, FP, FN))
 
-                print self.class_list[2]
+                print class_list[2]
                 TP = cnf_av[2][2]
                 TN = cnf_av[0][0] + cnf_av[0][1] + cnf_av[1][0] + cnf_av[1][1]
                 FP = cnf_av[2][0] + cnf_av[2][1]
@@ -248,9 +249,9 @@ This module build a classifier and predict phenotypes based on the classifier
                 self.list_statistics.append(list_forDict)
 
                 # self.plot_confusion_matrix(cnf_matrix/10,class_list,'Confusion Matrix')
-                self.plot_confusion_matrix(cnf_matrix_f/splits*100.0,self.class_list,u'Confusion Matrix',classifier_name)
+                self.plot_confusion_matrix(cnf_matrix_f/splits*100.0,class_list,u'Confusion Matrix',classifier_name)
 
-        if self.class_list.__len__() == 2:
+        if class_list.__len__() == 2:
             if print_cfm:
 
                 TP = cnf[0][0]
@@ -261,20 +262,20 @@ This module build a classifier and predict phenotypes based on the classifier
                 list_forDict.extend(self.cf_stats(TN, TP, FP, FN))
                 self.list_statistics.append(list_forDict)
 
-                self.plot_confusion_matrix(cnf_matrix_f/splits*100.0,self.class_list,u'Confusion Matrix',classifier_name)
+                self.plot_confusion_matrix(cnf_matrix_f/splits*100.0,class_list,u'Confusion Matrix',classifier_name)
 
         if print_cfm:
             print classifier
             print
             print u"Confusion matrix"
             for i in xrange(len(cnf_matrix)):
-                print self.class_list[i],; sys.stdout.write(u"  \t")
+                print class_list[i],; sys.stdout.write(u"  \t")
                 for j in xrange(len(cnf_matrix[i])):
                     print cnf_matrix[i][j] / splits,; sys.stdout.write(u"\t")
                 print
             print
             for i in xrange(len(cnf_matrix_f)):
-                print self.class_list[i],; sys.stdout.write(u"  \t")
+                print class_list[i],; sys.stdout.write(u"  \t")
                 for j in xrange(len(cnf_matrix_f[i])):
                     print u"%6.1f" % ((cnf_matrix_f[i][j] / splits) * 100.0),; sys.stdout.write(u"\t")
                 print
@@ -352,7 +353,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         return list_return
 
-    def to_HTML_Statistics(self, additional = False):
+    def to_HTML_Statistics(self, class_list, additional = False):
         """
         args:
         ---additional is a boolean and is used to indicate if this method is being called to make html2
@@ -379,12 +380,12 @@ This module build a classifier and predict phenotypes based on the classifier
 
             data = statistics_dict
 
-            if self.class_list.__len__() == 3:
+            if class_list.__len__() == 3:
                 my_index = [u'Facultative', u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None, u'Aerobic', u'Accuracy:',
                         u'Precision:', u'Recall:', u'F1 score::', None, u'Anaerobic', u'Accuracy:', u'Precision:', u'Recall:',
                         u'F1 score::', u'Average F1']
 
-            if self.class_list.__len__() == 2:
+            if class_list.__len__() == 2:
                 my_index = [u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::']
 
             df = pd.DataFrame(data, index=my_index)
@@ -420,12 +421,12 @@ This module build a classifier and predict phenotypes based on the classifier
 
             data = statistics_dict
 
-            if self.class_list.__len__() == 3:
+            if class_list.__len__() == 3:
                 my_index = [u'Facultative', u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None, u'Aerobic', u'Accuracy:',
                         u'Precision:', u'Recall:', u'F1 score::', None, u'Anaerobic', u'Accuracy:', u'Precision:', u'Recall:',
                         u'F1 score::', u'Average F1']
 
-            if self.class_list.__len__() == 2:
+            if class_list.__len__() == 2:
                 my_index = [u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::']
 
             df = pd.DataFrame(data, index=my_index)
@@ -492,7 +493,7 @@ This module build a classifier and predict phenotypes based on the classifier
         #fig.savefig(u"./pics/" + classifier_name +u".png", format=u'png')
         fig.savefig(u"/kb/module/work/tmp/forHTML/" + classifier_name +u".png", format=u'png')
 
-    def tree_code(self, optimized_tree, spacer_base=u"    "):
+    def tree_code(self, optimized_tree, all_attributes, all_classifications, master_Role, class_list, spacer_base=u"    "):
         """
         args:
         ---optimized_tree this is a DecisionTree object that has been tuned
@@ -508,10 +509,16 @@ This module build a classifier and predict phenotypes based on the classifier
         #tree = DecisionTreeClassifier(random_state=0, max_depth=3, criterion='entropy')
         print u"Hello"
 
+        """
         tree.fit(self.full_attribute_array, self.full_classification_array)
 
         feature_names = self.attribute_list
-        target_names = self.class_list
+        target_names = class_list
+        """
+
+        tree.fit(all_attributes, all_classifications)
+        feature_names = master_Role
+        target_names = class_list
 
         left = tree.tree_.children_left
         right = tree.tree_.children_right
@@ -543,9 +550,9 @@ This module build a classifier and predict phenotypes based on the classifier
 
         recurse(left, right, threshold, features, 0, 0)
 
-        self.printTree(tree, u"NAMEmyTreeLATER")
+        self.printTree(tree, u"NAMEmyTreeLATER", master_Role, class_list)
 
-    def tune_Decision_Tree(self, splits, train_index, test_index):
+    def tune_Decision_Tree(self, classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list):
         """
         args:
         ---NA
@@ -571,7 +578,7 @@ This module build a classifier and predict phenotypes based on the classifier
         val_std = numpy.zeros(12)
         for d in xrange(1, 12):
             val[d] = d
-            (test_av[d], test_std[d], val_av[d], val_std[d]) = self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=d), u"DecisionTreeClassifier", my_mapping, master_Role, splits, train_index, test_index, False)
+            (test_av[d], test_std[d], val_av[d], val_std[d]) = self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=d), classifier_type, classifier_name + u"DecisionTreeClassifier", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, False)
 
         fig, ax = plt.subplots(figsize=(6, 6))
         plt.errorbar(val[1:], test_av[1:], yerr=test_std[1:], fmt=u'o', label=u'Training set')
@@ -581,9 +588,9 @@ This module build a classifier and predict phenotypes based on the classifier
         plt.xlabel(u'Tree depth', fontsize=12)
         plt.ylabel(u'Accuracy', fontsize=12)
         plt.legend(loc=u'lower left')
-        #plt.savefig(u"./pics/"+ self.global_target +u"_gini_depth-met.png")
+        #plt.savefig(u"./pics/"+ global_target +u"_gini_depth-met.png")
         #fig.savefig(u"/kb/module/work/tmp/pics/" + classifier_name +u".png", format=u'png')
-        plt.savefig(u"/kb/module/work/tmp/forHTML/"+ self.global_target +u"_gini_depth-met.png")
+        plt.savefig(u"/kb/module/work/tmp/forHTML/"+ classifier_name +u"_gini_depth-met.png")
 
         gini_best_index = np.argmax(val_av)
         print gini_best_index
@@ -597,7 +604,7 @@ This module build a classifier and predict phenotypes based on the classifier
         val_std = numpy.zeros(12)
         for d in xrange(1, 12):
             val[d] = d
-            (test_av[d], test_std[d], val_av[d], val_std[d]) = self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=d, criterion=u'entropy'), u"DecisionTreeClassifier", my_mapping, master_Role, splits, train_index, test_index, False)
+            (test_av[d], test_std[d], val_av[d], val_std[d]) = self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=d, criterion=u'entropy'), classifier_type, classifier_name +u"DecisionTreeClassifier", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, False)
 
         fig, ax = plt.subplots(figsize=(6, 6))
         plt.errorbar(val[1:], test_av[1:], yerr=test_std[1:], fmt=u'o', label=u'Training set')
@@ -607,8 +614,8 @@ This module build a classifier and predict phenotypes based on the classifier
         plt.xlabel(u'Tree depth', fontsize=12)
         plt.ylabel(u'Accuracy', fontsize=12)
         plt.legend(loc=u'lower left')
-        #plt.savefig(u"./pics/"+ self.global_target +u"_entropy_depth-met.png")
-        plt.savefig(u"/kb/module/work/tmp/forHTML/"+ self.global_target +u"_entropy_depth-met.png")
+        #plt.savefig(u"./pics/"+ global_target +u"_entropy_depth-met.png")
+        plt.savefig(u"/kb/module/work/tmp/forHTML/"+ classifier_name +u"_entropy_depth-met.png")
 
         entropy_best_index = np.argmax(val_av)
         print entropy_best_index
@@ -618,18 +625,18 @@ This module build a classifier and predict phenotypes based on the classifier
         #gini_best_index = 4
         #entropy_best_index = 3
 
-        self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini'), self.global_target + u"_DecisionTreeClassifier(gini)", my_mapping, master_Role, splits, train_index, test_index,True)
-        self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy'), self.global_target + u"_DecisionTreeClassifier(entropy)", my_mapping, master_Role, splits, train_index, test_index,True)
+        self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini'), classifier_type, classifier_name + u"_DecisionTreeClassifier(gini)", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list,True)
+        self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy'), classifier_type, classifier_name + u"_DecisionTreeClassifier(entropy)", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list,True)
 
-        self.to_HTML_Statistics(additional=True)
+        self.to_HTML_Statistics(class_list, additional=True)
 
         if gini_best > entropy_best:
-            self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini'))
+            self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini'), all_attributes, all_classifications, master_Role, class_list)
         else:
-            self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy'))
+            self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy'), all_attributes, all_classifications, master_Role, class_list)
 
 
-    def parse_lookNice(self,name):
+    def parse_lookNice(self, name, class_list):
         """
         args:
         ---name is a string that is what you want the DecisionTree image saved as
@@ -653,7 +660,7 @@ This module build a classifier and predict phenotypes based on the classifier
         # nominal fixes like color and shape
         third_fix = re.sub(ur'shape=box] ;', ur'shape=Mrecord] ; node [style=filled];', second_fix)
 
-        if self.class_list.__len__() == 3:
+        if class_list.__len__() == 3:
             fourth_fix = re.sub(ur'(\w\s\[label="anaerobic")', ur'\1, color = "0.5176 0.2314 0.9020"', third_fix)
             fifth_fix = re.sub(ur'(\w\s\[label="aerobic")', ur'\1, color = "0.5725 0.6118 1.0000"', fourth_fix)
             sixth_fix = re.sub(ur'(\w\s\[label="facultative")', ur'\1, color = "0.5804 0.8824 0.8039"', fifth_fix)
@@ -663,7 +670,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
             os.system(u'dot -Tpng /kb/module/work/tmp/dotFolder/niceTree.dot >  '+ u"/kb/module/work/tmp/forHTML/"  + name + u'.png ')
 
-        if self.class_list.__len__() == 2:
+        if class_list.__len__() == 2:
             fourth_fix = re.sub(ur'(\w\s\[label="N")', ur'\1, color = "0.5176 0.2314 0.9020"', third_fix)
             fifth_fix = re.sub(ur'(\w\s\[label="P")', ur'\1, color = "0.5725 0.6118 1.0000"', fourth_fix)
             f = open(u"/kb/module/work/tmp/dotFolder/niceTree.dot", u"w")
@@ -672,7 +679,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
             os.system(u'dot -Tpng /kb/module/work/tmp/dotFolder/niceTree.dot >  '+ u"/kb/module/work/tmp/forHTML/" + name + u'.png ')
 
-    def html_report_1(self, classifier, best_classifier_str):
+    def html_report_1(self, classifier_type, best_classifier_str, classifier_name):
         """
         does: creates an .html file that makes the frist report (first app).
         """
@@ -716,39 +723,39 @@ This module build a classifier and predict phenotypes based on the classifier
 
         file.write(html_string)
 
-        if classifier == u"run_all":
+        if classifier_type == u"run_all":
             next_str = u"""
         <div class="row">
           <div class="column">
               <p style="text-align:left; font-size:160%;">K-Nearest-Neighbors Classifier</p>
-            <img src=" """+self.global_target +"""_KNeighborsClassifier.png" alt="Snow" style="width:100%">
+            <img src=" """+classifier_name +"""_KNeighborsClassifier.png" alt="Snow" style="width:100%">
               <!-- <figcaption>Fig.1 - Trulli, Puglia, Italy.</figcaption> -->
           </div>
           <div class="column">
               <p style="text-align:left; font-size:160%;">Logistic Regression Classifier</p>
-            <img src=" """+ self.global_target +"""_LogisticRegression.png" alt="Snow" style="width:100%">
+            <img src=" """+ classifier_name +"""_LogisticRegression.png" alt="Snow" style="width:100%">
           </div>
         </div>
 
         <div class="row">
           <div class="column">
               <p style="text-align:left; font-size:160%;">Naive Gaussian Bayes Classifier</p>
-            <img src=" """+ self.global_target +"""_GaussianNB.png" alt="Snow" style="width:100%">
+            <img src=" """+ classifier_name +"""_GaussianNB.png" alt="Snow" style="width:100%">
           </div>
           <div class="column">
               <p style="text-align:left; font-size:160%;">Linear SVM Classifier</p>
-            <img src=" """+ self.global_target +"""_SVM.png" alt="Snow" style="width:100%">
+            <img src=" """+ classifier_name +"""_SVM.png" alt="Snow" style="width:100%">
           </div>
         </div>
 
         <div class="row">
           <div class="column">
               <p style="text-align:left; font-size:160%;">Decision Tree Classifier</p>
-            <img src=" """+ self.global_target +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
+            <img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
           </div>
           <div class="column">
               <p style="text-align:left; font-size:160%;">Neural Network Classifier</p>
-            <img src=" """+ self.global_target +"""_NeuralNetwork.png" alt="Snow" style="width:100%">
+            <img src=" """+ classifier_name +"""_NeuralNetwork.png" alt="Snow" style="width:100%">
           </div>
         </div>
             """
@@ -769,8 +776,8 @@ This module build a classifier and predict phenotypes based on the classifier
             next_str = u"""
             <div class="row">
           <div class="column">
-            <p style="text-align:left; font-size:160%;">""" + classifier + """</p>
-            <img src=" """+ self.global_target +"""_""" + classifier + """.png" alt="Snow" style="width:100%">
+            <p style="text-align:left; font-size:160%;">""" + classifier_type + """</p>
+            <img src=" """+ classifier_name +""".png" alt="Snow" style="width:100%">
           </div>
           <div class="column">
             """
@@ -809,7 +816,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         file.close()
 
-    def html_report_2(self):
+    def html_report_2(self, classifier_name):
         """
         does: creates an .html file that makes the second report (first app).
         """
@@ -861,12 +868,12 @@ This module build a classifier and predict phenotypes based on the classifier
         <div class="row">
           <div class="column">
               <p style="text-align:left; font-size:160%;">Training vs Testing Score on Gini Criterion </p>
-            <img src=" """+ self.global_target +"""_gini_depth-met.png" alt="Snow" style="width:100%">
+            <img src=" """+ classifier_name +"""_gini_depth-met.png" alt="Snow" style="width:100%">
               <!-- <figcaption>Fig.1 - Trulli, Puglia, Italy.</figcaption> -->
           </div>
           <div class="column">
               <p style="text-align:left; font-size:160%;">Training vs Testing Score on Entropy Criterion</p>
-            <img src=" """+ self.global_target +"""_entropy_depth-met.png" alt="Snow" style="width:100%">
+            <img src=" """+ classifier_name +"""_entropy_depth-met.png" alt="Snow" style="width:100%">
           </div>
         </div>
 
@@ -876,22 +883,22 @@ This module build a classifier and predict phenotypes based on the classifier
         <div class="row">
           <div class="column">
               <p style="text-align:left; font-size:160%;"> Decision Tree Classifier </p>
-            <img src=" """+ self.global_target +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
+            <img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
           </div>
           <div class="column">
               <p style="text-align:left; font-size:160%;"> Logistic Regression Classifier </p>
-            <img src=" """+ self.global_target +"""_LogisticRegression.png" alt="Snow" style="width:100%">
+            <img src=" """+ classifier_name +"""_LogisticRegression.png" alt="Snow" style="width:100%">
           </div>
         </div>
 
         <div class="row">
           <div class="column">
               <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Gini </p>
-            <img src=" """+ self.global_target +"""_DecisionTreeClassifier(gini).png" alt="Snow" style="width:100%">
+            <img src=" """+ classifier_name +"""_DecisionTreeClassifier(gini).png" alt="Snow" style="width:100%">
           </div>
           <div class="column">
               <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Entropy </p>
-            <img src=" """+ self.global_target +"""_DecisionTreeClassifier(entropy).png" alt="Snow" style="width:100%">
+            <img src=" """+ classifier_name +"""_DecisionTreeClassifier(entropy).png" alt="Snow" style="width:100%">
           </div>
         </div>
         """
@@ -975,7 +982,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         file.close()
 
-    def printTree(self,tree, pass_name):
+    def printTree(self,tree, pass_name, master_Role, class_list):
         """
         args:
         ---tree is a DecisionTree object that has already been tuned
@@ -989,7 +996,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         """
         export_graphviz(tree, out_file="mytree.dot", feature_names=self.attribute_list,
-                        class_names=self.class_list)
+                        class_names=class_list)
         with open("mytree.dot") as f:
             dot_graph = f.read()
         os.system('dot -Tpng mytree.dot >  ' + name + '.png ')
@@ -997,8 +1004,8 @@ This module build a classifier and predict phenotypes based on the classifier
 
         #dotfile = io.open(u"/kb/module/work/tmp/dotFolder/mydotTree.dot", u'w')
         not_dotfile = StringIO.StringIO()
-        export_graphviz(tree, out_file=not_dotfile, feature_names=self.attribute_list,
-                        class_names=self.class_list)
+        export_graphviz(tree, out_file=not_dotfile, feature_names=master_Role,
+                        class_names=class_list)
         #dotfile.close()
 
         #print(type(dotfile))
@@ -1010,7 +1017,7 @@ This module build a classifier and predict phenotypes based on the classifier
         dotfile.write(contents)
         dotfile.close()
 
-        self.parse_lookNice(pass_name)
+        self.parse_lookNice(pass_name, class_list)
         #os.system('dot -Tpng ./mytree.dot >  ' + name + '.png ')
 
     def create_report(self):
@@ -1230,7 +1237,7 @@ This module build a classifier and predict phenotypes based on the classifier
         pickle_in = open("/kb/module/data/attribute_list.pickle", "rb")
         self.attribute_list = pickle.load(pickle_in)
 
-        self.class_list = ['anaerobic', 'aerobic', 'facultative']
+        class_list = ['anaerobic', 'aerobic', 'facultative']
 
         self.train_index = []
         self.test_index = []
@@ -1255,21 +1262,19 @@ This module build a classifier and predict phenotypes based on the classifier
         if which_target == u"Metabolism":
             self.full_attribute_array = np.load(u"/kb/module/data/full_attribute_array.npy")
             self.full_classification_array = np.load(u"/kb/module/data/full_classification_array.npy")
-            self.class_list = [u'anaerobic', u'aerobic', u'facultative']
+            class_list = [u'anaerobic', u'aerobic', u'facultative']
 
         if which_target == u"Gram_Stain":
             self.full_attribute_array = np.load(u"/kb/module/data/copyof_gram_full_attribute_array.npy")
             self.full_classification_array = np.load(u"/kb/module/data/copyof_gram_full_classification_array.npy")
-            self.class_list = [u'N',u'P']
+            class_list = [u'N',u'P']
 
 
         pickle_in = open(u"/kb/module/data/attribute_list.pickle", u"rb")
         self.attribute_list = pickle.load(pickle_in)
         """
 
-        #self.global_target = which_target
-
-        self.global_target = ''
+        #global_target = which_target
         
         self.list_name = []
 
@@ -1329,7 +1334,8 @@ This module build a classifier and predict phenotypes based on the classifier
         #should include self??
         class_list = list(set(full_dataFrame['Classification']))
 
-        self.class_list = class_list
+        #class_list = class_list
+
 
         #create a mapping
         my_mapping = {}
@@ -1341,20 +1347,25 @@ This module build a classifier and predict phenotypes based on the classifier
 
         all_classifications = full_dataFrame['Classification']
 
-        self.full_attribute_array = all_attributes
-        self.full_classification_array = all_classifications
+        #self.full_attribute_array = all_attributes
+        #self.full_classification_array = all_classifications
 
         print "Below is full_attribute_array and full_classification_array"
-        print self.full_attribute_array
-        print self.full_classification_array
+        #print self.full_attribute_array
+        #print self.full_classification_array
 
 
-        self.full_attribute_array = self.full_attribute_array.values.astype(int)
-        self.full_classification_array = self.full_classification_array.values.astype(int)
+        #self.full_attribute_array = self.full_attribute_array.values.astype(int)
+        #self.full_classification_array = self.full_classification_array.values.astype(int)
+
+        all_attributes = all_attributes.values.astype(int) 
+        all_classifications = all_classifications.values.astype(int)
 
         print "Below is full_attribute_array and full_classification_array round 2"
-        print self.full_attribute_array
-        print self.full_classification_array
+        #print self.full_attribute_array
+        #print self.full_classification_array
+        print all_attributes
+        print all_classifications
 
         os.makedirs("/kb/module/work/tmp/pics/")
         os.makedirs("/kb/module/work/tmp/dotFolder/")
@@ -1369,10 +1380,14 @@ This module build a classifier and predict phenotypes based on the classifier
 
         self._valid_params(params)
 
-        classifier = params.get('classifier')
-        target = params.get('phenotypeclass')
+        classifier_type = params.get('classifier')
+        global_target = params.get('phenotypeclass')
+        classifier_name = params.get('classifier_out')
 
-        self.global_target = target
+        #target = params.get('phenotypeclass')
+
+        
+        #global_target = target
 
         # Add the block of code that reads in .txt file contain the annotations.
         # (Here my question is how to change this section so that it reads in the genomes files on the KBASE Narrative)
@@ -1384,38 +1399,39 @@ This module build a classifier and predict phenotypes based on the classifier
 
 
         skf = StratifiedKFold(n_splits=splits, random_state=0, shuffle=True)
-        for train_idx, test_idx in skf.split(self.full_attribute_array, self.full_classification_array):
+        for train_idx, test_idx in skf.split(all_attributes, all_classifications):
             train_index.append(train_idx)
             test_index.append(test_idx)
 
-        if classifier == u"run_all":
-            self.classifierTest(KNeighborsClassifier(),target+u"_KNeighborsClassifier", my_mapping, master_Role, splits, train_index, test_index,True)
-            self.classifierTest(GaussianNB(),target+u"_GaussianNB", my_mapping, master_Role, splits, train_index, test_index,True)
-            self.classifierTest(LogisticRegression(random_state=0),target+u"_LogisticRegression", my_mapping, master_Role, splits, train_index, test_index,True)
-            self.classifierTest(DecisionTreeClassifier(random_state=0),target+u"_DecisionTreeClassifier", my_mapping, master_Role, splits, train_index, test_index,True)
-            self.classifierTest(svm.LinearSVC(random_state=0),target+u"_SVM", my_mapping, master_Role, splits, train_index, test_index,True)
-            self.classifierTest(MLPClassifier(random_state=0),target+u"_NeuralNetwork", my_mapping, master_Role, splits, train_index, test_index, True)
+        if classifier_type == u"run_all":
+            self.classifierTest(KNeighborsClassifier(),"KNeighborsClassifier", classifier_name+u"_KNeighborsClassifier", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications,class_list, True)
+            self.classifierTest(GaussianNB(),"GaussianNB", classifier_name+u"_GaussianNB", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list,True)
+            self.classifierTest(LogisticRegression(random_state=0),"LogisticRegression", classifier_name+u"_LogisticRegression", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, True)
+            self.classifierTest(DecisionTreeClassifier(random_state=0),"DecisionTreeClassifier", classifier_name+u"_DecisionTreeClassifier", my_mapping, master_Role, splits, train_index, test_index,  all_attributes, all_classifications, class_list, True)
+            self.classifierTest(svm.LinearSVC(random_state=0),"SVM", classifier_name+u"_SVM", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, True)
+            self.classifierTest(MLPClassifier(random_state=0),"NeuralNetwork", classifier_name+u"_NeuralNetwork", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, True)
         else:
+            """
             if target == u"Metabolism":
                 self.classifierTest(self.whichClassifier(classifier), unicode(u"Metabolism_") + classifier, my_mapping, master_Role, splits, train_index, test_index, True)
             elif target == u"Gram_Stain":
                 self.classifierTest(self.whichClassifier(classifier), unicode(u"Gram_Stain_") + classifier, my_mapping, master_Role, splits, train_index, test_index, True)
             else:
                 print u"ERROR check spelling?"
+            """
+            self.classifierTest(self.whichClassifier(classifier_type),classifier_type, classifier_name, my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, True)
 
-            #self.classifierTest(self.whichClassifier(classifier), unicode(target + u"_") + classifier, True)
 
 
+        best_classifier_str = self.to_HTML_Statistics(class_list)
+        self.html_report_1(classifier_type, best_classifier_str, classifier_name)
 
-        best_classifier_str = self.to_HTML_Statistics()
-        self.html_report_1(classifier, best_classifier_str)
-
-        #self.tune_Decision_Tree(splits, train_index, test_index)
+        self.tune_Decision_Tree(classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list)
 
 
         #self.tree_code("doesn't matter") #<-- don't use rn
 
-        #self.html_report_2()
+        self.html_report_2(classifier_name)
 
 
         uuid_string = str(uuid.uuid4())
