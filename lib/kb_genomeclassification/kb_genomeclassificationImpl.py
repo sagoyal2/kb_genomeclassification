@@ -422,7 +422,11 @@ This module build a classifier and predict phenotypes based on the classifier
             #neededIndex = [2, 3, self.list_name.__len__() - 2, self.list_name.__len__() -1]
             #neededIndex = [self.list_name.__len__() - 2, self.list_name.__len__() -1]
 
-            neededIndex = [DTClf_index, BestClf_index, self.list_name.__len__() - 2, self.list_name.__len__() -1]
+            try: 
+                neededIndex = [DTClf_index, BestClf_index, self.list_name.__len__() - 2, self.list_name.__len__() -1]
+            except:
+                neededIndex = [0, self.list_name.__len__() - 2, self.list_name.__len__() -1]
+
 
             sub_list_name = [self.list_name[i] for i in neededIndex]
             sub_list_statistics = [self.list_statistics[i] for i in neededIndex]
@@ -570,7 +574,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         self.printTree(tree, u"NAMEmyTreeLATER", master_Role, class_list)
 
-    def tune_Decision_Tree(self, classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, htmlfolder, best_classifier_str):
+    def tune_Decision_Tree(self, classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, htmlfolder, best_classifier_str = None):
         """
         args:
         ---NA
@@ -647,7 +651,7 @@ This module build a classifier and predict phenotypes based on the classifier
         self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini'), classifier_type, classifier_name + u"_DecisionTreeClassifier(gini)", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, htmlfolder, True)
         self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy'), classifier_type, classifier_name + u"_DecisionTreeClassifier(entropy)", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, htmlfolder, True)
 
-        self.to_HTML_Statistics(class_list, classifier_name, best_classifier_str,additional=True)
+        self.to_HTML_Statistics(class_list, classifier_name, known = best_classifier_str,additional=True)
 
         if gini_best > entropy_best:
             self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini'), all_attributes, all_classifications, master_Role, class_list)
@@ -698,7 +702,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
             os.system(u'dot -Tpng /kb/module/work/tmp/dotFolder/niceTree.dot >  '+ u"/kb/module/work/tmp/forHTML/html2folder/" + name + u'.png ')
 
-    def html_report_1(self, classifier_type, best_classifier_str, classifier_name):
+    def html_report_1(self, classifier_type, classifier_name, best_classifier_str = None):
         """
         does: creates an .html file that makes the frist report (first app).
         """
@@ -791,6 +795,13 @@ This module build a classifier and predict phenotypes based on the classifier
 
             file.write(all_str)
 
+            next_str = u"""
+            <p style="text-align:center; font-size:100%;">  Based on these results it would be in your best interest to use the """ + unicode(best_classifier_str) + """ as your model as
+            it produced the strongest F1 score </p>
+            """
+
+            file.write(next_str)
+
         else:
             next_str = u"""
             <div class="row">
@@ -819,14 +830,6 @@ This module build a classifier and predict phenotypes based on the classifier
             """
             file.write(next_str)
 
-
-        next_str = u"""
-         <p style="text-align:center; font-size:100%;">  Based on these results it would be in your best interest to use the """ + unicode(best_classifier_str) + """ as your model as
-         it produced the strongest F1 score </p>
-        """
-
-        file.write(next_str)
-
         next_str = u"""
         <a href="../html2folder/html2.html">Second html page</a>
         """
@@ -835,7 +838,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         file.close()
 
-    def html_report_2(self, classifier_name, best_classifier_str):
+    def html_report_2(self, classifier_name, best_classifier_str = None):
         """
         does: creates an .html file that makes the second report (first app).
         """
@@ -902,26 +905,52 @@ This module build a classifier and predict phenotypes based on the classifier
         <div class="row">
           <div class="column">
               <p style="text-align:left; font-size:160%;"> Decision Tree Classifier </p>
-            <img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
+            <img src=" """+ classifier_name +""".png" alt="Snow" style="width:100%">
           </div>
-          <div class="column">
-              <p style="text-align:left; font-size:160%;"> Logistic Regression Classifier </p>
-            <img src=" """+ best_classifier_str + """.png" alt="Snow" style="width:100%">
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="column">
-              <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Gini </p>
-            <img src=" """+ classifier_name +"""_DecisionTreeClassifier(gini).png" alt="Snow" style="width:100%">
-          </div>
-          <div class="column">
-              <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Entropy </p>
-            <img src=" """+ classifier_name +"""_DecisionTreeClassifier(entropy).png" alt="Snow" style="width:100%">
-          </div>
-        </div>
         """
+
         file.write(next_str)
+
+        if best_classifier_str == None :
+
+            next_str = u"""
+            </div>
+
+            <div class="row">
+                <div class="column">
+                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Gini </p>
+                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier(gini).png" alt="Snow" style="width:100%">
+                </div>
+                <div class="column">
+                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Entropy </p>
+                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier(entropy).png" alt="Snow" style="width:100%">
+                </div>
+            </div>
+            """
+
+            file.write(next_str)
+
+        else:
+
+            next_str = u"""
+                <div class="column">
+                    <p style="text-align:left; font-size:160%;"> Logistic Regression Classifier </p>
+                    <img src=" """+ best_classifier_str + """.png" alt="Snow" style="width:100%">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="column">
+                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Gini </p>
+                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier(gini).png" alt="Snow" style="width:100%">
+                </div>
+                <div class="column">
+                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Entropy </p>
+                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier(entropy).png" alt="Snow" style="width:100%">
+                </div>
+            </div>
+            """
+            file.write(next_str)
 
         next_str= u"""
         <p style="font-size:160%;">Comparison of statistics in the form of Accuracy, Precision, Recall and F1 Score calculated against the confusion matrices of respiration type for the classifiers</p>
@@ -1072,6 +1101,130 @@ This module build a classifier and predict phenotypes based on the classifier
 
         file.write(html_string)
         file.close()
+
+        return "dual_12.html"
+
+    def html_nodual(self):
+        file = open(u"/kb/module/work/tmp/forHTML/nodual.html", u"w")
+
+        html_string = u"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+            body {font-family: "Lato", sans-serif;}
+            /* Style the tab */
+            div.tab {
+                overflow: hidden;
+                border: 1px solid #ccc;
+                background-color: #f1f1f1;
+            }
+            /* Style the buttons inside the tab */
+            div.tab button {
+                background-color: inherit;
+                float: left;
+                border: none;
+                outline: none;
+                cursor: pointer;
+                padding: 14px 16px;
+                transition: 0.3s;
+                font-size: 17px;
+            }
+            /* Change background color of buttons on hover */
+            div.tab button:hover {
+                background-color: #ddd;
+            }
+            /* Create an active/current tablink class */
+            div.tab button.active {
+                background-color: #ccc;
+            }
+            /* Style the tab content */
+            .tabcontent {
+                display: none;
+                padding: 6px 12px;
+                border: 1px solid #ccc;
+                -webkit-animation: fadeEffect 1s;
+                animation: fadeEffect 1s;
+                border-top: none;
+            }
+            /* Fade in tabs */
+            @-webkit-keyframes fadeEffect {
+                from {opacity: 0;}
+                to {opacity: 1;}
+            }
+            @keyframes fadeEffect {
+                from {opacity: 0;}
+                to {opacity: 1;}
+            }
+            table {
+                font-family: arial, sans-serif;
+                border-collapse: collapse;
+                width: 100%;
+            }
+            td, th {
+                border: 1px solid #dddddd;
+                text-align: left;
+                padding: 8px;
+            }
+            tr:nth-child(odd) {
+                background-color: #dddddd;
+            }
+            div.gallery {
+                margin: 5px;
+                border: 1px solid #ccc;
+                float: left;
+                width: 180px;
+            }
+            div.gallery:hover {
+                border: 1px solid #777;
+            }
+            div.gallery img {
+                width: 100%;
+                height: auto;
+            }
+            div.desc {
+                padding: 15px;
+                text-align: center;
+            }
+        </style>
+        </head>
+        <body>
+
+            <p></p>
+
+            <div class="tab">
+              <button class="tablinks" onclick="openTab(event, 'Overview')" id="defaultOpen">Main Page</button>
+          </div>
+
+          <div id="Overview" class="tabcontent">
+              <iframe src="html1folder/html1.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
+          </div>
+
+          <script>
+            function openTab(evt, tabName) {
+                var i, tabcontent, tablinks;
+                tabcontent = document.getElementsByClassName("tabcontent");
+                for (i = 0; i < tabcontent.length; i++) {
+                    tabcontent[i].style.display = "none";
+                }
+                tablinks = document.getElementsByClassName("tablinks");
+                for (i = 0; i < tablinks.length; i++) {
+                    tablinks[i].className = tablinks[i].className.replace(" active", "");
+                }
+                document.getElementById(tabName).style.display = "block";
+                evt.currentTarget.className += " active";
+            }
+                // Get the element with id="defaultOpen" and click on it
+                document.getElementById("defaultOpen").click();
+            </script>
+
+        </body>
+        </html> 
+        """
+        file.write(html_string)
+        file.close()
+
+        return "nodual.html"
 
     def html_report_3(self):
         """
@@ -1560,6 +1713,31 @@ This module build a classifier and predict phenotypes based on the classifier
             self.classifierTest(DecisionTreeClassifier(random_state=0),"DecisionTreeClassifier", classifier_name+u"_DecisionTreeClassifier", my_mapping, master_Role, splits, train_index, test_index,  all_attributes, all_classifications, class_list, folderhtml1, True)
             self.classifierTest(svm.LinearSVC(random_state=0),"SVM", classifier_name+u"_SVM", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
             self.classifierTest(MLPClassifier(random_state=0),"NeuralNetwork", classifier_name+u"_NeuralNetwork", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
+            
+            best_classifier_str = self.to_HTML_Statistics(class_list, classifier_name)
+            best_classifier_str = classifier_name+u"_LogisticRegression"
+            best_classifier_type = best_classifier_str[classifier_name.__len__() + 1:] #extract just the classifier_type aka. "LogisticRegression" from "myName_LogisticRegression"
+            #to create another "best in html2"
+            self.classifierTest(self.whichClassifier(best_classifier_type),best_classifier_type, classifier_name+u"_" + best_classifier_type, my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2, True)
+
+
+            self.html_report_1(classifier_type, classifier_name, best_classifier_str= best_classifier_str)
+            
+            self.tune_Decision_Tree(classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2, best_classifier_str)
+            #self.tree_code("doesn't matter") #<-- don't use rn
+            self.html_report_2(classifier_name, best_classifier_str)
+            htmloutput_name = self.html_dual_12()
+
+        elif classifier_type == u"DecisionTreeClassifier":
+            self.classifierTest(self.whichClassifier(classifier_type),classifier_type, classifier_name, my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
+
+            self.to_HTML_Statistics(class_list, classifier_name)
+            self.html_report_1(classifier_type, classifier_name)
+
+            self.tune_Decision_Tree(classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2)
+            self.html_report_2(classifier_name)
+            htmloutput_name = self.html_dual_12()
+
         else:
             """
             if target == u"Metabolism":
@@ -1571,26 +1749,9 @@ This module build a classifier and predict phenotypes based on the classifier
             """
             self.classifierTest(self.whichClassifier(classifier_type),classifier_type, classifier_name, my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
 
-
-        best_classifier_str = self.to_HTML_Statistics(class_list, classifier_name)
-
-        best_classifier_str = classifier_name+u"_LogisticRegression"
-        best_classifier_type = best_classifier_str[classifier_name.__len__() + 1:] #extract just the classifier_type aka. "LogisticRegression" from "myName_LogisticRegression"
-
-        #to create another "best in html2"
-        self.classifierTest(self.whichClassifier(best_classifier_type),best_classifier_type, classifier_name+u"_" + best_classifier_type, my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2, True)
-
-
-        self.html_report_1(classifier_type, best_classifier_str, classifier_name)
-
-        self.tune_Decision_Tree(classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2, best_classifier_str)
-
-
-        #self.tree_code("doesn't matter") #<-- don't use rn
-
-        self.html_report_2(classifier_name, best_classifier_str)
-
-        self.html_dual_12()
+            self.to_HTML_Statistics(class_list, classifier_name)
+            self.html_report_1(classifier_type, classifier_name)
+            htmloutput_name = self.html_nodual()
 
         """
         fileoutput1 = {
@@ -1645,7 +1806,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         htmloutput = {
         'description' : 'htmloutuputdescription',
-        'name' : 'dual_12.html',
+        'name' : htmloutput_name,
         'label' : 'htmloutputlabel',
         'shock_id': report_shock_id
         }
