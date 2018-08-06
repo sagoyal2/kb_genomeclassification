@@ -947,6 +947,132 @@ This module build a classifier and predict phenotypes based on the classifier
 
         file.close()
 
+    def html_dual_12(self):
+        file = open(u"/kb/module/work/tmp/forHTML/dual_12.html", u"w")
+
+        html_string = u"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <style>
+        body {font-family: "Lato", sans-serif;}
+        /* Style the tab */
+        div.tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+        }
+        /* Style the buttons inside the tab */
+        div.tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+            font-size: 17px;
+        }
+        /* Change background color of buttons on hover */
+        div.tab button:hover {
+            background-color: #ddd;
+        }
+        /* Create an active/current tablink class */
+        div.tab button.active {
+            background-color: #ccc;
+        }
+        /* Style the tab content */
+        .tabcontent {
+            display: none;
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            -webkit-animation: fadeEffect 1s;
+            animation: fadeEffect 1s;
+            border-top: none;
+        }
+        /* Fade in tabs */
+        @-webkit-keyframes fadeEffect {
+            from {opacity: 0;}
+            to {opacity: 1;}
+        }
+        @keyframes fadeEffect {
+            from {opacity: 0;}
+            to {opacity: 1;}
+        }
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+        tr:nth-child(odd) {
+            background-color: #dddddd;
+        }
+        div.gallery {
+            margin: 5px;
+            border: 1px solid #ccc;
+            float: left;
+            width: 180px;
+        }
+        div.gallery:hover {
+            border: 1px solid #777;
+        }
+        div.gallery img {
+            width: 100%;
+            height: auto;
+        }
+        div.desc {
+            padding: 15px;
+            text-align: center;
+        }
+        </style>
+        </head>
+        <body>
+
+        <p></p>
+
+        <div class="tab">
+          <button class="tablinks" onclick="openTab(event, 'Overview')" id="defaultOpen">Main Page</button>
+          <button class="tablinks" onclick="openTab(event, 'Visualization')">Decision Tree Analysis</button>
+        </div>
+
+        <div id="Overview" class="tabcontent">
+          <iframe src="html1folder/html1.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
+        </div>
+
+        <div id="Visualization" class="tabcontent">
+          <iframe src="html2folder/html2.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
+        </div>
+
+        <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+        // Get the element with id="defaultOpen" and click on it
+        document.getElementById("defaultOpen").click();
+        </script>
+             
+        </body>
+        </html> 
+        """
+
+        file.write(html_string)
+        file.close()
+
     def html_report_3(self):
         """
         does: creates an .html file that makes the first report (second app).
@@ -1464,9 +1590,21 @@ This module build a classifier and predict phenotypes based on the classifier
 
         self.html_report_2(classifier_name, best_classifier_str)
 
+        self.html_dual_12()
+
+        """
+        fileoutput1 = {
+        'description' : 'htmloutuput2description',
+        'name' : 'htmloutput2name',
+        'label' : 'htmloutput2label',
+        'URL' : "/kb/module/work/tmp/forDATA/" + self.best_classifier_str + u".pickle"
+        }
+        """
+
 
         uuid_string = str(uuid.uuid4())
 
+        """
         output_directory1 = '/kb/module/work/tmp/forHTML/html1folder'
         report_shock_id1 = self.dfu.file_to_shock({'file_path': output_directory1,'pack': 'zip'})['shock_id']
 
@@ -1489,22 +1627,37 @@ This module build a classifier and predict phenotypes based on the classifier
         'shock_id': report_shock_id2
         }
 
-        """
-        fileoutput1 = {
-        'description' : 'htmloutuput2description',
-        'name' : 'htmloutput2name',
-        'label' : 'htmloutput2label',
-        'URL' : "/kb/module/work/tmp/forDATA/" + self.best_classifier_str + u".pickle"
-        }
-        """
-
         report_params = {'message': '',
                          'workspace_name': params.get('workspace'),#params.get('input_ws'),
                          #'objects_created': objects_created,
                          'html_links': [htmloutput1, htmloutput2],
                          'direct_html_link_index': 0,
                          'html_window_height': 500,
-                         'report_object_name': 'kb_classifier_report_' + str(uuid.uuid4())}
+                         'report_object_name': 'kb_classifier_report_' + str(uuid.uuid4())
+                         }
+
+        kbase_report_client = KBaseReport(self.callback_url, token=token)
+        report_output = kbase_report_client.create_extended_report(report_params)
+        """
+
+        output_directory = '/kb/module/work/tmp/forHTML'
+        report_shock_id = self.dfu.file_to_shock({'file_path': output_directory,'pack': 'zip'})['shock_id']
+
+        htmloutput = {
+        'description' : 'htmloutuputdescription',
+        'name' : 'dual_12.html',
+        'label' : 'htmloutputlabel',
+        'shock_id': report_shock_id
+        }
+
+        report_params = {'message': '',
+                         'workspace_name': params.get('workspace'),#params.get('input_ws'),
+                         #'objects_created': objects_created,
+                         'html_links': [htmloutput],
+                         'direct_html_link_index': 0,
+                         'html_window_height': 500,
+                         'report_object_name': 'kb_classifier_report_' + str(uuid.uuid4())
+                         }
 
         kbase_report_client = KBaseReport(self.callback_url, token=token)
         report_output = kbase_report_client.create_extended_report(report_params)
