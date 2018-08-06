@@ -94,8 +94,8 @@ class kb_genomeclassificationTest(unittest.TestCase):
         params = {
         "shock_id": "72e5c2c1-217d-462f-a0a1-7fd2c1a59f5c",
         "list_name": "262543.4,216432.3,269798.12,309807.19,411154.5,485917.5,485918.5,457391.3,470145.6,665954.3,679190.3",
-        "phenotypeclass": "Gram_Stain",
-        "classifier": "run_all",
+        "phenotypeclass": "Gram_Stain", #you can name this whatever it doesn't matter
+        "classifier": "run_all",#run_all LogisticRegression
         "attribute": "functional_roles",
         "save_ts": 0,
         "classifier_out": "GramOut",
