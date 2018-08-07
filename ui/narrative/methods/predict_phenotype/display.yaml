@@ -42,9 +42,9 @@ parameters :
             Classifier
         short-hint : |
             Select the classifier
-    phenotype :
+    phenotypeclass:
         ui-name : |
-            Select the phenotype
+            Phenotype or Condition [e.g.; Gram type, Respiration]
         short-hint : |
             Select the phenotype to be predicted
 description : |

@@ -109,7 +109,9 @@ class kb_genomeclassificationTest(unittest.TestCase):
     def test_predict_phenotype(self):
         params = {
         "shock_id" : "8f55c4b4-750f-40c4-a973-f2c98825a18e",
-        "classifier_name" : "GramOut",
+        "list_name" : "",
+        "classifier_name" : "myOutPutName",
+        "phenotypeclass" : "I'm predicting this",
         "workspace" : "sagoyal:narrative_1533659119242" #"janakakbase:narrative_1533153056355" "janakakbase:narrative_1533320423326"
         }
 

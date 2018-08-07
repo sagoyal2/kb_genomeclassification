@@ -44,10 +44,12 @@ module kb_genomeclassification {
 
 
 
-   typedef structure {
+   typedef structure { 
         string workspace;
-        string classifier_ref;
-        string phenotype;
+        string classifier_name;
+        string phenotypeclass;
+        string shock_id;
+        string list_name;
     } ClassifierPredictionInput;
 
 
