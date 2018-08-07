@@ -195,15 +195,15 @@ This module build a classifier and predict phenotypes based on the classifier
 
         classifier_object = {
         'classifier_id' : '',
-        'classifier_type' : 'DecisionTree', # Neural network
-        'classifier_name' : 'FirstSavingClassifier',
-        'classifier_data' : 'base64string',
+        'classifier_type' : classifier_type, # Neural network
+        'classifier_name' : classifier_name,
+        'classifier_data' : pickled,
         'classifier_description' : 'this is my description',
         'lib_name' : 'sklearn',
         'attribute_type' : 'functional_roles',
         'number_of_attributes' : class_list.__len__(),
-        'attribute_data' : [],#master_Role, #master_Role,
-        'class_list_mapping' : {}, #my_mapping, #my_mapping,
+        'attribute_data' : ["this is where master_role would go", "just a list"],#master_Role, #master_Role,
+        'class_list_mapping' : my_mapping, #{} my_mapping, #my_mapping,
         'number_of_genomes' : 0,
         'training_set_ref' : ''
         }
@@ -227,7 +227,8 @@ This module build a classifier and predict phenotypes based on the classifier
         print ""
 
         print obj_save_ref
-        
+        print "done"        
+
 
         list_forDict = []
 
@@ -669,8 +670,8 @@ This module build a classifier and predict phenotypes based on the classifier
         #gini_best_index = 4
         #entropy_best_index = 3
 
-        self.classifierTest(ctx, current_ws, DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini'), classifier_type, classifier_name + u"_DecisionTreeClassifier(gini)", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, htmlfolder, True)
-        self.classifierTest(ctx, current_ws, DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy'), classifier_type, classifier_name + u"_DecisionTreeClassifier(entropy)", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, htmlfolder, True)
+        self.classifierTest(ctx, current_ws, DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini'), classifier_type, classifier_name + u"_DecisionTreeClassifier_gini", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, htmlfolder, True)
+        self.classifierTest(ctx, current_ws, DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy'), classifier_type, classifier_name + u"_DecisionTreeClassifier_entropy", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, htmlfolder, True)
 
         self.to_HTML_Statistics(class_list, classifier_name, known = best_classifier_str,additional=True)
 
@@ -940,11 +941,11 @@ This module build a classifier and predict phenotypes based on the classifier
             <div class="row">
                 <div class="column">
                     <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Gini </p>
-                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier(gini).png" alt="Snow" style="width:100%">
+                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier_gini.png" alt="Snow" style="width:100%">
                 </div>
                 <div class="column">
                     <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Entropy </p>
-                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier(entropy).png" alt="Snow" style="width:100%">
+                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier_entropy.png" alt="Snow" style="width:100%">
                 </div>
             </div>
             """
@@ -963,11 +964,11 @@ This module build a classifier and predict phenotypes based on the classifier
             <div class="row">
                 <div class="column">
                     <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Gini </p>
-                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier(gini).png" alt="Snow" style="width:100%">
+                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier_gini.png" alt="Snow" style="width:100%">
                 </div>
                 <div class="column">
                     <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Entropy </p>
-                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier(entropy).png" alt="Snow" style="width:100%">
+                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier_entropy.png" alt="Snow" style="width:100%">
                 </div>
             </div>
             """
