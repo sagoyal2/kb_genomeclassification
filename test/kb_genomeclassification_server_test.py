@@ -92,14 +92,14 @@ class kb_genomeclassificationTest(unittest.TestCase):
 
     def test_build_classifier(self):
         params = {
-        "shock_id": "72e5c2c1-217d-462f-a0a1-7fd2c1a59f5c",
+        "shock_id": "2dcb9741-df3b-4a3a-8ce4-d8dead1b4127", #2dcb9741-df3b-4a3a-8ce4-d8dead1b4127 #72e5c2c1-217d-462f-a0a1-7fd2c1a59f5c
         "list_name": "262543.4,216432.3,269798.12,309807.19,411154.5,485917.5,485918.5,457391.3,470145.6,665954.3,679190.3",
         "phenotypeclass": "Gram_Stain", #you can name this whatever it doesn't matter
-        "classifier": "LogisticRegression",#run_all DecisionTreeClassifier LogisticRegression
+        "classifier": "DecisionTreeClassifier",#run_all DecisionTreeClassifier LogisticRegression
         "attribute": "functional_roles",
         "save_ts": 0,
         "classifier_out": "GramOut",
-        "workspace" : "janakakbase:narrative_1533320423326" #"janakakbase:narrative_1533153056355"
+        "workspace" : "janakakbase:narrative_1533153056355" #"janakakbase:narrative_1533153056355" "janakakbase:narrative_1533320423326"
         }
 
         self.getImpl().build_classifier(self.getContext(), params)

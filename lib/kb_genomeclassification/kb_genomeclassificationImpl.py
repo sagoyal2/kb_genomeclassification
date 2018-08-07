@@ -121,7 +121,7 @@ This module build a classifier and predict phenotypes based on the classifier
     #BEGIN_CLASS_HEADER
     # Class variables and functions can be defined in this block
 
-    def classifierTest(self, classifier, classifier_type, classifier_name, my_mapping, master_Role,  splits, train_index, test_index,  all_attributes, all_classifications, class_list, htmlfolder, print_cfm):
+    def classifierTest(self, ctx, current_ws, classifier, classifier_type, classifier_name, my_mapping, master_Role,  splits, train_index, test_index,  all_attributes, all_classifications, class_list, htmlfolder, print_cfm):
         """
         args:
         ---classifier which is a sklearn object that has methods #LogisticRegression()
@@ -195,32 +195,39 @@ This module build a classifier and predict phenotypes based on the classifier
 
         classifier_object = {
         'classifier_id' : '',
-        'classifier_type' : 'DecisionTree', # Neural network
-        'classifier_name' : 'FirstSavingClassifier',
-        'classifier_data' : 'base64string',
+        'classifier_type' : classifier_type, # Neural network
+        'classifier_name' : classifier_name,
+        'classifier_data' : pickled,
         'classifier_description' : 'this is my description',
         'lib_name' : 'sklearn',
         'attribute_type' : 'functional_roles',
         'number_of_attributes' : class_list.__len__(),
-        'attribute_data' : [],#master_Role, #master_Role,
-        'class_list_mapping' : {}, #my_mapping, #my_mapping,
+        'attribute_data' : ["this is where master_role would go", "just a list"],#master_Role, #master_Role,
+        'class_list_mapping' : my_mapping, #{} my_mapping, #my_mapping,
         'number_of_genomes' : 0,
         'training_set_ref' : ''
         }
 
         print classifier_object
 
-#Saving the Classifier object
-        obj_save_ref = self.ws_client.save_objects({'workspace' : 'janakakbase:narrative_1533153056355',
+        #Saving the Classifier object
+        
+        obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
                                                       'objects':[{
                                                       'type': 'KBaseClassifier.GenomeClassifier',
-                                                      'data':  classifier_object,
-                                                      'name': 'FirstClassifierObject'
-                                                      #'provenance' : self.provenance
-                                                      }]})[0]
+                                                      'data': classifier_object,
+                                                      'name': classifier_name,  
+                                                      'provenance': ctx.get('provenance')  # ctx should be passed into this func.
+                                                      }]
+                                                    })[0]
 
+        print "I'm print out the obj_save_ref"
+        print ""
+        print ""
+        print ""
 
         print obj_save_ref
+        print "done"        
 
 
         list_forDict = []
@@ -589,7 +596,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         self.printTree(tree, u"NAMEmyTreeLATER", master_Role, class_list)
 
-    def tune_Decision_Tree(self, classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, htmlfolder, best_classifier_str = None):
+    def tune_Decision_Tree(self, ctx, current_ws, classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, htmlfolder, best_classifier_str = None):
         """
         args:
         ---NA
@@ -616,7 +623,7 @@ This module build a classifier and predict phenotypes based on the classifier
         val_std = numpy.zeros(12)
         for d in xrange(1, 12):
             val[d] = d
-            (test_av[d], test_std[d], val_av[d], val_std[d]) = self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=d), classifier_type, classifier_name + u"DecisionTreeClassifier", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, htmlfolder, False)
+            (test_av[d], test_std[d], val_av[d], val_std[d]) = self.classifierTest(ctx, current_ws, DecisionTreeClassifier(random_state=0, max_depth=d), classifier_type, classifier_name + u"DecisionTreeClassifier", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, htmlfolder, False)
 
         fig, ax = plt.subplots(figsize=(6, 6))
         plt.errorbar(val[1:], test_av[1:], yerr=test_std[1:], fmt=u'o', label=u'Training set')
@@ -642,7 +649,7 @@ This module build a classifier and predict phenotypes based on the classifier
         val_std = numpy.zeros(12)
         for d in xrange(1, 12):
             val[d] = d
-            (test_av[d], test_std[d], val_av[d], val_std[d]) = self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=d, criterion=u'entropy'), classifier_type, classifier_name +u"DecisionTreeClassifier", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, htmlfolder, False)
+            (test_av[d], test_std[d], val_av[d], val_std[d]) = self.classifierTest(ctx, current_ws, DecisionTreeClassifier(random_state=0, max_depth=d, criterion=u'entropy'), classifier_type, classifier_name +u"DecisionTreeClassifier", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, htmlfolder, False)
 
         fig, ax = plt.subplots(figsize=(6, 6))
         plt.errorbar(val[1:], test_av[1:], yerr=test_std[1:], fmt=u'o', label=u'Training set')
@@ -663,8 +670,8 @@ This module build a classifier and predict phenotypes based on the classifier
         #gini_best_index = 4
         #entropy_best_index = 3
 
-        self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini'), classifier_type, classifier_name + u"_DecisionTreeClassifier(gini)", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, htmlfolder, True)
-        self.classifierTest(DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy'), classifier_type, classifier_name + u"_DecisionTreeClassifier(entropy)", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, htmlfolder, True)
+        self.classifierTest(ctx, current_ws, DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini'), classifier_type, classifier_name + u"_DecisionTreeClassifier_gini", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, htmlfolder, True)
+        self.classifierTest(ctx, current_ws, DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy'), classifier_type, classifier_name + u"_DecisionTreeClassifier_entropy", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, htmlfolder, True)
 
         self.to_HTML_Statistics(class_list, classifier_name, known = best_classifier_str,additional=True)
 
@@ -934,11 +941,11 @@ This module build a classifier and predict phenotypes based on the classifier
             <div class="row">
                 <div class="column">
                     <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Gini </p>
-                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier(gini).png" alt="Snow" style="width:100%">
+                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier_gini.png" alt="Snow" style="width:100%">
                 </div>
                 <div class="column">
                     <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Entropy </p>
-                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier(entropy).png" alt="Snow" style="width:100%">
+                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier_entropy.png" alt="Snow" style="width:100%">
                 </div>
             </div>
             """
@@ -957,11 +964,11 @@ This module build a classifier and predict phenotypes based on the classifier
             <div class="row">
                 <div class="column">
                     <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Gini </p>
-                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier(gini).png" alt="Snow" style="width:100%">
+                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier_gini.png" alt="Snow" style="width:100%">
                 </div>
                 <div class="column">
                     <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Entropy </p>
-                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier(entropy).png" alt="Snow" style="width:100%">
+                    <img src=" """+ classifier_name +"""_DecisionTreeClassifier_entropy.png" alt="Snow" style="width:100%">
                 </div>
             </div>
             """
@@ -1634,9 +1641,10 @@ This module build a classifier and predict phenotypes based on the classifier
         all_classifications = self.get_mainClassification(file_path)
 
         full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
-        """
+        """ 
+        current_ws = params.get('workspace')
 
-        all_attributes, master_Role = self.get_wholeClassification(file_path, params.get('workspace'))
+        all_attributes, master_Role = self.get_wholeClassification(file_path, current_ws)
         all_classifications = self.get_mainClassification(file_path)
 
         full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
@@ -1722,34 +1730,34 @@ This module build a classifier and predict phenotypes based on the classifier
             test_index.append(test_idx)
 
         if classifier_type == u"run_all":
-            self.classifierTest(KNeighborsClassifier(),"KNeighborsClassifier", classifier_name+u"_KNeighborsClassifier", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications,class_list, folderhtml1, True)
-            self.classifierTest(GaussianNB(),"GaussianNB", classifier_name+u"_GaussianNB", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
-            self.classifierTest(LogisticRegression(random_state=0),"LogisticRegression", classifier_name+u"_LogisticRegression", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
-            self.classifierTest(DecisionTreeClassifier(random_state=0),"DecisionTreeClassifier", classifier_name+u"_DecisionTreeClassifier", my_mapping, master_Role, splits, train_index, test_index,  all_attributes, all_classifications, class_list, folderhtml1, True)
-            self.classifierTest(svm.LinearSVC(random_state=0),"SVM", classifier_name+u"_SVM", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
-            self.classifierTest(MLPClassifier(random_state=0),"NeuralNetwork", classifier_name+u"_NeuralNetwork", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
+            self.classifierTest(ctx, current_ws, KNeighborsClassifier(),"KNeighborsClassifier", classifier_name+u"_KNeighborsClassifier", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications,class_list, folderhtml1, True)
+            self.classifierTest(ctx, current_ws, GaussianNB(),"GaussianNB", classifier_name+u"_GaussianNB", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
+            self.classifierTest(ctx, current_ws, LogisticRegression(random_state=0),"LogisticRegression", classifier_name+u"_LogisticRegression", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
+            self.classifierTest(ctx, current_ws, DecisionTreeClassifier(random_state=0),"DecisionTreeClassifier", classifier_name+u"_DecisionTreeClassifier", my_mapping, master_Role, splits, train_index, test_index,  all_attributes, all_classifications, class_list, folderhtml1, True)
+            self.classifierTest(ctx, current_ws, svm.LinearSVC(random_state=0),"SVM", classifier_name+u"_SVM", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
+            self.classifierTest(ctx, current_ws, MLPClassifier(random_state=0),"NeuralNetwork", classifier_name+u"_NeuralNetwork", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
 
             best_classifier_str = self.to_HTML_Statistics(class_list, classifier_name)
             best_classifier_str = classifier_name+u"_LogisticRegression"
             best_classifier_type = best_classifier_str[classifier_name.__len__() + 1:] #extract just the classifier_type aka. "LogisticRegression" from "myName_LogisticRegression"
             #to create another "best in html2"
-            self.classifierTest(self.whichClassifier(best_classifier_type),best_classifier_type, classifier_name+u"_" + best_classifier_type, my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2, True)
+            self.classifierTest(ctx, current_ws, self.whichClassifier(best_classifier_type),best_classifier_type, classifier_name+u"_" + best_classifier_type, my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2, True)
 
 
             self.html_report_1(classifier_type, classifier_name, best_classifier_str= best_classifier_str)
 
-            self.tune_Decision_Tree(classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2, best_classifier_str)
+            self.tune_Decision_Tree(ctx, current_ws, classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2, best_classifier_str)
             #self.tree_code("doesn't matter") #<-- don't use rn
             self.html_report_2(classifier_name, best_classifier_str)
             htmloutput_name = self.html_dual_12()
 
         elif classifier_type == u"DecisionTreeClassifier":
-            self.classifierTest(self.whichClassifier(classifier_type),classifier_type, classifier_name, my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
+            self.classifierTest(ctx, current_ws, self.whichClassifier(classifier_type),classifier_type, classifier_name, my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
 
             self.to_HTML_Statistics(class_list, classifier_name)
             self.html_report_1(classifier_type, classifier_name)
 
-            self.tune_Decision_Tree(classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2)
+            self.tune_Decision_Tree(ctx, current_ws, classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2)
             self.html_report_2(classifier_name)
             htmloutput_name = self.html_dual_12()
 
@@ -1762,7 +1770,7 @@ This module build a classifier and predict phenotypes based on the classifier
             else:
                 print u"ERROR check spelling?"
             """
-            self.classifierTest(self.whichClassifier(classifier_type),classifier_type, classifier_name, my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
+            self.classifierTest(ctx, current_ws, self.whichClassifier(classifier_type),classifier_type, classifier_name, my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
 
             self.to_HTML_Statistics(class_list, classifier_name)
             self.html_report_1(classifier_type, classifier_name)
