@@ -211,6 +211,7 @@ This module build a classifier and predict phenotypes based on the classifier
         print classifier_object
 
         #Saving the Classifier object
+        """
         obj_save_ref = self.ws_client.save_objects({'workspace' : 'janakakbase:narrative_1533153056355',
                                                       'objects':[{
                                                       'type': 'KBaseClassifier.GenomeClassifier',
@@ -222,7 +223,7 @@ This module build a classifier and predict phenotypes based on the classifier
         });
 
         print obj_save_ref
-
+        """
 
         list_forDict = []
 
