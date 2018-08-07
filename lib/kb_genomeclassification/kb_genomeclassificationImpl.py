@@ -210,6 +210,20 @@ This module build a classifier and predict phenotypes based on the classifier
 
         print classifier_object
 
+#Saving the Classifier object
+        obj_save_ref = self.ws_client.save_objects({'workspace' : 'janakakbase:narrative_1533320423326',
+                                                      'objects':[{
+                                                      'type': 'KBaseClassifier.GenomeClassifier',
+                                                      'data': classifier_object,
+                                                      'name': 'FirstClassifierObject'
+                                                      #'provenance' : ctx.provenance  # ctx should be passed into this func.
+                                                      }]
+
+        });
+
+        print obj_save_ref
+
+
         list_forDict = []
 
         if class_list.__len__() == 3:
@@ -422,10 +436,12 @@ This module build a classifier and predict phenotypes based on the classifier
             #neededIndex = [2, 3, self.list_name.__len__() - 2, self.list_name.__len__() -1]
             #neededIndex = [self.list_name.__len__() - 2, self.list_name.__len__() -1]
 
-            try: 
+            try:
                 neededIndex = [DTClf_index, BestClf_index, self.list_name.__len__() - 2, self.list_name.__len__() -1]
             except:
                 neededIndex = [0, self.list_name.__len__() - 2, self.list_name.__len__() -1]
+
+
 
 
             sub_list_name = [self.list_name[i] for i in neededIndex]
@@ -1094,9 +1110,9 @@ This module build a classifier and predict phenotypes based on the classifier
         // Get the element with id="defaultOpen" and click on it
         document.getElementById("defaultOpen").click();
         </script>
-             
+
         </body>
-        </html> 
+        </html>
         """
 
         file.write(html_string)
@@ -1219,7 +1235,7 @@ This module build a classifier and predict phenotypes based on the classifier
             </script>
 
         </body>
-        </html> 
+        </html>
         """
         file.write(html_string)
         file.close()
@@ -1713,7 +1729,7 @@ This module build a classifier and predict phenotypes based on the classifier
             self.classifierTest(DecisionTreeClassifier(random_state=0),"DecisionTreeClassifier", classifier_name+u"_DecisionTreeClassifier", my_mapping, master_Role, splits, train_index, test_index,  all_attributes, all_classifications, class_list, folderhtml1, True)
             self.classifierTest(svm.LinearSVC(random_state=0),"SVM", classifier_name+u"_SVM", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
             self.classifierTest(MLPClassifier(random_state=0),"NeuralNetwork", classifier_name+u"_NeuralNetwork", my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
-            
+
             best_classifier_str = self.to_HTML_Statistics(class_list, classifier_name)
             best_classifier_str = classifier_name+u"_LogisticRegression"
             best_classifier_type = best_classifier_str[classifier_name.__len__() + 1:] #extract just the classifier_type aka. "LogisticRegression" from "myName_LogisticRegression"
@@ -1722,7 +1738,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
 
             self.html_report_1(classifier_type, classifier_name, best_classifier_str= best_classifier_str)
-            
+
             self.tune_Decision_Tree(classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2, best_classifier_str)
             #self.tree_code("doesn't matter") #<-- don't use rn
             self.html_report_2(classifier_name, best_classifier_str)
