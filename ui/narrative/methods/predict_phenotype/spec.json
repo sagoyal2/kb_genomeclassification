@@ -10,15 +10,38 @@
         "output": "no-display"
     },
     "parameters": [
+     {
+          "id": "shock_id",
+          "optional" : false,
+          "advanced" : false,
+          "allow_multiple" : false,
+          "default_values" : [ "" ],
+          "field_type" : "file",
+          "text_options" : {
+            "valid_ws_types" : [ ]
+          }
+        },
         {
-            "id": "classifier_ref",
+        "id": "list_name",
+        "optional": true,
+        "advanced": false,
+        "allow_multiple": false,
+        "default_values": [ "" ],
+        "field_type": "textarea",
+        "textarea_options" : {
+            "n_rows" : 15
+            }
+        },
+    
+        {
+            "id": "classifier_name",
             "optional": false,
             "advanced": false,
             "allow_multiple": false,
             "default_values": [ "" ],
             "field_type": "text",
             "text_options": {
-                "valid_ws_types": [ "KBaseGenomes.Genome" ]
+                "valid_ws_types": [ "KBaseClassifier.GenomeClassifier" ]
             }
         },
         {
@@ -53,12 +76,23 @@
             "method": "predict_phenotype",
             "input_mapping": [
                 {
+                    "input_parameter": "shock_id",
+                    "target_property": "shock_id"
+
+                },
+                {
+                    "input_parameter": "list_name",
+                    "target_property": "list_name"
+
+                },
+                
+                {
                     "narrative_system_variable": "workspace",
                     "target_property": "workspace"
                 },
                 {
-                    "input_parameter": "classifier_ref",
-                    "target_property": "classifier_ref"
+                    "input_parameter": "classifier_name",
+                    "target_property": "classifier_name"
 
                 },
                 {

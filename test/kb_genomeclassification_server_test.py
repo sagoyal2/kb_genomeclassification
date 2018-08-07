@@ -90,6 +90,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         ws_client = Workspace()
     """
 
+    """
     def test_build_classifier(self):
         params = {
         "shock_id": "2dcb9741-df3b-4a3a-8ce4-d8dead1b4127", #2dcb9741-df3b-4a3a-8ce4-d8dead1b4127 #72e5c2c1-217d-462f-a0a1-7fd2c1a59f5c
@@ -103,6 +104,16 @@ class kb_genomeclassificationTest(unittest.TestCase):
         }
 
         self.getImpl().build_classifier(self.getContext(), params)
+    """
+
+    def test_predict_phenotype(self):
+        params = {
+        "shock_id" : "fill in later",
+        "classifier_name" : "GramOut",
+        "workspace" : "janakakbase:narrative_1533153056355" #"janakakbase:narrative_1533153056355" "janakakbase:narrative_1533320423326"
+        }
+
+        self.getImpl().predict_phenotype(self.getContext(), params)
 
     """
     def test_build_classifier(self):

@@ -176,8 +176,8 @@ This module build a classifier and predict phenotypes based on the classifier
             pickle_out.close()
 
 
-            #current_pickle = pickle.dumps(classifier.fit(self.full_attribute_array, self.full_classification_array), protocol=0)
-            #pickled = codecs.encode(current_pickle, "base64").decode()
+            current_pickle = pickle.dumps(classifier.fit(all_attributes, all_classifications), protocol=0)
+            pickled = codecs.encode(current_pickle, "base64").decode()
 
 
             """
@@ -187,47 +187,47 @@ This module build a classifier and predict phenotypes based on the classifier
                     f.write(line)
             """
 
-        pickled = "this is what the pickled string would be"
+            #pickled = "this is what the pickled string would be"
 
-        print ""
-        print "This is printing out the classifier_object that needs to be saved down dump"
-        print ""
+            print ""
+            print "This is printing out the classifier_object that needs to be saved down dump"
+            print ""
 
-        classifier_object = {
-        'classifier_id' : '',
-        'classifier_type' : classifier_type, # Neural network
-        'classifier_name' : classifier_name,
-        'classifier_data' : pickled,
-        'classifier_description' : 'this is my description',
-        'lib_name' : 'sklearn',
-        'attribute_type' : 'functional_roles',
-        'number_of_attributes' : class_list.__len__(),
-        'attribute_data' : ["this is where master_role would go", "just a list"],#master_Role, #master_Role,
-        'class_list_mapping' : my_mapping, #{} my_mapping, #my_mapping,
-        'number_of_genomes' : 0,
-        'training_set_ref' : ''
-        }
+            classifier_object = {
+            'classifier_id' : '',
+            'classifier_type' : classifier_type, # Neural network
+            'classifier_name' : classifier_name,
+            'classifier_data' : pickled,
+            'classifier_description' : 'this is my description',
+            'lib_name' : 'sklearn',
+            'attribute_type' : 'functional_roles',
+            'number_of_attributes' : class_list.__len__(),
+            'attribute_data' : master_Role,#["this is where master_role would go", "just a list"],#master_Role, #master_Role,
+            'class_list_mapping' : my_mapping, #{} my_mapping, #my_mapping,
+            'number_of_genomes' : 0,
+            'training_set_ref' : ''
+            }
 
-        print classifier_object
+            print classifier_object
 
-        #Saving the Classifier object
-        
-        obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
-                                                      'objects':[{
-                                                      'type': 'KBaseClassifier.GenomeClassifier',
-                                                      'data': classifier_object,
-                                                      'name': classifier_name,  
-                                                      'provenance': ctx.get('provenance')  # ctx should be passed into this func.
-                                                      }]
-                                                    })[0]
+            #Saving the Classifier object
+            
+            obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
+                                                          'objects':[{
+                                                          'type': 'KBaseClassifier.GenomeClassifier',
+                                                          'data': classifier_object,
+                                                          'name': classifier_name,  
+                                                          'provenance': ctx.get('provenance')  # ctx should be passed into this func.
+                                                          }]
+                                                        })[0]
 
-        print "I'm print out the obj_save_ref"
-        print ""
-        print ""
-        print ""
+            print "I'm print out the obj_save_ref"
+            print ""
+            print ""
+            print ""
 
-        print obj_save_ref
-        print "done"        
+            print obj_save_ref
+            print "done"        
 
 
         list_forDict = []
@@ -1252,7 +1252,7 @@ This module build a classifier and predict phenotypes based on the classifier
         """
         does: creates an .html file that makes the first report (second app).
         """
-        file = open(u"/kb/module/work/tmp/forHTML/nice_html3.html", u"w")
+        file = open(u"/kb/module/work/tmp/forSecHTML/html3.html", u"w")
 
         html_string = u"""
         <!DOCTYPE html>
@@ -1288,7 +1288,7 @@ This module build a classifier and predict phenotypes based on the classifier
         """
         file.write(html_string)
 
-        another_file = open(u'/kb/module/work/tmp/results.html', u"r")
+        another_file = open(u'/kb/module/work/tmp/forSecHTML/html3folder/results.html', u"r")
         all_str = another_file.read()
         another_file.close()
 
@@ -1301,6 +1301,8 @@ This module build a classifier and predict phenotypes based on the classifier
         file.write(next_str)
 
         file.close()
+
+        return "html3.html"
 
     def printTree(self,tree, pass_name, master_Role, class_list):
         """
@@ -1462,7 +1464,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         return my_all_classifications
 
-    def get_wholeClassification(self, file_path, my_current_ws, for_predict = False):
+    def get_wholeClassification(self, file_path, my_current_ws, master_Role = None, for_predict = False):
 
         file_input = pd.read_excel(file_path) #replace with location of file
         listOfNames = file_input['Genome_ID']
@@ -1517,7 +1519,10 @@ This module build a classifier and predict phenotypes based on the classifier
 
         my_all_attributes = pd.DataFrame.from_dict(data_dict, orient='index', columns = master_Role)
 
-        return my_all_attributes, master_Role
+        if not for_predict:
+            return my_all_attributes, master_Role
+        else:
+            return my_all_attributes
 
     def _valid_params(self, params):
 
@@ -1879,19 +1884,37 @@ This module build a classifier and predict phenotypes based on the classifier
         # return variables are: output
         #BEGIN predict_phenotype
 
-        classifier_name_rn = best_classifier_str
-        #this can be passed in as a key value that the user can select
 
-        with open(u"/kb/module/work/tmp/" + unicode(classifier_name_rn) + u".txt", u"r") as f:
-            still_str = f.read()
+        os.makedirs("/kb/module/work/tmp/forSecHTML/")
+        os.makedirs("/kb/module/work/tmp/forSecHTML/html3folder/")
 
-        after_classifier = pickle.loads(codecs.decode(still_str.encode(), "base64"))
+
+        current_ws = params.get('workspace')
+        classifier_name = params.get('classifier_name')
+
+        classifier_object = self.ws_client.get_objects([{'workspace':current_ws, 'name':classifier_name}])
+
+        base64str = str(classifier_object[0]['data']['classifier_data'])
+        master_Role = classifier_object[0]['data']['attribute_data']
+        my_mapping = classifier_object[0]['data']['class_list_mapping']
+
+
+        after_classifier = pickle.loads(codecs.decode(base64str.encode(), "base64"))
         #should be able to run regular commands like... after_classifier.predict(insert_X)
 
         """
         all_attributes = self.get_mainAttributes(params.get('list_name'), for_predict = True)
         #again here we need to edit how to feed in the inputs
         """
+
+        token = ctx['token']
+
+        file_path = self._download_shock(params.get('shock_id'))
+        #file_path = '/kb/module/data/pnewTrialRun.xlsx'
+        #file_path = '/kb/module/data/prodTrial.xlsx'
+
+
+        all_attributes = self.get_wholeClassification(file_path, current_ws, master_Role = master_Role ,for_predict = True)
 
         after_classifier_result = after_classifier.predict(all_attributes) #replace with all_attributes
 
@@ -1903,12 +1926,12 @@ This module build a classifier and predict phenotypes based on the classifier
         after_classifier_df = pd.DataFrame(after_classifier_result_forDF, index=all_attributes.index)
 
 
-        allProbs = after_classifier.predict_proba(self.full_attribute_array)
+        allProbs = after_classifier.predict_proba(all_attributes)
         maxEZ = np.amax(allProbs, axis=1)
         maxEZ_df = pd.DataFrame(maxEZ, index=all_attributes.index)
 
         predict_table_pd = pd.concat([after_classifier_df, maxEZ_df], axis=1)
-        predict_table_pd.to_html(u'/kb/module/work/tmp/forHTML/results.html')
+        predict_table_pd.to_html(u'/kb/module/work/tmp/forSecHTML/html3folder/results.html')
 
         #you can also save down table as text file or csv
         """
@@ -1919,16 +1942,49 @@ This module build a classifier and predict phenotypes based on the classifier
         predict_table_pd.to_csv(r'/kb/module/work/tmp/pandas.txt', header=None, index=None, sep=' ', mode='a')
         """
 
-        self.html_report_3()
+        htmloutput_name = self.html_report_3()
+
+        uuid_string = str(uuid.uuid4())
+
+        output_directory = '/kb/module/work/tmp/forSecHTML'
+        report_shock_id = self.dfu.file_to_shock({'file_path': output_directory,'pack': 'zip'})['shock_id']
+
+        htmloutput = {
+        'description' : 'htmloutuputdescription',
+        'name' : htmloutput_name,
+        'label' : 'htmloutputlabel',
+        'shock_id': report_shock_id
+        }
+
+        report_params = {'message': '',
+                         'workspace_name': params.get('workspace'),#params.get('input_ws'),
+                         #'objects_created': objects_created,
+                         'html_links': [htmloutput],
+                         'direct_html_link_index': 0,
+                         'html_window_height': 500,
+                         'report_object_name': 'kb_classifier_report_' + str(uuid.uuid4())
+                         }
+
+        kbase_report_client = KBaseReport(self.callback_url, token=token)
+        report_output = kbase_report_client.create_extended_report(report_params)
+
+        output = {'report_name': report_output['name'], 'report_ref': report_output['ref']}
+
+        print('I hope I am working now - this means that I am past the report generation')
+
+        print(output.get('report_name')) # kb_classifier_report_5920d1da-2a99-463b-94a5-6cb8721fca45
+        print(output.get('report_ref')) #19352/1/1
+
 
         #END predict_phenotype
 
         # At some point might do deeper type checking...
-        if not isinstance(output, dict):
+        if not isinstance(report_output, dict):
             raise ValueError('Method predict_phenotype return value ' +
                              'output is not type dict as required.')
         # return the results
-        return [output]
+        return [report_output]
+
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK",
