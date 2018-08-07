@@ -203,7 +203,7 @@ This module build a classifier and predict phenotypes based on the classifier
         'attribute_type' : 'functional_roles',
         'number_of_attributes' : class_list.__len__(),
         'attribute_data' : [],#master_Role, #master_Role,
-        'class_list_mapping' : {} #my_mapping, #my_mapping,
+        'class_list_mapping' : {}, #my_mapping, #my_mapping,
         'number_of_genomes' : 0,
         'training_set_ref' : ''
         }
