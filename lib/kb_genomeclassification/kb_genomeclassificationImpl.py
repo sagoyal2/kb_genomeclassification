@@ -215,8 +215,8 @@ This module build a classifier and predict phenotypes based on the classifier
                                                       'objects':[{
                                                       'type': 'KBaseClassifier.GenomeClassifier',
                                                       'data':  classifier_object,
-                                                      'name': 'FirstClassifierObject',
-                                                      'provenance' : self.provenance
+                                                      'name': 'FirstClassifierObject'
+                                                      #'provenance' : self.provenance
                                                       }]})[0]
 
 
