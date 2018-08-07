@@ -219,7 +219,7 @@ This module build a classifier and predict phenotypes based on the classifier
                                                       #'provenance' : ctx.provenance  # ctx should be passed into this func.
                                                       }]
 
-        });
+        })[0]
 
         print obj_save_ref
 
