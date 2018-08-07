@@ -193,17 +193,17 @@ This module build a classifier and predict phenotypes based on the classifier
         print "This is printing out the classifier_object that needs to be saved down dump"
         print ""
 
-        classifier_object= {
+        classifier_object = {
         'classifier_id' : '',
-        'classifier_type' : classifier_type, # Neural network
-        'classifier_name' : classifier_name,
-        'classifier_data' : pickled,
+        'classifier_type' : 'DecisionTree', # Neural network
+        'classifier_name' : 'FirstSavingClassifier',
+        'classifier_data' : 'base64string',
         'classifier_description' : 'this is my description',
         'lib_name' : 'sklearn',
         'attribute_type' : 'functional_roles',
         'number_of_attributes' : class_list.__len__(),
-        'attribute_data' : 'master_Role go here',#master_Role, #master_Role,
-        'class_list_mapping' : my_mapping, #my_mapping,
+        'attribute_data' : [],#master_Role, #master_Role,
+        'class_list_mapping' : {} #my_mapping, #my_mapping,
         'number_of_genomes' : 0,
         'training_set_ref' : ''
         }
@@ -214,12 +214,11 @@ This module build a classifier and predict phenotypes based on the classifier
         obj_save_ref = self.ws_client.save_objects({'workspace' : 'janakakbase:narrative_1533153056355',
                                                       'objects':[{
                                                       'type': 'KBaseClassifier.GenomeClassifier',
-                                                      'data': classifier_object,
+                                                      'data':  classifier_object,
                                                       'name': 'FirstClassifierObject'
-                                                      #'provenance' : ctx.provenance  # ctx should be passed into this func.
-                                                      }]
+                                                      'provenance' : self.provenance
+                                                      }]})[0]
 
-        })[0]
 
         print obj_save_ref
 
