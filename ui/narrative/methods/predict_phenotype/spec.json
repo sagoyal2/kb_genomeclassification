@@ -1,7 +1,7 @@
 {
     "ver": "0.0.1",
     "authors": [
-        "janakakbase"
+        "janakakbase", "sagoyal"
     ],
     "contact": "https://kbase.us/contact-us/",
     "categories": ["active"],
@@ -45,28 +45,15 @@
             }
         },
         {
-           "id": "phenotype",
+           "id": "phenotypeclass",
            "optional": false,
            "advanced": false,
            "allow_multiple": false,
-           "default_values": [ "Gram type" ],
-           "field_type": "dropdown",
-           "dropdown_options": {
-               "options": [
-                   {
-                     "value": "gram",
-                     "display": "Gram type",
-                     "id": "gram",
-                     "ui_name": "Gram type"
-                   },
-                   {
-                     "value": "resp",
-                     "display": "Respiration type",
-                     "id": "resp",
-                     "ui_name": "Respiration type"
-                   }
-                ]
-            }
+           "default_values": [ "" ],
+           "field_type": "text",
+            "text_options" : {
+            "valid_ws_types" : [ ]
+          }
         }
     ],
     "behavior": {
@@ -96,8 +83,8 @@
 
                 },
                 {
-                    "input_parameter": "phenotype",
-                    "target_property": "phenotype"
+                    "input_parameter": "phenotypeclass",
+                    "target_property": "phenotypeclass"
                 }
             ],
             "output_mapping": [

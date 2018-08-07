@@ -1126,8 +1126,12 @@ This module build a classifier and predict phenotypes based on the classifier
 
         return "dual_12.html"
 
-    def html_nodual(self):
-        file = open(u"/kb/module/work/tmp/forHTML/nodual.html", u"w")
+    def html_nodual(self, location):
+
+        if location == "forHTML":
+            file = open(u"/kb/module/work/tmp/forHTML/nodual.html", u"w")
+        else :
+            file = open(u"/kb/module/work/tmp/forSecHTML/nodual.html", u"w")
 
         html_string = u"""
         <!DOCTYPE html>
@@ -1217,11 +1221,26 @@ This module build a classifier and predict phenotypes based on the classifier
             <div class="tab">
               <button class="tablinks" onclick="openTab(event, 'Overview')" id="defaultOpen">Main Page</button>
           </div>
+        """
+        file.write(html_string)
 
-          <div id="Overview" class="tabcontent">
-              <iframe src="html1folder/html1.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
-          </div>
+        if location == "forHTML":
+            next_str = u"""
+              <div id="Overview" class="tabcontent">
+                  <iframe src="html1folder/html1.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
+              </div>
+              """
+            file.write(next_str)
+        else :
+            next_str = u"""
+              <div id="Overview" class="tabcontent">
+                  <iframe src="html3.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
+              </div>
+              """         
+            file.write(next_str)  
 
+
+        next_str = u"""
           <script>
             function openTab(evt, tabName) {
                 var i, tabcontent, tablinks;
@@ -1243,7 +1262,7 @@ This module build a classifier and predict phenotypes based on the classifier
         </body>
         </html>
         """
-        file.write(html_string)
+        file.write(next_str)
         file.close()
 
         return "nodual.html"
@@ -1284,7 +1303,15 @@ This module build a classifier and predict phenotypes based on the classifier
         </head>
         <body>
 
-        <h1 style="text-align:center;">Prediction of Classifications</h1>
+        <h1 style="text-align:center;">Prediction Results</h1>
+
+        <!-- <h2>Maybe we can add some more text here later?</h2> -->
+        <!--<p>How to create side-by-side images with the CSS float property:</p> -->
+
+        <p style="text-align:center; font-size:160%;">  Here is a simple table that shows the prediction for each sample and the probability of that prediction being correct </p>
+        <p style="text-align:center; font-size:100%;">  (Remember you can always increase the probabilty of the prediction being correct by adding in more data in the build classifier app and then re-running this app. Good Luck!) </p>
+
+
         """
         file.write(html_string)
 
@@ -1779,7 +1806,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
             self.to_HTML_Statistics(class_list, classifier_name)
             self.html_report_1(classifier_type, classifier_name)
-            htmloutput_name = self.html_nodual()
+            htmloutput_name = self.html_nodual("forHTML")
 
         """
         fileoutput1 = {
@@ -1891,6 +1918,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         current_ws = params.get('workspace')
         classifier_name = params.get('classifier_name')
+        target = params.get('phenotypeclass')
 
         classifier_object = self.ws_client.get_objects([{'workspace':current_ws, 'name':classifier_name}])
 
@@ -1923,12 +1951,12 @@ This module build a classifier and predict phenotypes based on the classifier
         for current_result in after_classifier_result:
             after_classifier_result_forDF.extend(my_mapping.keys()[my_mapping.values().index(current_result)])
 
-        after_classifier_df = pd.DataFrame(after_classifier_result_forDF, index=all_attributes.index)
+        after_classifier_df = pd.DataFrame(after_classifier_result_forDF, index=all_attributes.index, columns=[target])
 
 
         allProbs = after_classifier.predict_proba(all_attributes)
         maxEZ = np.amax(allProbs, axis=1)
-        maxEZ_df = pd.DataFrame(maxEZ, index=all_attributes.index)
+        maxEZ_df = pd.DataFrame(maxEZ, index=all_attributes.index, columns=["probability"])
 
         predict_table_pd = pd.concat([after_classifier_df, maxEZ_df], axis=1)
         predict_table_pd.to_html(u'/kb/module/work/tmp/forSecHTML/html3folder/results.html')
@@ -1941,8 +1969,8 @@ This module build a classifier and predict phenotypes based on the classifier
         #csv
         predict_table_pd.to_csv(r'/kb/module/work/tmp/pandas.txt', header=None, index=None, sep=' ', mode='a')
         """
-
-        htmloutput_name = self.html_report_3()
+        self.html_report_3()
+        htmloutput_name = self.html_nodual("forSecHTML")
 
         uuid_string = str(uuid.uuid4())
 
