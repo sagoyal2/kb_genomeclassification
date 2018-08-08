@@ -167,7 +167,7 @@ This module build a classifier and predict phenotypes based on the classifier
                     cnf_matrix_f[i][j] += cnf_f[i][j]
 
         if print_cfm:
-            pickle_out = open(u"/kb/module/work/tmp/forDATA/" + unicode(classifier_name) + u".pickle", u"wb")
+            pickle_out = open(u"/kb/module/work/tmp/forHTML/forDATA/" + unicode(classifier_name) + u".pickle", u"wb")
 
             #pickle_out = open("/kb/module/work/tmp/" + str(self.classifier_name) + ".pickle", "wb")
 
@@ -772,34 +772,34 @@ This module build a classifier and predict phenotypes based on the classifier
             next_str = u"""
         <div class="row">
           <div class="column">
-              <p style="text-align:left; font-size:160%;">K-Nearest-Neighbors Classifier</p>
+              <p style="text-align:left; font-size:160%;">K-Nearest-Neighbors Classifier <a href="../forDATA/""" + classifier_name + """_KNeighborsClassifier.pickle" download> (Download) </a> </p>
             <img src=" """+classifier_name +"""_KNeighborsClassifier.png" alt="Snow" style="width:100%">
               <!-- <figcaption>Fig.1 - Trulli, Puglia, Italy.</figcaption> -->
           </div>
           <div class="column">
-              <p style="text-align:left; font-size:160%;">Logistic Regression Classifier</p>
+              <p style="text-align:left; font-size:160%;">Logistic Regression Classifier <a href="../forDATA/""" + classifier_name + """_LogisticRegression.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +"""_LogisticRegression.png" alt="Snow" style="width:100%">
           </div>
         </div>
 
         <div class="row">
           <div class="column">
-              <p style="text-align:left; font-size:160%;">Naive Gaussian Bayes Classifier</p>
+              <p style="text-align:left; font-size:160%;">Naive Gaussian Bayes Classifier <a href="../forDATA/""" + classifier_name + """_GaussianNB.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +"""_GaussianNB.png" alt="Snow" style="width:100%">
           </div>
           <div class="column">
-              <p style="text-align:left; font-size:160%;">Linear SVM Classifier</p>
+              <p style="text-align:left; font-size:160%;">Linear SVM Classifier <a href="../forDATA/""" + classifier_name + """_SVM.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +"""_SVM.png" alt="Snow" style="width:100%">
           </div>
         </div>
 
         <div class="row">
           <div class="column">
-              <p style="text-align:left; font-size:160%;">Decision Tree Classifier</p>
+              <p style="text-align:left; font-size:160%;">Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
           </div>
           <div class="column">
-              <p style="text-align:left; font-size:160%;">Neural Network Classifier</p>
+              <p style="text-align:left; font-size:160%;">Neural Network Classifier <a href="../forDATA/""" + classifier_name + """_NeuralNetwork.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +"""_NeuralNetwork.png" alt="Snow" style="width:100%">
           </div>
         </div>
@@ -828,7 +828,7 @@ This module build a classifier and predict phenotypes based on the classifier
             next_str = u"""
             <div class="row">
           <div class="column">
-            <p style="text-align:left; font-size:160%;">""" + classifier_type + """</p>
+            <p style="text-align:left; font-size:160%;">""" + classifier_type + """ <a href="../forDATA/""" + classifier_name + """.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +""".png" alt="Snow" style="width:100%">
           </div>
           <div class="column">
@@ -926,7 +926,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         <div class="row">
           <div class="column">
-              <p style="text-align:left; font-size:160%;"> Decision Tree Classifier </p>
+              <p style="text-align:left; font-size:160%;"> Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +""".png" alt="Snow" style="width:100%">
           </div>
         """
@@ -940,11 +940,11 @@ This module build a classifier and predict phenotypes based on the classifier
 
             <div class="row">
                 <div class="column">
-                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Gini </p>
+                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Gini <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_gini.pickle" download> (Download) </a> </p>
                     <img src=" """+ classifier_name +"""_DecisionTreeClassifier_gini.png" alt="Snow" style="width:100%">
                 </div>
                 <div class="column">
-                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Entropy </p>
+                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Entropy <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_entropy.pickle" download> (Download) </a> </p>
                     <img src=" """+ classifier_name +"""_DecisionTreeClassifier_entropy.png" alt="Snow" style="width:100%">
                 </div>
             </div>
@@ -956,18 +956,18 @@ This module build a classifier and predict phenotypes based on the classifier
 
             next_str = u"""
                 <div class="column">
-                    <p style="text-align:left; font-size:160%;"> Logistic Regression Classifier </p>
+                    <p style="text-align:left; font-size:160%;"> """+ best_classifier_str + """ <a href="../forDATA/""" + best_classifier_str + """.pickle" download> (Download) </a> </p>
                     <img src=" """+ best_classifier_str + """.png" alt="Snow" style="width:100%">
                 </div>
             </div>
 
             <div class="row">
                 <div class="column">
-                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Gini </p>
+                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Gini <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_gini.pickle" download> (Download) </a> </p>
                     <img src=" """+ classifier_name +"""_DecisionTreeClassifier_gini.png" alt="Snow" style="width:100%">
                 </div>
                 <div class="column">
-                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Entropy </p>
+                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Entropy <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_entropy.pickle" download> (Download) </a> </p>
                     <img src=" """+ classifier_name +"""_DecisionTreeClassifier_entropy.png" alt="Snow" style="width:100%">
                 </div>
             </div>
@@ -1801,7 +1801,7 @@ This module build a classifier and predict phenotypes based on the classifier
         os.makedirs("/kb/module/work/tmp/forHTML/")
         os.makedirs("/kb/module/work/tmp/forHTML/html1folder/")
         os.makedirs("/kb/module/work/tmp/forHTML/html2folder/")
-        os.makedirs("/kb/module/work/tmp/forDATA/")
+        os.makedirs("/kb/module/work/tmp/forHTML/forDATA/")
 
         print 'fdsafds'
         print params

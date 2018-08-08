@@ -99,7 +99,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "classifier": "DecisionTreeClassifier",#run_all DecisionTreeClassifier LogisticRegression
         "attribute": "functional_roles",
         "save_ts": 0,
-        "classifier_out": "GramOut22",
+        "classifier_out": "GramOutSaving3",
         "workspace" : "sagoyal:narrative_1533659119242" #"janakakbase:narrative_1533153056355" "janakakbase:narrative_1533320423326"
         }
 
