@@ -1387,8 +1387,9 @@ This module build a classifier and predict phenotypes based on the classifier
         output = kbase_report_client.create_extended_report(report_params)
         return output
 
+    """
     def get_mainAttributes(self,my_input, my_current_ws, for_predict = False):
-        """
+        
         args:
         ---my_input is either a list of the names of the genomes in format "name1,name2" or "all" meaning everything in workspace will get used
         does:
@@ -1397,7 +1398,7 @@ This module build a classifier and predict phenotypes based on the classifier
             ---Colmuns are "master Role" which is a list of the all functional roles
         return:
         ---returns the dataframe which contains all_attributes (this is the X matrix for ML)
-        """
+        
 
         #current_ws = os.environ['KB_WORKSPACE_ID']
         print my_input
@@ -1469,9 +1470,71 @@ This module build a classifier and predict phenotypes based on the classifier
         my_all_attributes = pd.DataFrame.from_dict(data_dict, orient='index', columns = master_Role)
 
         return my_all_attributes, master_Role
+    """
+    
+    def incaseList_Names(self, list_name, for_predict = False):
 
+        #clean list_name to get rid of user formatting
+        #list_name = unicode(list_name)
+
+        list_name = list_name.replace("\"", "")
+        list_name = list_name.replace(", ", "\t")
+        #list_name = list_name.replace("-", "\t")
+
+        working_str = list_name.split("\\n")
+
+        print(working_str) #['Genome_ID\tClassification', '262543.4\tfacultative', '1134785.3\tfacultative', '216432.3\taerobic', '269798.12\taerobic', '309807.19\taerobic', '411154.5\taerobic', '485917.5\taerobic', '485918.5\taerobic', '457391.3\tanaerobic', '470145.6\tanaerobic', '665954.3\tanaerobic', '679190.3\tanaerobic']
+
+        #open(u'kb/module/work/tmp/trialoutput.txt', u'w')
+        tem_file = codecs.open(u"/kb/module/work/tmp/trialoutput.txt", u"w", 'utf-8')
+        for index in working_str:
+            #print(index, file=tem_file)
+            print index
+            print >>tem_file, index
+
+        print "before closing"
+
+        tem_file.close()
+
+        if not for_predict:
+            print "I'm inside the if not for_predict"
+            my_workPD = pd.read_csv(u"/kb/module/work/tmp/trialoutput.txt", delimiter="\s+")
+            print my_workPD
+        else: 
+            my_workPD = pd.read_csv(u"/kb/module/work/tmp/trialoutput.txt")
+
+        os.remove(u"/kb/module/work/tmp/trialoutput.txt")
+
+        return my_workPD
+
+        #print(my_workPD)
+        #print(type(my_workPD.index[0]))
+        #print(my_workPD.loc[['262543.40'],['Classification']])
+
+
+
+
+    def intake_method(self, just_DF, for_predict = False):
+
+        my_all_classifications = just_DF
+
+        print my_all_classifications
+        print my_all_classifications.columns.values.tolist()
+
+        my_all_classifications.set_index('Genome_ID', inplace=True)
+
+        print "Below is my_all_classifications"
+
+        print my_all_classifications
+
+        if not for_predict:
+            return my_all_classifications.index, my_all_classifications
+        else:
+            return my_all_classifications.index
+
+    """
     def get_mainClassification(self, file_path):
-        """
+        
         args:
         ---file_path is a path that holds the path of where the excel file is located (given as input by the user)
         does:
@@ -1479,7 +1542,7 @@ This module build a classifier and predict phenotypes based on the classifier
             ---it creates another dataframe with only classifications and rows as "index" which are genome names (my_input)
         return:
         ---the dataframe with all_classifications (essentially the Y variable for ML)
-        """
+        
 
         #figure out how to read in xls file
         my_all_classifications = pd.read_excel(file_path) #replace with location of file
@@ -1490,11 +1553,12 @@ This module build a classifier and predict phenotypes based on the classifier
         print my_all_classifications
 
         return my_all_classifications
+    """
 
-    def get_wholeClassification(self, file_path, my_current_ws, master_Role = None, for_predict = False):
+    def get_wholeClassification(self, listOfNames, my_current_ws, master_Role = None, for_predict = False):
 
-        file_input = pd.read_excel(file_path) #replace with location of file
-        listOfNames = file_input['Genome_ID']
+        #file_input = pd.read_excel(file_path) #replace with location of file
+        #listOfNames = file_input['Genome_ID']
 
         current_ws = my_current_ws
 
@@ -1662,7 +1726,20 @@ This module build a classifier and predict phenotypes based on the classifier
 
         print params
 
-        file_path = self._download_shock(params.get('shock_id'))
+        current_ws = params.get('workspace')
+
+        if params.get('list_name'):
+            #checks if empty string bool("") --> False
+            print ("taking this path rn")
+            toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
+            listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
+            all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
+        else:
+            file_path = self._download_shock(params.get('shock_id'))
+            listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
+            all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
+
+        #file_path = self._download_shock(params.get('shock_id'))
         #file_path = '/kb/module/data/newTrialRun.xlsx'
         #file_path = '/kb/module/data/prodTrial.xlsx'
 
@@ -1673,11 +1750,10 @@ This module build a classifier and predict phenotypes based on the classifier
         all_classifications = self.get_mainClassification(file_path)
 
         full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
-        """ 
-        current_ws = params.get('workspace')
+        """
 
-        all_attributes, master_Role = self.get_wholeClassification(file_path, current_ws)
-        all_classifications = self.get_mainClassification(file_path)
+        #all_attributes, master_Role = self.get_wholeClassification(file_path, current_ws)
+        #all_classifications = self.get_mainClassification(file_path)
 
         full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
 
@@ -1915,7 +1991,6 @@ This module build a classifier and predict phenotypes based on the classifier
         os.makedirs("/kb/module/work/tmp/forSecHTML/")
         os.makedirs("/kb/module/work/tmp/forSecHTML/html3folder/")
 
-
         current_ws = params.get('workspace')
         classifier_name = params.get('classifier_name')
         target = params.get('phenotypeclass')
@@ -1941,8 +2016,23 @@ This module build a classifier and predict phenotypes based on the classifier
         #file_path = '/kb/module/data/pnewTrialRun.xlsx'
         #file_path = '/kb/module/data/prodTrial.xlsx'
 
+        print params
 
-        all_attributes = self.get_wholeClassification(file_path, current_ws, master_Role = master_Role ,for_predict = True)
+        if params.get('list_name'):
+            #checks if empty string bool("") --> False
+            toEdit_all_classifications = self.incaseList_Names(params.get('list_name'), for_predict = True)
+            listOfNames = self.intake_method(toEdit_all_classifications, for_predict = True)
+            all_attributes = self.get_wholeClassification(listOfNames, current_ws, master_Role = master_Role ,for_predict = True)
+        else:
+            file_path = self._download_shock(params.get('shock_id'))
+            listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
+            all_attributes = self.get_wholeClassification(listOfNames, current_ws, master_Role = master_Role ,for_predict = True)
+
+
+
+
+
+        #all_attributes = self.get_wholeClassification(file_path, current_ws, master_Role = master_Role ,for_predict = True)
 
         after_classifier_result = after_classifier.predict(all_attributes) #replace with all_attributes
 

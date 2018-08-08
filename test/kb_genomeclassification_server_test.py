@@ -90,34 +90,43 @@ class kb_genomeclassificationTest(unittest.TestCase):
         ws_client = Workspace()
     """
 
-    """
+    
     def test_build_classifier(self):
         params = {
         "shock_id": "2dcb9741-df3b-4a3a-8ce4-d8dead1b4127", #2dcb9741-df3b-4a3a-8ce4-d8dead1b4127 #72e5c2c1-217d-462f-a0a1-7fd2c1a59f5c
-        "list_name": "262543.4,216432.3,269798.12,309807.19,411154.5,485917.5,485918.5,457391.3,470145.6,665954.3,679190.3",
+        "list_name": "Genome_ID Classification\ngenBankGO   N\nNC_003197    P\nShewanella_ondeisensis_MR-1_GenBank  N",#"Genome_ID Classification\ngenBankGO   N\nNC_003197    P",#\nShewanella_ondeisensis_MR-1_GenBank  N",#"",
         "phenotypeclass": "Gram_Stain", #you can name this whatever it doesn't matter
         "classifier": "DecisionTreeClassifier",#run_all DecisionTreeClassifier LogisticRegression
         "attribute": "functional_roles",
         "save_ts": 0,
-        "classifier_out": "GramOut",
-        "workspace" : "janakakbase:narrative_1533153056355" #"janakakbase:narrative_1533153056355" "janakakbase:narrative_1533320423326"
+        "classifier_out": "GramOut22",
+        "workspace" : "sagoyal:narrative_1533659119242" #"janakakbase:narrative_1533153056355" "janakakbase:narrative_1533320423326"
         }
 
         self.getImpl().build_classifier(self.getContext(), params)
     """
+    """
 
+    """
+
+    "Genome_ID    Classification\n262543.4    facultative\n1134785.3  facultative\n216432.3   aerobic\n269798.12  aerobic\n309807.19  aerobic\n411154.5   aerobic\n485917.5   aerobic\n485918.5   aerobic\n457391.3   anaerobic\n470145.6 anaerobic\n665954.3 anaerobic\n679190.3 anaerobic"
+    "262543.4,216432.3,269798.12,309807.19,411154.5,485917.5,485918.5,457391.3,470145.6,665954.3,679190.3",
+    """
+
+
+    """
     def test_predict_phenotype(self):
         params = {
         "shock_id" : "8f55c4b4-750f-40c4-a973-f2c98825a18e",
-        "list_name" : "",
-        "classifier_name" : "myOutPutName",
+        "list_name" : "Genome_ID\ngenBankGO\nNC_003197",#\nShewanella_ondeisensis_MR-1_GenBank",#"",
+        "classifier_name" : "GramOut",
         "phenotypeclass" : "I'm predicting this",
         "workspace" : "sagoyal:narrative_1533659119242" #"janakakbase:narrative_1533153056355" "janakakbase:narrative_1533320423326"
         }
 
         self.getImpl().predict_phenotype(self.getContext(), params)
 
-    """
+    
     def test_build_classifier(self):
         #result = self.getImpl() #impl_kb_genomeclassification = kb_genomeclassification(u"Metabolism")
         print("this first part is about to begin")
