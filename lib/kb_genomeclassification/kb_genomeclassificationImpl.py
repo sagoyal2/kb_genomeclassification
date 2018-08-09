@@ -724,7 +724,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
             os.system(u'dot -Tpng /kb/module/work/tmp/dotFolder/niceTree.dot >  '+ u"/kb/module/work/tmp/forHTML/html2folder/" + name + u'.png ')
 
-    def html_report_1(self, classifier_type, classifier_name, best_classifier_str = None):
+    def html_report_1(self, global_target, classifier_type, classifier_name, best_classifier_str = None):
         """
         does: creates an .html file that makes the frist report (first app).
         """
@@ -760,46 +760,84 @@ This module build a classifier and predict phenotypes based on the classifier
         </head>
         <body>
 
-        <h1 style="text-align:center;">Metabolic Respiration Classifier</h1>
-
-        <p style="text-align:center; font-size:160%;">  Prediction of respiration type based on classifiers depicted in the form of confusion matrices.  A.) K-Nearest-Neighbors Classifier B. ) Naive Gaussian Bayes Classifier C.) , Logistic Regression Classifier and the D.) Decision Tree Classifier E.) Linear SVM, F.) Neural Network</p>
-        <h2> Disclaimer:No feature selection and parameter optimization was not done</h2>
-        """
+        <h1 style="text-align:center;">""" + global_target + """Classifier</h1> """
 
         file.write(html_string)
+
+        if classifier_type == u"run_all":
+            
+            next_str = u"""
+            <p style="text-align:center; font-size:160%;">  Prediction of respiration type based on classifiers depicted in the form of confusion matrices*. 
+            A.) K-Nearest-Neighbors Classifier,  
+            B.) Logistic Regression Classifier,
+            C.) Naive Gaussian Bayes Classifier,
+            D.) Linear Support Vector Machine (SVM) Classifier,
+            E.) Decision Tree Classifier,  
+            F.) Neural Network Classifier</p>
+            <h2> Disclaimer:No feature selection and parameter optimization was not done</h2>
+            """
+
+            file.write(next_str)
+
+        else :
+
+            next_str = u"""
+            <p style="text-align:center; font-size:160%;">  Prediction of respiration type based on classifiers depicted in the form of confusion matrices*. <br/>
+             A.) """ + classifier_type + """</p>  
+            <h2> Disclaimer:No feature selection and parameter optimization was not done</h2>
+            """
+
+            file.write(next_str)
+
+        next_str = u"""
+        <p style="font-size:110%;"> 
+        * A confusion matrix is a table that is used to describe the performance of a classifier
+        on a set of test data for which the true values are known - showing the comparision between the predicted labels and true labels. (In our case we used 
+        K-fold Cross Validation and the below confusion matrices represent the "average" of k-folds.) 
+        The number in each cell of the confusion matrix is the percentage of samples with a certain label. Confusion matrices are read by row. 
+        For example: ___number %___ of the ___row[0] lable___ were predicted as being ___column[0] lable___.
+        A strong classifier is one that has a central diagonal with the highest percentages, meaning that the majority of the predicted labels match the true label.
+        </p>,
+
+        <br/>
+
+        <p style="font-size:110%;">**Furthermore each classifer is available to download via the Download link in a .pickle format (sklearn classifiers)</p>
+        """
+
+        file.write(next_str)
 
         if classifier_type == u"run_all":
             next_str = u"""
         <div class="row">
           <div class="column">
-              <p style="text-align:left; font-size:160%;">K-Nearest-Neighbors Classifier <a href="../forDATA/""" + classifier_name + """_KNeighborsClassifier.pickle" download> (Download) </a> </p>
-            <img src=" """+classifier_name +"""_KNeighborsClassifier.png" alt="Snow" style="width:100%">
+              <p style="text-align:left; font-size:160%;">A.) K-Nearest-Neighbors Classifier <a href="../forDATA/""" + classifier_name + """_KNeighborsClassifier.pickle" download> (Download) </a> </p>
+            <img src=" """+ classifier_name +"""_KNeighborsClassifier.png" alt="Snow" style="width:100%">
               <!-- <figcaption>Fig.1 - Trulli, Puglia, Italy.</figcaption> -->
           </div>
           <div class="column">
-              <p style="text-align:left; font-size:160%;">Logistic Regression Classifier <a href="../forDATA/""" + classifier_name + """_LogisticRegression.pickle" download> (Download) </a> </p>
+              <p style="text-align:left; font-size:160%;">B.) Logistic Regression Classifier <a href="../forDATA/""" + classifier_name + """_LogisticRegression.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +"""_LogisticRegression.png" alt="Snow" style="width:100%">
           </div>
         </div>
 
         <div class="row">
           <div class="column">
-              <p style="text-align:left; font-size:160%;">Naive Gaussian Bayes Classifier <a href="../forDATA/""" + classifier_name + """_GaussianNB.pickle" download> (Download) </a> </p>
+              <p style="text-align:left; font-size:160%;">C.) Naive Gaussian Bayes Classifier <a href="../forDATA/""" + classifier_name + """_GaussianNB.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +"""_GaussianNB.png" alt="Snow" style="width:100%">
           </div>
           <div class="column">
-              <p style="text-align:left; font-size:160%;">Linear SVM Classifier <a href="../forDATA/""" + classifier_name + """_SVM.pickle" download> (Download) </a> </p>
+              <p style="text-align:left; font-size:160%;">D.) Linear Support Vector Machine (SVM) Classifier <a href="../forDATA/""" + classifier_name + """_SVM.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +"""_SVM.png" alt="Snow" style="width:100%">
           </div>
         </div>
 
         <div class="row">
           <div class="column">
-              <p style="text-align:left; font-size:160%;">Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier.pickle" download> (Download) </a> </p>
+              <p style="text-align:left; font-size:160%;">E.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
           </div>
           <div class="column">
-              <p style="text-align:left; font-size:160%;">Neural Network Classifier <a href="../forDATA/""" + classifier_name + """_NeuralNetwork.pickle" download> (Download) </a> </p>
+              <p style="text-align:left; font-size:160%;">F.) Neural Network Classifier <a href="../forDATA/""" + classifier_name + """_NeuralNetwork.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +"""_NeuralNetwork.png" alt="Snow" style="width:100%">
           </div>
         </div>
@@ -808,6 +846,8 @@ This module build a classifier and predict phenotypes based on the classifier
 
             next_str = u"""
             <p style="font-size:160%;">Comparison of statistics in the form of Accuracy, Precision, Recall and F1 Score calculated against the confusion matrices of respiration type for the classifiers</p>
+            <p style="font-size:100%;">Defintion of key statistics: Accuracy - how often is the classifier correct, Precision - when predition is positive how often is it correct, 
+            Recall - when the condition is correct how often is it correct, F1 Score - This is a weighted average of recall and precision </p>               
             """
             file.write(next_str)
 
@@ -828,7 +868,7 @@ This module build a classifier and predict phenotypes based on the classifier
             next_str = u"""
             <div class="row">
           <div class="column">
-            <p style="text-align:left; font-size:160%;">""" + classifier_type + """ <a href="../forDATA/""" + classifier_name + """.pickle" download> (Download) </a> </p>
+            <p style="text-align:left; font-size:160%;">A.) """ + classifier_type + """ <a href="../forDATA/""" + classifier_name + """.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +""".png" alt="Snow" style="width:100%">
           </div>
           <div class="column">
@@ -837,6 +877,8 @@ This module build a classifier and predict phenotypes based on the classifier
 
             next_str = u"""
             <p style="font-size:160%;">Comparison of statistics in the form of Accuracy, Precision, Recall and F1 Score calculated against the confusion matrices of respiration type for the classifiers</p>
+            <p style="font-size:100%;">Defintion of key statistics: Accuracy - how often is the classifier correct, Precision - when predition is positive how often is it correct, 
+            Recall - when the condition is correct how often is it correct, F1 Score - This is a weighted average of recall and precision </p>            
             """
             file.write(next_str)
 
@@ -856,7 +898,7 @@ This module build a classifier and predict phenotypes based on the classifier
         <a href="../html2folder/html2.html">Second html page</a>
         """
 
-        file.write(next_str)
+        #file.write(next_str)
 
         file.close()
 
@@ -1852,7 +1894,7 @@ This module build a classifier and predict phenotypes based on the classifier
             self.classifierTest(ctx, current_ws, self.whichClassifier(best_classifier_type),best_classifier_type, classifier_name+u"_" + best_classifier_type, my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2, True)
 
 
-            self.html_report_1(classifier_type, classifier_name, best_classifier_str= best_classifier_str)
+            self.html_report_1(global_target, classifier_type, classifier_name, best_classifier_str= best_classifier_str)
 
             self.tune_Decision_Tree(ctx, current_ws, classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2, best_classifier_str)
             #self.tree_code("doesn't matter") #<-- don't use rn
@@ -1863,7 +1905,7 @@ This module build a classifier and predict phenotypes based on the classifier
             self.classifierTest(ctx, current_ws, self.whichClassifier(classifier_type),classifier_type, classifier_name, my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
 
             self.to_HTML_Statistics(class_list, classifier_name)
-            self.html_report_1(classifier_type, classifier_name)
+            self.html_report_1(global_target, classifier_type, classifier_name)
 
             self.tune_Decision_Tree(ctx, current_ws, classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2)
             self.html_report_2(classifier_name)
@@ -1881,7 +1923,7 @@ This module build a classifier and predict phenotypes based on the classifier
             self.classifierTest(ctx, current_ws, self.whichClassifier(classifier_type),classifier_type, classifier_name, my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
 
             self.to_HTML_Statistics(class_list, classifier_name)
-            self.html_report_1(classifier_type, classifier_name)
+            self.html_report_1(global_target, classifier_type, classifier_name)
             htmloutput_name = self.html_nodual("forHTML")
 
         """
