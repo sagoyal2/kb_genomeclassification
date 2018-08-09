@@ -167,7 +167,7 @@ This module build a classifier and predict phenotypes based on the classifier
                     cnf_matrix_f[i][j] += cnf_f[i][j]
 
         if print_cfm:
-            pickle_out = open(u"/kb/module/work/tmp/forDATA/" + unicode(classifier_name) + u".pickle", u"wb")
+            pickle_out = open(u"/kb/module/work/tmp/forHTML/forDATA/" + unicode(classifier_name) + u".pickle", u"wb")
 
             #pickle_out = open("/kb/module/work/tmp/" + str(self.classifier_name) + ".pickle", "wb")
 
@@ -724,7 +724,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
             os.system(u'dot -Tpng /kb/module/work/tmp/dotFolder/niceTree.dot >  '+ u"/kb/module/work/tmp/forHTML/html2folder/" + name + u'.png ')
 
-    def html_report_1(self, classifier_type, classifier_name, best_classifier_str = None):
+    def html_report_1(self, global_target, classifier_type, classifier_name, best_classifier_str = None):
         """
         does: creates an .html file that makes the frist report (first app).
         """
@@ -760,46 +760,84 @@ This module build a classifier and predict phenotypes based on the classifier
         </head>
         <body>
 
-        <h1 style="text-align:center;">Metabolic Respiration Classifier</h1>
-
-        <p style="text-align:center; font-size:160%;">  Prediction of respiration type based on classifiers depicted in the form of confusion matrices.  A.) K-Nearest-Neighbors Classifier B. ) Naive Gaussian Bayes Classifier C.) , Logistic Regression Classifier and the D.) Decision Tree Classifier E.) Linear SVM, F.) Neural Network</p>
-        <h2> Disclaimer:No feature selection and parameter optimization was not done</h2>
-        """
+        <h1 style="text-align:center;">""" + global_target + """ Classifier</h1> """
 
         file.write(html_string)
+
+        if classifier_type == u"run_all":
+            
+            next_str = u"""
+            <p style="text-align:center; font-size:160%;">  Prediction of respiration type based on classifiers depicted in the form of confusion matrices*. 
+            A.) K-Nearest-Neighbors Classifier,  
+            B.) Logistic Regression Classifier,
+            C.) Naive Gaussian Bayes Classifier,
+            D.) Linear Support Vector Machine (SVM) Classifier,
+            E.) Decision Tree Classifier,  
+            F.) Neural Network Classifier</p>
+            <h2> Disclaimer:No feature selection and parameter optimization was not done</h2>
+            """
+
+            file.write(next_str)
+
+        else :
+
+            next_str = u"""
+            <p style="text-align:center; font-size:160%;">  Prediction of respiration type based on classifiers depicted in the form of confusion matrices*. <br/>
+             A.) """ + classifier_type + """</p>  
+            <h2> Disclaimer:No feature selection and parameter optimization was not done</h2>
+            """
+
+            file.write(next_str)
+
+        next_str = u"""
+        <p style="font-size:110%;"> 
+        * A confusion matrix is a table that is used to describe the performance of a classifier
+        on a set of test data for which the true values are known - showing the comparision between the predicted labels and true labels. (In our case we used 
+        K-fold Cross Validation and the below confusion matrices represent the "average" of k-folds.) 
+        The number in each cell of the confusion matrix is the percentage of samples with a certain label. Confusion matrices are read by row. 
+        For example: ___number %___ of the ___row[0] lable___ were predicted as being ___column[0] lable___.
+        A strong classifier is one that has a central diagonal with the highest percentages, meaning that the majority of the predicted labels match the true label.
+        </p>,
+
+        <br/>
+
+        <p style="font-size:110%;">**Furthermore each classifer is available to download via the Download link in a .pickle format (sklearn classifiers)</p>
+        """
+
+        file.write(next_str)
 
         if classifier_type == u"run_all":
             next_str = u"""
         <div class="row">
           <div class="column">
-              <p style="text-align:left; font-size:160%;">K-Nearest-Neighbors Classifier</p>
-            <img src=" """+classifier_name +"""_KNeighborsClassifier.png" alt="Snow" style="width:100%">
+              <p style="text-align:left; font-size:160%;">A.) K-Nearest-Neighbors Classifier <a href="../forDATA/""" + classifier_name + """_KNeighborsClassifier.pickle" download> (Download) </a> </p>
+            <img src=" """+ classifier_name +"""_KNeighborsClassifier.png" alt="Snow" style="width:100%">
               <!-- <figcaption>Fig.1 - Trulli, Puglia, Italy.</figcaption> -->
           </div>
           <div class="column">
-              <p style="text-align:left; font-size:160%;">Logistic Regression Classifier</p>
+              <p style="text-align:left; font-size:160%;">B.) Logistic Regression Classifier <a href="../forDATA/""" + classifier_name + """_LogisticRegression.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +"""_LogisticRegression.png" alt="Snow" style="width:100%">
           </div>
         </div>
 
         <div class="row">
           <div class="column">
-              <p style="text-align:left; font-size:160%;">Naive Gaussian Bayes Classifier</p>
+              <p style="text-align:left; font-size:160%;">C.) Naive Gaussian Bayes Classifier <a href="../forDATA/""" + classifier_name + """_GaussianNB.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +"""_GaussianNB.png" alt="Snow" style="width:100%">
           </div>
           <div class="column">
-              <p style="text-align:left; font-size:160%;">Linear SVM Classifier</p>
+              <p style="text-align:left; font-size:160%;">D.) Linear Support Vector Machine (SVM) Classifier <a href="../forDATA/""" + classifier_name + """_SVM.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +"""_SVM.png" alt="Snow" style="width:100%">
           </div>
         </div>
 
         <div class="row">
           <div class="column">
-              <p style="text-align:left; font-size:160%;">Decision Tree Classifier</p>
+              <p style="text-align:left; font-size:160%;">E.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
           </div>
           <div class="column">
-              <p style="text-align:left; font-size:160%;">Neural Network Classifier</p>
+              <p style="text-align:left; font-size:160%;">F.) Neural Network Classifier <a href="../forDATA/""" + classifier_name + """_NeuralNetwork.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +"""_NeuralNetwork.png" alt="Snow" style="width:100%">
           </div>
         </div>
@@ -808,6 +846,8 @@ This module build a classifier and predict phenotypes based on the classifier
 
             next_str = u"""
             <p style="font-size:160%;">Comparison of statistics in the form of Accuracy, Precision, Recall and F1 Score calculated against the confusion matrices of respiration type for the classifiers</p>
+            <p style="font-size:100%;">Defintion of key statistics: Accuracy - how often is the classifier correct, Precision - when predition is positive how often is it correct, 
+            Recall - when the condition is correct how often is it correct, F1 Score - This is a weighted average of recall and precision </p>               
             """
             file.write(next_str)
 
@@ -828,7 +868,7 @@ This module build a classifier and predict phenotypes based on the classifier
             next_str = u"""
             <div class="row">
           <div class="column">
-            <p style="text-align:left; font-size:160%;">""" + classifier_type + """</p>
+            <p style="text-align:left; font-size:160%;">A.) """ + classifier_type + """ <a href="../forDATA/""" + classifier_name + """.pickle" download> (Download) </a> </p>
             <img src=" """+ classifier_name +""".png" alt="Snow" style="width:100%">
           </div>
           <div class="column">
@@ -837,6 +877,8 @@ This module build a classifier and predict phenotypes based on the classifier
 
             next_str = u"""
             <p style="font-size:160%;">Comparison of statistics in the form of Accuracy, Precision, Recall and F1 Score calculated against the confusion matrices of respiration type for the classifiers</p>
+            <p style="font-size:100%;">Defintion of key statistics: Accuracy - how often is the classifier correct, Precision - when predition is positive how often is it correct, 
+            Recall - when the condition is correct how often is it correct, F1 Score - This is a weighted average of recall and precision </p>            
             """
             file.write(next_str)
 
@@ -856,11 +898,11 @@ This module build a classifier and predict phenotypes based on the classifier
         <a href="../html2folder/html2.html">Second html page</a>
         """
 
-        file.write(next_str)
+        #file.write(next_str)
 
         file.close()
 
-    def html_report_2(self, classifier_name, best_classifier_str = None):
+    def html_report_2(self, global_target, classifier_name, best_classifier_str = None):
         """
         does: creates an .html file that makes the second report (first app).
         """
@@ -896,13 +938,13 @@ This module build a classifier and predict phenotypes based on the classifier
         </head>
         <body>
 
-        <h1 style="text-align:center;">Metabolic Respiration Classifier - Decision Tree Tuning</h1>
+        <h1 style="text-align:center;">""" + global_target + """ - Decision Tree Tuning</h1>
 
         <!-- <h2>Maybe we can add some more text here later?</h2> -->
         <!--<p>How to create side-by-side images with the CSS float property:</p> -->
 
-        <p style="text-align:center; font-size:160%;">  Comparison of level of Accuracy between respiration Training versus Testing data sets based on  the Gini Criterion and the Entropy Criterion for 11 levels of Tree Depth </p>
-        <p style="text-align:center; font-size:100%;">  (Below is the training and test accuracy at each tree depth. The Decision Criterion was Gini and Entropy) </p>
+        <p style="text-align:center; font-size:160%;">  Comparison of Accuracy between Training versus Testing data sets based on the Gini Criterion and the Entropy Criterion for 11 levels of Tree Depth </p>
+        <p style="text-align:center; font-size:100%;">  (Below is the training and testing accuracy at each tree depth. The tuning parameter choosen was criterion which measures the quality of a split. The criteria were "gini" for the Gini impurity and "entropy" for the information gain.) </p>
         """
 
         file.write(html_string)
@@ -920,16 +962,37 @@ This module build a classifier and predict phenotypes based on the classifier
             <img src=" """+ classifier_name +"""_entropy_depth-met.png" alt="Snow" style="width:100%">
           </div>
         </div>
-
-        <p style="text-align:center; font-size:160%;">  Comparison of respiration tuned Gini and Entropy based Decision Tree Classifiers depicted in the form of confusion matrices. A.) Decision Tree Classifier B.) Decision Tree Classifier-Gini C.) Decision Tree Classifier-Entropy D.) Naive Gaussian Bayes Classifier </p>
-        <p style="text-align:center; font-size:100%;">  The original Decision Tree Classifier model was chosen as a base comparision and Logistic Regression model was chosen since it showed the best average F1 Score </p>
-
-        <div class="row">
-          <div class="column">
-              <p style="text-align:left; font-size:160%;"> Decision Tree Classifier </p>
-            <img src=" """+ classifier_name +""".png" alt="Snow" style="width:100%">
-          </div>
         """
+
+        file.write(next_str)
+
+        if best_classifier_str == None :
+            next_str = u"""<p style="text-align:center; font-size:160%;">  Comparison of tuned Gini and Entropy based Decision Tree Classifiers depicted in the form of confusion matrices. 
+            A.) Decision Tree Classifier 
+            B.) Decision Tree Classifier-Gini 
+            C.) Decision Tree Classifier-Entropy 
+            <p style="text-align:center; font-size:100%;">  The original Decision Tree Classifier model was chosen as a base comparision </p>
+
+            <div class="row">
+              <div class="column">
+                  <p style="text-align:left; font-size:160%;">A.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """.pickle" download> (Download) </a> </p>
+                <img src=" """+ classifier_name +""".png" alt="Snow" style="width:100%">
+              </div>
+            """
+        else:
+            next_str = u"""<p style="text-align:center; font-size:160%;">  Comparison of tuned Gini and Entropy based Decision Tree Classifiers depicted in the form of confusion matrices. 
+            A.) Decision Tree Classifier 
+            B.) Decision Tree Classifier-Gini 
+            C.) Decision Tree Classifier-Entropy 
+            D.) """+ best_classifier_str + """ </p>
+            <p style="text-align:center; font-size:100%;">  The original Decision Tree Classifier model was chosen as a base comparision and """+ best_classifier_str + """  was chosen since it showed the best average F1 Score </p>
+
+            <div class="row">
+              <div class="column">
+                  <p style="text-align:left; font-size:160%;">A.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """.pickle" download> (Download) </a> </p>
+                <img src=" """+ classifier_name +""".png" alt="Snow" style="width:100%">
+              </div>
+            """
 
         file.write(next_str)
 
@@ -940,11 +1003,11 @@ This module build a classifier and predict phenotypes based on the classifier
 
             <div class="row">
                 <div class="column">
-                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Gini </p>
+                    <p style="text-align:left; font-size:160%;">B.) Decision Tree Classifier - Gini <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_gini.pickle" download> (Download) </a> </p>
                     <img src=" """+ classifier_name +"""_DecisionTreeClassifier_gini.png" alt="Snow" style="width:100%">
                 </div>
                 <div class="column">
-                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Entropy </p>
+                    <p style="text-align:left; font-size:160%;">C.) Decision Tree Classifier - Entropy <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_entropy.pickle" download> (Download) </a> </p>
                     <img src=" """+ classifier_name +"""_DecisionTreeClassifier_entropy.png" alt="Snow" style="width:100%">
                 </div>
             </div>
@@ -956,18 +1019,18 @@ This module build a classifier and predict phenotypes based on the classifier
 
             next_str = u"""
                 <div class="column">
-                    <p style="text-align:left; font-size:160%;"> Logistic Regression Classifier </p>
+                    <p style="text-align:left; font-size:160%;">B.) """+ best_classifier_str + """ <a href="../forDATA/""" + best_classifier_str + """.pickle" download> (Download) </a> </p>
                     <img src=" """+ best_classifier_str + """.png" alt="Snow" style="width:100%">
                 </div>
             </div>
 
             <div class="row">
                 <div class="column">
-                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Gini </p>
+                    <p style="text-align:left; font-size:160%;">C.) Decision Tree Classifier - Gini <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_gini.pickle" download> (Download) </a> </p>
                     <img src=" """+ classifier_name +"""_DecisionTreeClassifier_gini.png" alt="Snow" style="width:100%">
                 </div>
                 <div class="column">
-                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Entropy </p>
+                    <p style="text-align:left; font-size:160%;">D.) Decision Tree Classifier - Entropy <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_entropy.pickle" download> (Download) </a> </p>
                     <img src=" """+ classifier_name +"""_DecisionTreeClassifier_entropy.png" alt="Snow" style="width:100%">
                 </div>
             </div>
@@ -1387,8 +1450,9 @@ This module build a classifier and predict phenotypes based on the classifier
         output = kbase_report_client.create_extended_report(report_params)
         return output
 
+    """
     def get_mainAttributes(self,my_input, my_current_ws, for_predict = False):
-        """
+        
         args:
         ---my_input is either a list of the names of the genomes in format "name1,name2" or "all" meaning everything in workspace will get used
         does:
@@ -1397,7 +1461,7 @@ This module build a classifier and predict phenotypes based on the classifier
             ---Colmuns are "master Role" which is a list of the all functional roles
         return:
         ---returns the dataframe which contains all_attributes (this is the X matrix for ML)
-        """
+        
 
         #current_ws = os.environ['KB_WORKSPACE_ID']
         print my_input
@@ -1469,9 +1533,71 @@ This module build a classifier and predict phenotypes based on the classifier
         my_all_attributes = pd.DataFrame.from_dict(data_dict, orient='index', columns = master_Role)
 
         return my_all_attributes, master_Role
+    """
+    
+    def incaseList_Names(self, list_name, for_predict = False):
 
+        #clean list_name to get rid of user formatting
+        #list_name = unicode(list_name)
+
+        list_name = list_name.replace("\"", "")
+        list_name = list_name.replace(", ", "\t")
+        #list_name = list_name.replace("-", "\t")
+
+        working_str = list_name.split("\\n")
+
+        print(working_str) #['Genome_ID\tClassification', '262543.4\tfacultative', '1134785.3\tfacultative', '216432.3\taerobic', '269798.12\taerobic', '309807.19\taerobic', '411154.5\taerobic', '485917.5\taerobic', '485918.5\taerobic', '457391.3\tanaerobic', '470145.6\tanaerobic', '665954.3\tanaerobic', '679190.3\tanaerobic']
+
+        #open(u'kb/module/work/tmp/trialoutput.txt', u'w')
+        tem_file = codecs.open(u"/kb/module/work/tmp/trialoutput.txt", u"w", 'utf-8')
+        for index in working_str:
+            #print(index, file=tem_file)
+            print index
+            print >>tem_file, index
+
+        print "before closing"
+
+        tem_file.close()
+
+        if not for_predict:
+            print "I'm inside the if not for_predict"
+            my_workPD = pd.read_csv(u"/kb/module/work/tmp/trialoutput.txt", delimiter="\s+")
+            print my_workPD
+        else: 
+            my_workPD = pd.read_csv(u"/kb/module/work/tmp/trialoutput.txt")
+
+        os.remove(u"/kb/module/work/tmp/trialoutput.txt")
+
+        return my_workPD
+
+        #print(my_workPD)
+        #print(type(my_workPD.index[0]))
+        #print(my_workPD.loc[['262543.40'],['Classification']])
+
+
+
+
+    def intake_method(self, just_DF, for_predict = False):
+
+        my_all_classifications = just_DF
+
+        print my_all_classifications
+        print my_all_classifications.columns.values.tolist()
+
+        my_all_classifications.set_index('Genome_ID', inplace=True)
+
+        print "Below is my_all_classifications"
+
+        print my_all_classifications
+
+        if not for_predict:
+            return my_all_classifications.index, my_all_classifications
+        else:
+            return my_all_classifications.index
+
+    """
     def get_mainClassification(self, file_path):
-        """
+        
         args:
         ---file_path is a path that holds the path of where the excel file is located (given as input by the user)
         does:
@@ -1479,7 +1605,7 @@ This module build a classifier and predict phenotypes based on the classifier
             ---it creates another dataframe with only classifications and rows as "index" which are genome names (my_input)
         return:
         ---the dataframe with all_classifications (essentially the Y variable for ML)
-        """
+        
 
         #figure out how to read in xls file
         my_all_classifications = pd.read_excel(file_path) #replace with location of file
@@ -1490,11 +1616,12 @@ This module build a classifier and predict phenotypes based on the classifier
         print my_all_classifications
 
         return my_all_classifications
+    """
 
-    def get_wholeClassification(self, file_path, my_current_ws, master_Role = None, for_predict = False):
+    def get_wholeClassification(self, listOfNames, my_current_ws, master_Role = None, for_predict = False):
 
-        file_input = pd.read_excel(file_path) #replace with location of file
-        listOfNames = file_input['Genome_ID']
+        #file_input = pd.read_excel(file_path) #replace with location of file
+        #listOfNames = file_input['Genome_ID']
 
         current_ws = my_current_ws
 
@@ -1662,7 +1789,20 @@ This module build a classifier and predict phenotypes based on the classifier
 
         print params
 
-        file_path = self._download_shock(params.get('shock_id'))
+        current_ws = params.get('workspace')
+
+        if params.get('list_name'):
+            #checks if empty string bool("") --> False
+            print ("taking this path rn")
+            toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
+            listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
+            all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
+        else:
+            file_path = self._download_shock(params.get('shock_id'))
+            listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
+            all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
+
+        #file_path = self._download_shock(params.get('shock_id'))
         #file_path = '/kb/module/data/newTrialRun.xlsx'
         #file_path = '/kb/module/data/prodTrial.xlsx'
 
@@ -1673,11 +1813,10 @@ This module build a classifier and predict phenotypes based on the classifier
         all_classifications = self.get_mainClassification(file_path)
 
         full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
-        """ 
-        current_ws = params.get('workspace')
+        """
 
-        all_attributes, master_Role = self.get_wholeClassification(file_path, current_ws)
-        all_classifications = self.get_mainClassification(file_path)
+        #all_attributes, master_Role = self.get_wholeClassification(file_path, current_ws)
+        #all_classifications = self.get_mainClassification(file_path)
 
         full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
 
@@ -1725,7 +1864,7 @@ This module build a classifier and predict phenotypes based on the classifier
         os.makedirs("/kb/module/work/tmp/forHTML/")
         os.makedirs("/kb/module/work/tmp/forHTML/html1folder/")
         os.makedirs("/kb/module/work/tmp/forHTML/html2folder/")
-        os.makedirs("/kb/module/work/tmp/forDATA/")
+        os.makedirs("/kb/module/work/tmp/forHTML/forDATA/")
 
         print 'fdsafds'
         print params
@@ -1776,21 +1915,21 @@ This module build a classifier and predict phenotypes based on the classifier
             self.classifierTest(ctx, current_ws, self.whichClassifier(best_classifier_type),best_classifier_type, classifier_name+u"_" + best_classifier_type, my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2, True)
 
 
-            self.html_report_1(classifier_type, classifier_name, best_classifier_str= best_classifier_str)
+            self.html_report_1(global_target, classifier_type, classifier_name, best_classifier_str= best_classifier_str)
 
             self.tune_Decision_Tree(ctx, current_ws, classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2, best_classifier_str)
             #self.tree_code("doesn't matter") #<-- don't use rn
-            self.html_report_2(classifier_name, best_classifier_str)
+            self.html_report_2(global_target, classifier_name, best_classifier_str)
             htmloutput_name = self.html_dual_12()
 
         elif classifier_type == u"DecisionTreeClassifier":
             self.classifierTest(ctx, current_ws, self.whichClassifier(classifier_type),classifier_type, classifier_name, my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
 
             self.to_HTML_Statistics(class_list, classifier_name)
-            self.html_report_1(classifier_type, classifier_name)
+            self.html_report_1(global_target, classifier_type, classifier_name)
 
             self.tune_Decision_Tree(ctx, current_ws, classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2)
-            self.html_report_2(classifier_name)
+            self.html_report_2(global_target, classifier_name)
             htmloutput_name = self.html_dual_12()
 
         else:
@@ -1805,7 +1944,7 @@ This module build a classifier and predict phenotypes based on the classifier
             self.classifierTest(ctx, current_ws, self.whichClassifier(classifier_type),classifier_type, classifier_name, my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml1, True)
 
             self.to_HTML_Statistics(class_list, classifier_name)
-            self.html_report_1(classifier_type, classifier_name)
+            self.html_report_1(global_target, classifier_type, classifier_name)
             htmloutput_name = self.html_nodual("forHTML")
 
         """
@@ -1915,7 +2054,6 @@ This module build a classifier and predict phenotypes based on the classifier
         os.makedirs("/kb/module/work/tmp/forSecHTML/")
         os.makedirs("/kb/module/work/tmp/forSecHTML/html3folder/")
 
-
         current_ws = params.get('workspace')
         classifier_name = params.get('classifier_name')
         target = params.get('phenotypeclass')
@@ -1941,8 +2079,23 @@ This module build a classifier and predict phenotypes based on the classifier
         #file_path = '/kb/module/data/pnewTrialRun.xlsx'
         #file_path = '/kb/module/data/prodTrial.xlsx'
 
+        print params
 
-        all_attributes = self.get_wholeClassification(file_path, current_ws, master_Role = master_Role ,for_predict = True)
+        if params.get('list_name'):
+            #checks if empty string bool("") --> False
+            toEdit_all_classifications = self.incaseList_Names(params.get('list_name'), for_predict = True)
+            listOfNames = self.intake_method(toEdit_all_classifications, for_predict = True)
+            all_attributes = self.get_wholeClassification(listOfNames, current_ws, master_Role = master_Role ,for_predict = True)
+        else:
+            file_path = self._download_shock(params.get('shock_id'))
+            listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
+            all_attributes = self.get_wholeClassification(listOfNames, current_ws, master_Role = master_Role ,for_predict = True)
+
+
+
+
+
+        #all_attributes = self.get_wholeClassification(file_path, current_ws, master_Role = master_Role ,for_predict = True)
 
         after_classifier_result = after_classifier.predict(all_attributes) #replace with all_attributes
 
