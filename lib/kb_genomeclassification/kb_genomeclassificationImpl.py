@@ -760,7 +760,7 @@ This module build a classifier and predict phenotypes based on the classifier
         </head>
         <body>
 
-        <h1 style="text-align:center;">""" + global_target + """Classifier</h1> """
+        <h1 style="text-align:center;">""" + global_target + """ Classifier</h1> """
 
         file.write(html_string)
 
@@ -902,7 +902,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
         file.close()
 
-    def html_report_2(self, classifier_name, best_classifier_str = None):
+    def html_report_2(self, global_target, classifier_name, best_classifier_str = None):
         """
         does: creates an .html file that makes the second report (first app).
         """
@@ -938,13 +938,13 @@ This module build a classifier and predict phenotypes based on the classifier
         </head>
         <body>
 
-        <h1 style="text-align:center;">Metabolic Respiration Classifier - Decision Tree Tuning</h1>
+        <h1 style="text-align:center;">""" + global_target + """ - Decision Tree Tuning</h1>
 
         <!-- <h2>Maybe we can add some more text here later?</h2> -->
         <!--<p>How to create side-by-side images with the CSS float property:</p> -->
 
-        <p style="text-align:center; font-size:160%;">  Comparison of level of Accuracy between respiration Training versus Testing data sets based on  the Gini Criterion and the Entropy Criterion for 11 levels of Tree Depth </p>
-        <p style="text-align:center; font-size:100%;">  (Below is the training and test accuracy at each tree depth. The Decision Criterion was Gini and Entropy) </p>
+        <p style="text-align:center; font-size:160%;">  Comparison of Accuracy between Training versus Testing data sets based on the Gini Criterion and the Entropy Criterion for 11 levels of Tree Depth </p>
+        <p style="text-align:center; font-size:100%;">  (Below is the training and testing accuracy at each tree depth. The tuning parameter choosen was criterion which measures the quality of a split. The criteria were "gini" for the Gini impurity and "entropy" for the information gain.) </p>
         """
 
         file.write(html_string)
@@ -962,16 +962,37 @@ This module build a classifier and predict phenotypes based on the classifier
             <img src=" """+ classifier_name +"""_entropy_depth-met.png" alt="Snow" style="width:100%">
           </div>
         </div>
-
-        <p style="text-align:center; font-size:160%;">  Comparison of respiration tuned Gini and Entropy based Decision Tree Classifiers depicted in the form of confusion matrices. A.) Decision Tree Classifier B.) Decision Tree Classifier-Gini C.) Decision Tree Classifier-Entropy D.) Naive Gaussian Bayes Classifier </p>
-        <p style="text-align:center; font-size:100%;">  The original Decision Tree Classifier model was chosen as a base comparision and Logistic Regression model was chosen since it showed the best average F1 Score </p>
-
-        <div class="row">
-          <div class="column">
-              <p style="text-align:left; font-size:160%;"> Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """.pickle" download> (Download) </a> </p>
-            <img src=" """+ classifier_name +""".png" alt="Snow" style="width:100%">
-          </div>
         """
+
+        file.write(next_str)
+
+        if best_classifier_str == None :
+            next_str = u"""<p style="text-align:center; font-size:160%;">  Comparison of tuned Gini and Entropy based Decision Tree Classifiers depicted in the form of confusion matrices. 
+            A.) Decision Tree Classifier 
+            B.) Decision Tree Classifier-Gini 
+            C.) Decision Tree Classifier-Entropy 
+            <p style="text-align:center; font-size:100%;">  The original Decision Tree Classifier model was chosen as a base comparision </p>
+
+            <div class="row">
+              <div class="column">
+                  <p style="text-align:left; font-size:160%;">A.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """.pickle" download> (Download) </a> </p>
+                <img src=" """+ classifier_name +""".png" alt="Snow" style="width:100%">
+              </div>
+            """
+        else:
+            next_str = u"""<p style="text-align:center; font-size:160%;">  Comparison of tuned Gini and Entropy based Decision Tree Classifiers depicted in the form of confusion matrices. 
+            A.) Decision Tree Classifier 
+            B.) Decision Tree Classifier-Gini 
+            C.) Decision Tree Classifier-Entropy 
+            D.) """+ best_classifier_str + """ </p>
+            <p style="text-align:center; font-size:100%;">  The original Decision Tree Classifier model was chosen as a base comparision and """+ best_classifier_str + """  was chosen since it showed the best average F1 Score </p>
+
+            <div class="row">
+              <div class="column">
+                  <p style="text-align:left; font-size:160%;">A.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """.pickle" download> (Download) </a> </p>
+                <img src=" """+ classifier_name +""".png" alt="Snow" style="width:100%">
+              </div>
+            """
 
         file.write(next_str)
 
@@ -982,11 +1003,11 @@ This module build a classifier and predict phenotypes based on the classifier
 
             <div class="row">
                 <div class="column">
-                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Gini <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_gini.pickle" download> (Download) </a> </p>
+                    <p style="text-align:left; font-size:160%;">B.) Decision Tree Classifier - Gini <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_gini.pickle" download> (Download) </a> </p>
                     <img src=" """+ classifier_name +"""_DecisionTreeClassifier_gini.png" alt="Snow" style="width:100%">
                 </div>
                 <div class="column">
-                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Entropy <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_entropy.pickle" download> (Download) </a> </p>
+                    <p style="text-align:left; font-size:160%;">C.) Decision Tree Classifier - Entropy <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_entropy.pickle" download> (Download) </a> </p>
                     <img src=" """+ classifier_name +"""_DecisionTreeClassifier_entropy.png" alt="Snow" style="width:100%">
                 </div>
             </div>
@@ -998,18 +1019,18 @@ This module build a classifier and predict phenotypes based on the classifier
 
             next_str = u"""
                 <div class="column">
-                    <p style="text-align:left; font-size:160%;"> """+ best_classifier_str + """ <a href="../forDATA/""" + best_classifier_str + """.pickle" download> (Download) </a> </p>
+                    <p style="text-align:left; font-size:160%;">B.) """+ best_classifier_str + """ <a href="../forDATA/""" + best_classifier_str + """.pickle" download> (Download) </a> </p>
                     <img src=" """+ best_classifier_str + """.png" alt="Snow" style="width:100%">
                 </div>
             </div>
 
             <div class="row">
                 <div class="column">
-                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Gini <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_gini.pickle" download> (Download) </a> </p>
+                    <p style="text-align:left; font-size:160%;">C.) Decision Tree Classifier - Gini <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_gini.pickle" download> (Download) </a> </p>
                     <img src=" """+ classifier_name +"""_DecisionTreeClassifier_gini.png" alt="Snow" style="width:100%">
                 </div>
                 <div class="column">
-                    <p style="text-align:left; font-size:160%;"> Decision Tree Classifier - Entropy <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_entropy.pickle" download> (Download) </a> </p>
+                    <p style="text-align:left; font-size:160%;">D.) Decision Tree Classifier - Entropy <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_entropy.pickle" download> (Download) </a> </p>
                     <img src=" """+ classifier_name +"""_DecisionTreeClassifier_entropy.png" alt="Snow" style="width:100%">
                 </div>
             </div>
@@ -1898,7 +1919,7 @@ This module build a classifier and predict phenotypes based on the classifier
 
             self.tune_Decision_Tree(ctx, current_ws, classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2, best_classifier_str)
             #self.tree_code("doesn't matter") #<-- don't use rn
-            self.html_report_2(classifier_name, best_classifier_str)
+            self.html_report_2(global_target, classifier_name, best_classifier_str)
             htmloutput_name = self.html_dual_12()
 
         elif classifier_type == u"DecisionTreeClassifier":
@@ -1908,7 +1929,7 @@ This module build a classifier and predict phenotypes based on the classifier
             self.html_report_1(global_target, classifier_type, classifier_name)
 
             self.tune_Decision_Tree(ctx, current_ws, classifier_type, classifier_name , my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2)
-            self.html_report_2(classifier_name)
+            self.html_report_2(global_target, classifier_name)
             htmloutput_name = self.html_dual_12()
 
         else:
