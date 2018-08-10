@@ -204,11 +204,11 @@ This module build a classifier and predict phenotypes based on the classifier
             'number_of_attributes' : class_list.__len__(),
             'attribute_data' : master_Role,#["this is where master_role would go", "just a list"],#master_Role, #master_Role,
             'class_list_mapping' : my_mapping, #{} my_mapping, #my_mapping,
-            'number_of_genomes' : 0,
+            'number_of_genomes' : all_attributes.shape[0],
             'training_set_ref' : ''
             }
 
-            print classifier_object
+            #print classifier_object
 
             #Saving the Classifier object
             
@@ -401,8 +401,8 @@ This module build a classifier and predict phenotypes based on the classifier
             data = statistics_dict
 
             if class_list.__len__() == 3:
-                my_index = [u'Facultative', u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None, u'Aerobic', u'Accuracy:',
-                        u'Precision:', u'Recall:', u'F1 score::', None, u'Anaerobic', u'Accuracy:', u'Precision:', u'Recall:',
+                my_index = [class_list[0], u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None, class_list[1], u'Accuracy:',
+                        u'Precision:', u'Recall:', u'F1 score::', None, class_list[2], u'Accuracy:', u'Precision:', u'Recall:',
                         u'F1 score::', u'Average F1']
 
             if class_list.__len__() == 2:
@@ -459,8 +459,8 @@ This module build a classifier and predict phenotypes based on the classifier
             data = statistics_dict
 
             if class_list.__len__() == 3:
-                my_index = [u'Facultative', u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None, u'Aerobic', u'Accuracy:',
-                        u'Precision:', u'Recall:', u'F1 score::', None, u'Anaerobic', u'Accuracy:', u'Precision:', u'Recall:',
+                my_index = [class_list[0], u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None, class_list[1], u'Accuracy:',
+                        u'Precision:', u'Recall:', u'F1 score::', None, class_list[2], u'Accuracy:', u'Precision:', u'Recall:',
                         u'F1 score::', u'Average F1']
 
             if class_list.__len__() == 2:
@@ -628,7 +628,7 @@ This module build a classifier and predict phenotypes based on the classifier
         fig, ax = plt.subplots(figsize=(6, 6))
         plt.errorbar(val[1:], test_av[1:], yerr=test_std[1:], fmt=u'o', label=u'Training set')
         plt.errorbar(val[1:], val_av[1:], yerr=val_std[1:], fmt=u'o', label=u'Testing set')
-        ax.set_ylim(ymin=0.5, ymax=1.1)
+        ax.set_ylim(ymin=0.0, ymax=1.1)
         ax.set_title(u"Gini Criterion")
         plt.xlabel(u'Tree depth', fontsize=12)
         plt.ylabel(u'Accuracy', fontsize=12)
@@ -654,7 +654,7 @@ This module build a classifier and predict phenotypes based on the classifier
         fig, ax = plt.subplots(figsize=(6, 6))
         plt.errorbar(val[1:], test_av[1:], yerr=test_std[1:], fmt=u'o', label=u'Training set')
         plt.errorbar(val[1:], val_av[1:], yerr=val_std[1:], fmt=u'o', label=u'Testing set')
-        ax.set_ylim(ymin=0.5, ymax=1.1)
+        ax.set_ylim(ymin=0.0, ymax=1.1)
         ax.set_title(u"Entropy Criterion")
         plt.xlabel(u'Tree depth', fontsize=12)
         plt.ylabel(u'Accuracy', fontsize=12)
@@ -706,9 +706,9 @@ This module build a classifier and predict phenotypes based on the classifier
         third_fix = re.sub(ur'shape=box] ;', ur'shape=Mrecord] ; node [style=filled];', second_fix)
 
         if class_list.__len__() == 3:
-            fourth_fix = re.sub(ur'(\w\s\[label="anaerobic")', ur'\1, color = "0.5176 0.2314 0.9020"', third_fix)
-            fifth_fix = re.sub(ur'(\w\s\[label="aerobic")', ur'\1, color = "0.5725 0.6118 1.0000"', fourth_fix)
-            sixth_fix = re.sub(ur'(\w\s\[label="facultative")', ur'\1, color = "0.5804 0.8824 0.8039"', fifth_fix)
+            fourth_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[0], ur'\1, color = "0.5176 0.2314 0.9020"', third_fix)
+            fifth_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[1], ur'\1, color = "0.5725 0.6118 1.0000"', fourth_fix)
+            sixth_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[2], ur'\1, color = "0.5804 0.8824 0.8039"', fifth_fix)
             f = open(u"/kb/module/work/tmp/dotFolder/niceTree.dot", u"w")
             f.write(sixth_fix)
             f.close()
@@ -716,8 +716,8 @@ This module build a classifier and predict phenotypes based on the classifier
             os.system(u'dot -Tpng /kb/module/work/tmp/dotFolder/niceTree.dot >  '+ u"/kb/module/work/tmp/forHTML/html2folder/"  + name + u'.png ')
 
         if class_list.__len__() == 2:
-            fourth_fix = re.sub(ur'(\w\s\[label="N")', ur'\1, color = "0.5176 0.2314 0.9020"', third_fix)
-            fifth_fix = re.sub(ur'(\w\s\[label="P")', ur'\1, color = "0.5725 0.6118 1.0000"', fourth_fix)
+            fourth_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[0], ur'\1, color = "0.5176 0.2314 0.9020"', third_fix)
+            fifth_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[1], ur'\1, color = "0.5725 0.6118 1.0000"', fourth_fix)
             f = open(u"/kb/module/work/tmp/dotFolder/niceTree.dot", u"w")
             f.write(fifth_fix)
             f.close()
@@ -1546,13 +1546,13 @@ This module build a classifier and predict phenotypes based on the classifier
 
         working_str = list_name.split("\\n")
 
-        print(working_str) #['Genome_ID\tClassification', '262543.4\tfacultative', '1134785.3\tfacultative', '216432.3\taerobic', '269798.12\taerobic', '309807.19\taerobic', '411154.5\taerobic', '485917.5\taerobic', '485918.5\taerobic', '457391.3\tanaerobic', '470145.6\tanaerobic', '665954.3\tanaerobic', '679190.3\tanaerobic']
+        #print(working_str) #['Genome_ID\tClassification', '262543.4\tfacultative', '1134785.3\tfacultative', '216432.3\taerobic', '269798.12\taerobic', '309807.19\taerobic', '411154.5\taerobic', '485917.5\taerobic', '485918.5\taerobic', '457391.3\tanaerobic', '470145.6\tanaerobic', '665954.3\tanaerobic', '679190.3\tanaerobic']
 
         #open(u'kb/module/work/tmp/trialoutput.txt', u'w')
         tem_file = codecs.open(u"/kb/module/work/tmp/trialoutput.txt", u"w", 'utf-8')
         for index in working_str:
             #print(index, file=tem_file)
-            print index
+            #print index
             print >>tem_file, index
 
         print "before closing"
@@ -1562,7 +1562,7 @@ This module build a classifier and predict phenotypes based on the classifier
         if not for_predict:
             print "I'm inside the if not for_predict"
             my_workPD = pd.read_csv(u"/kb/module/work/tmp/trialoutput.txt", delimiter="\s+")
-            print my_workPD
+            #print my_workPD
         else: 
             my_workPD = pd.read_csv(u"/kb/module/work/tmp/trialoutput.txt")
 
@@ -1581,14 +1581,14 @@ This module build a classifier and predict phenotypes based on the classifier
 
         my_all_classifications = just_DF
 
-        print my_all_classifications
+        #print my_all_classifications
         print my_all_classifications.columns.values.tolist()
 
         my_all_classifications.set_index('Genome_ID', inplace=True)
 
         print "Below is my_all_classifications"
 
-        print my_all_classifications
+        #print my_all_classifications
 
         if not for_predict:
             return my_all_classifications.index, my_all_classifications
@@ -1867,7 +1867,7 @@ This module build a classifier and predict phenotypes based on the classifier
         os.makedirs("/kb/module/work/tmp/forHTML/forDATA/")
 
         print 'fdsafds'
-        print params
+        #print params
 
         token = ctx['token']
         # wsClient = workspaceService(self.workspaceURL, token=token)
