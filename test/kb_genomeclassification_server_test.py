@@ -105,6 +105,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "workspace" : "janakakbase:narrative_1533153056355"#"sagoyal:narrative_1533659119242" #"janakakbase:narrative_1533153056355" "janakakbase:narrative_1533320423326"
         }
 
+
         self.getImpl().build_classifier(self.getContext(), params)
         """
         params = {
