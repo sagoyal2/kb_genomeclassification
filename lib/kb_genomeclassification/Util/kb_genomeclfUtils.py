@@ -65,20 +65,18 @@ class kb_genomeclfUtils(object):
 		self.list_statistics = []
 
 
-	#### Methods below are called from KBASE apps
+	#### MAIN Methods below are called from KBASE apps ###
 	def fullClassify(self, params, current_ws):
 		"""
 		args:
 		---params from build_classifier
 		---current_ws which is a narrative enviornment variable necessary to access the KBase workspace
-
 		does:
 		---first it sets up the Xs and Ys in dataframe (the columns are masterRole which are all the function rolls and the indexes are the Genome_IDs the rest is a matrix of 1's and 0s
 														that that have a classification stored in the last column)
 		---runs the classifers based on the classifier_type (either run_all, Decision Tree, or single selection)
 			---if run_all or Decision Tree is selected then a second 'tab' is also created in the html page base on tuning of the Decision Tree
 		---creates html pages with 'tabs' that show the main classifcation and statistics on the classification
-
 		return:
 		---an htmloutput_name which is the name of the html report that get created from makeHtmlReport
 		--- 
@@ -126,8 +124,6 @@ class kb_genomeclfUtils(object):
 
 		ctx = self.ctx
 		token = ctx['token']
-
-		self._valid_params(params)
 
 		classifier_type = params.get('classifier')
 		global_target = params.get('phenotypeclass')
@@ -234,12 +230,10 @@ class kb_genomeclfUtils(object):
 		args:
 		---params from predict_phenotype
 		---current_ws which is a narrative enviornment variable necessary to access the KBase workspace
-
 		does:
 		---first it sets up the Xs in dataframe (the columns are masterRole which are all the function rolls and the indexes are the Genome_IDs)
 			--- The Xs in this case is the testing data or unclassified data
 		---based on the user selected classifier makes predictions on the data with a column for the probability of the prediction being correct
-
 		return:
 		---an htmloutput_name which is the name of the html report that get created from makeHtmlReport
 		--- 
@@ -289,7 +283,7 @@ class kb_genomeclfUtils(object):
 		maxEZ_df = pd.DataFrame(maxEZ, index=all_attributes.index, columns=["probability"])
 
 		predict_table_pd = pd.concat([after_classifier_df, maxEZ_df], axis=1)
-		predict_table_pd.to_html(u'/kb/module/work/tmp/forSecHTML/html3folder/results.html')
+		predict_table_pd.to_html(os.path.join(self.scratch, 'forSecHTML', 'html3folder', 'results.html'))
 
 		#you can also save down table as text file or csv
 		"""
@@ -309,10 +303,8 @@ class kb_genomeclfUtils(object):
 		args:
 		---htmloutput_name the name of the html file 'something.html'
 		---which_report whether from clf_Runner or pred_Runner
-
 		does:
 		---using shock, zips and uploads an html folder to kbase app that is then viewable through the reports window
-
 		return:
 		---report_output the html report itself as a ws object that is viewable after the Kbase app runs
 		--- 
@@ -359,7 +351,145 @@ class kb_genomeclfUtils(object):
 
 		return report_output
 
-	##### Methods below are called only from inside this class
+	##### Methods below are called only from inside this class ####
+	def incaseList_Names(self, list_name, for_predict = False):
+		"""		
+		args:
+		---list_name (same as classifierTest)
+		---for_predict is boolean indicator to see if this used by clf_Runner to pred_Runner
+		does:
+		---used when user inputs data/classifications in the textbox instead of excel file
+		---creates a panda dataframe after parsing the input
+		return:
+		---the panda dataframe
+		"""
+
+		list_name = list_name.replace("\"", "")
+		list_name = list_name.replace(", ", "\t")
+		#list_name = list_name.replace("-", "\t")
+
+		working_str = list_name.split("\\n")
+
+		#open(u'kb/module/work/tmp/trialoutput.txt', u'w')
+		tem_file = codecs.open(os.path.join(self.scratch, 'trialoutput.txt'), u"w", 'utf-8')
+		for index in working_str:
+			#print(index, file=tem_file)
+			#print index
+			print >>tem_file, index
+
+		print "before closing"
+
+		tem_file.close()
+
+		if not for_predict:
+			print "I'm inside the if not for_predict"
+			my_workPD = pd.read_csv(os.path.join(self.scratch, 'trialoutput.txt'), delimiter="\s+")
+			#print my_workPD
+		else: 
+			my_workPD = pd.read_csv(os.path.join(self.scratch, 'trialoutput.txt'))
+
+		os.remove(os.path.join(self.scratch, 'trialoutput.txt'))
+
+		return my_workPD
+
+	def intake_method(self, just_DF, for_predict = False):
+		"""
+		args:
+		---just_DF is pandas dataframe made from incaseList_Names or from shock--> converted to pd
+		---for_predict is boolean indicator to see if this used by clf_Runner to pred_Runner
+		does:
+		---with the excel file which has 2 columns: Genome_ID (same as my_input) and Classification
+			---it creates another dataframe with only classifications and rows as "index" which are genome names (my_input)
+		return:
+		---my_all_classifications the dataframe with all_classifications (essentially the Y variable for ML)
+		---my_all_classifications.index the index or 'rows' as list (listOfNames) of my_all_classifications
+		"""
+
+		my_all_classifications = just_DF
+
+		#print my_all_classifications
+		print my_all_classifications.columns.values.tolist()
+
+		my_all_classifications.set_index('Genome_ID', inplace=True)
+
+		print "Below is my_all_classifications"
+
+		#print my_all_classifications
+
+		if not for_predict:
+			return my_all_classifications.index, my_all_classifications
+		else:
+			return my_all_classifications.index
+
+
+	def get_wholeClassification(self, listOfNames, current_ws, master_Role = None, for_predict = False):
+		"""
+		args:
+		---listOfNames is a list from the dataframe.index containing the 'rows' which is names/Genome_ID
+		---current_ws (same as before)
+		---master_Role is given if being called from predict_phenotype method otherwise not
+		---for_predict is boolean indicator to see if this used by clf_Runner to pred_Runner
+		does:
+		---creates a dataframe for the all the genomes given
+			---Rows are "index" which is the name of the genome(same as my_input)
+			---Colmuns are "master Role" which is a list of the all functional roles
+		return:
+		---returns the dataframe which contains all_attributes (this is the X matrix for ML)
+		"""
+
+		print current_ws
+
+		if not for_predict:
+			master_Role = [] #make this master_Role
+
+
+		name_and_roles = {}
+
+		for current_gName in listOfNames:
+			listOfFunctionalRoles = []
+			try:
+				functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['cdss']
+				for function in range(len (functionList)):
+					if str(functionList[function]['functions'][0]).lower() != 'hypothetical protein':
+						listOfFunctionalRoles.append(str(functionList[function]['functions'][0]))
+
+			except:
+				functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['features']
+				for function in range(len (functionList)):
+					if str(functionList[function]['function']).lower() != 'hypothetical protein':
+						listOfFunctionalRoles.append(str(functionList[function]['function']))
+
+			name_and_roles[current_gName] = listOfFunctionalRoles
+
+			print "I have arrived inside the desired for loop!!"
+
+		if not for_predict:
+			master_pre_Role = list(itertools.chain(*name_and_roles.values()))
+			master_Role = list(set(master_pre_Role))
+
+
+		data_dict = {}
+
+		for current_gName in listOfNames:
+			arrayofONEZERO = []
+
+			current_Roles = name_and_roles[current_gName]
+
+			for individual_role in master_Role:
+				if individual_role in current_Roles:
+					arrayofONEZERO.append(1)
+				else:
+					arrayofONEZERO.append(0)
+
+			data_dict[current_gName] = arrayofONEZERO
+
+		my_all_attributes = pd.DataFrame.from_dict(data_dict, orient='index', columns = master_Role)
+
+		if not for_predict:
+			return my_all_attributes, master_Role
+		else:
+			return my_all_attributes
+
 	def createHoldingDirs(self, clf = True):
 		"""
 		does:
@@ -374,6 +504,31 @@ class kb_genomeclfUtils(object):
 		for name in dirs_names:
 			out_path = os.path.join(self.scratch, name)
 			os.makedirs(out_path)
+
+	def whichClassifier(self, name):
+		"""
+		args:
+		---name which is a string that the user will pass in as to which classifier (sklearn) classifier they want
+		does:
+		---matches string with sklearn classifier
+		return:
+		---sklearn classifier
+		"""
+
+		if name == u"KNeighborsClassifier":
+			return KNeighborsClassifier()
+		elif name == u"GaussianNB":
+			return GaussianNB()
+		elif name == u"LogisticRegression":
+			return LogisticRegression(random_state=0)
+		elif name == u"DecisionTreeClassifier":
+			return DecisionTreeClassifier(random_state=0)
+		elif name == u"SVM":
+			return svm.LinearSVC(random_state=0)
+		elif name == u"NeuralNetwork":
+			return MLPClassifier(random_state=0)
+		else:
+			return u"ERROR THIS SHOULD NOT HAVE REACHED HERE"
 
 	def classifierTest(self, classifierTest_params):
 		"""
@@ -453,7 +608,7 @@ class kb_genomeclfUtils(object):
 					cnf_matrix_f[i][j] += cnf_f[i][j]
 
 		if print_cfm:
-			pickle_out = open(u"/kb/module/work/tmp/forHTML/forDATA/" + unicode(classifier_name) + u".pickle", u"wb")
+			pickle_out = open(os.path.join(self.scratch, 'forHTML', 'forDATA', unicode(classifier_name) + u".pickle"), u"wb")
 
 			#pickle_out = open("/kb/module/work/tmp/" + str(self.classifier_name) + ".pickle", "wb")
 
@@ -593,32 +748,6 @@ class kb_genomeclfUtils(object):
 
 		return (np.average(train_score), np.std(train_score), np.average(validate_score), np.std(validate_score))
 
-
-	def whichClassifier(self, name):
-		"""
-		args:
-		---name which is a string that the user will pass in as to which classifier (sklearn) classifier they want
-		does:
-		---matches string with sklearn classifier
-		return:
-		---sklearn classifier
-		"""
-
-		if name == u"KNeighborsClassifier":
-			return KNeighborsClassifier()
-		elif name == u"GaussianNB":
-			return GaussianNB()
-		elif name == u"LogisticRegression":
-			return LogisticRegression(random_state=0)
-		elif name == u"DecisionTreeClassifier":
-			return DecisionTreeClassifier(random_state=0)
-		elif name == u"SVM":
-			return svm.LinearSVC(random_state=0)
-		elif name == u"NeuralNetwork":
-			return MLPClassifier(random_state=0)
-		else:
-			return u"ERROR THIS SHOULD NOT HAVE REACHED HERE"
-
 	def cf_stats(self, TN, TP, FP, FN):
 		"""
 		args:
@@ -645,19 +774,41 @@ class kb_genomeclfUtils(object):
 		Total = TN + TP + FP + FN
 		Recall = (TP / (TP + FN))
 		Precision = (TP / (TP + FP))
-		"""
-		print("Accuracy:\t\t%6.3f" % ((TP + TN) / Total))
-		print("Precision:\t\t%6.3f" % (Precision))
-		print("Recall:\t\t%6.3f" % (Recall))
-		print("F1 score::\t\t%6.3f" % (2 * ((Precision * Recall) / (Precision + Recall))))
-		print()
-		"""
 
 		list_return=[((TP + TN) / Total), (Precision), (Recall), (2 * ((Precision * Recall) / (Precision + Recall)))]
-
-
-
 		return list_return
+
+	def plot_confusion_matrix(self,cm, classes, title, htmlfolder, classifier_name, classifier_type):
+		"""
+		args:
+		---cm is the "cnf_matrix" which is a np array of numerical values for the confusion matrix
+		---classes is the class_list which is a list of the classes ie. [N,P] or [Aerobic, Anaerobic, Facultative]
+		---title is a "heading" that appears on the image
+		---classifier_name is the classifier name and is what the saved .png file name will be
+		does:
+		---creates a confusion matrix .png file and saves it
+		return:
+		---N/A but instead creates an .png file in tmp
+		"""
+		plt.rcParams.update({u'font.size': 18})
+		fig = plt.figure()
+		ax = fig.add_subplot(figsize=(4.5,4.5))
+		#fig, ax = plt.subplots(figsize=(4.5,4.5))
+		sns.set(font_scale=1.2)
+		sns_plot = sns.heatmap(cm, annot=True, ax = ax, cmap=u"Blues"); #annot=True to annotate cells
+		ax = sns_plot
+		ax.set_xlabel(u'Predicted labels'); ax.set_ylabel(u'True labels');
+		ax.set_title(title);
+		ax.xaxis.set_ticklabels(classes); ax.yaxis.set_ticklabels(classes);
+		#ax.xaxis.set_horizontalalignment('center'), ax.yaxis.set_verticalalignment('center')
+		#ax.savefig(classifier_name+".png", format='png')
+
+		fig = sns_plot.get_figure()
+		#fig.savefig(u"./pics/" + classifier_name +u".png", format=u'png')
+		fig.savefig(os.path.join(self.scratch, 'forHTML', htmlfolder, classifier_name +u".png"), format=u'png')
+
+		if classifier_type == "DecisionTreeClassifier":
+			fig.savefig(os.path.join(self.scratch, 'forHTML','html2folder', classifier_name +u".png"), format=u'png')
 
 	def to_HTML_Statistics(self, class_list, classifier_name, known = "", additional = False):
 		"""
@@ -696,19 +847,19 @@ class kb_genomeclfUtils(object):
 
 			df = pd.DataFrame(data, index=my_index)
 
-			df.to_html(u'/kb/module/work/tmp/forHTML/html1folder/newStatistics.html')
+			df.to_html(os.path.join(self.scratch, 'forHTML', 'html1folder','newStatistics.html'))
 
 			df['Max'] = df.idxmax(1)
 			best_classifier_str = df['Max'].iloc[-1]
 
 
-			file = open(u'/kb/module/work/tmp/forHTML/html1folder/newStatistics.html', u'r')
+			file = open(os.path.join(self.scratch, 'forHTML', 'html1folder','newStatistics.html'), u'r')
 			allHTML = file.read()
 			file.close()
 
 			new_allHTML = re.sub(r'NaN', r'', allHTML)
 
-			file = open(u'/kb/module/work/tmp/forHTML/html1folder/newStatistics.html', u'w')
+			file = open(os.path.join(self.scratch, 'forHTML', 'html1folder','newStatistics.html'), u'w')
 			file.write(new_allHTML)
 			file.close
 
@@ -753,126 +904,24 @@ class kb_genomeclfUtils(object):
 				my_index = [u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::']
 
 			df = pd.DataFrame(data, index=my_index)
-			df.to_html(u'/kb/module/work/tmp/forHTML/html2folder/postStatistics.html')
+			df.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'))
 
 			df['Max'] = df.idxmax(1)
 			best_classifier_str = df['Max'].iloc[-1]
 
-			file = open(u'/kb/module/work/tmp/forHTML/html2folder/postStatistics.html', u'r')
+			file = open(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'), u'r')
 			allHTML = file.read()
 			file.close()
 
 			new_allHTML = re.sub(r'NaN', r'', allHTML)
 
-			file = open(u'/kb/module/work/tmp/forHTML/html2folder/postStatistics.html', u'w')
+			file = open(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'), u'w')
 			file.write(new_allHTML)
 			file.close
 
 			return best_classifier_str
 
-
-		#df.to_html('statistics' + str(self.counter) + '.html')
-
-	def plot_confusion_matrix(self,cm, classes, title, htmlfolder, classifier_name, classifier_type):
-		"""
-		args:
-		---cm is the "cnf_matrix" which is a np array of numerical values for the confusion matrix
-		---classes is the class_list which is a list of the classes ie. [N,P] or [Aerobic, Anaerobic, Facultative]
-		---title is a "heading" that appears on the image
-		---classifier_name is the classifier name and is what the saved .png file name will be
-		does:
-		---creates a confusion matrix .png file and saves it
-		return:
-		---N/A but instead creates an .png file in tmp
-
-		"""
-		"""
-		plt.rcParams.update({'font.size': 18})
-		#fig,ax= plt.subplots(figsize=(5,4))
-		fig = plt.figure()
-		ax = fig.add_subplot(figsize=(5,4))
-		sns.set(font_scale=1.5)
-		sns_plot = sns.heatmap(cm, annot=True, ax = ax, cmap="Blues"); #annot=True to annotate cells
-		# labels, title and ticks
-		ax.set_xlabel('Predicted labels');ax.set_ylabel('True labels');
-		ax.set_title(title);
-		ax.xaxis.set_ticklabels(classes); ax.yaxis.set_ticklabels(classes);
-		#fig.savefig(classifier_name+".png") #this may not be necessary as not necessary to save png file
-		sns_plot.savefig(classifier_name+".png", format='png')
-		"""
-
-		plt.rcParams.update({u'font.size': 18})
-		fig = plt.figure()
-		ax = fig.add_subplot(figsize=(4.5,4.5))
-		#fig, ax = plt.subplots(figsize=(4.5,4.5))
-		sns.set(font_scale=1.2)
-		sns_plot = sns.heatmap(cm, annot=True, ax = ax, cmap=u"Blues"); #annot=True to annotate cells
-		ax = sns_plot
-		ax.set_xlabel(u'Predicted labels'); ax.set_ylabel(u'True labels');
-		ax.set_title(title);
-		ax.xaxis.set_ticklabels(classes); ax.yaxis.set_ticklabels(classes);
-		#ax.xaxis.set_horizontalalignment('center'), ax.yaxis.set_verticalalignment('center')
-		#ax.savefig(classifier_name+".png", format='png')
-
-		fig = sns_plot.get_figure()
-		#fig.savefig(u"./pics/" + classifier_name +u".png", format=u'png')
-		fig.savefig(u"/kb/module/work/tmp/forHTML/"+ htmlfolder + classifier_name +u".png", format=u'png')
-
-		if classifier_type == "DecisionTreeClassifier":
-			fig.savefig(u"/kb/module/work/tmp/forHTML/html2folder/" + classifier_name +u".png", format=u'png')
-
-
-
-	def tree_code(self, optimized_tree, all_attributes, all_classifications, master_Role, class_list, spacer_base=u"    "):
-		"""
-		args:
-		---optimized_tree this is a DecisionTree object that has been tuned
-		---spacer_base is string physically acting as a spacer
-		does:
-		---Produce psuedo-code for decision tree - based on http://stackoverflow.com/a/30104792.
-		---calls printTree
-		return:
-		---N/A but prints out a visual of what the DecisionTree object looks like on the inside
-		"""
-
-		tree = optimized_tree 
-		#tree = DecisionTreeClassifier(random_state=0, max_depth=3, criterion='entropy')
-
-		tree.fit(all_attributes, all_classifications)
-		feature_names = master_Role
-		target_names = class_list
-
-		left = tree.tree_.children_left
-		right = tree.tree_.children_right
-		threshold = tree.tree_.threshold
-		features = [feature_names[i] for i in tree.tree_.feature]
-		value = tree.tree_.value
-
-		def recurse(left, right, threshold, features, node, depth):
-			spacer = spacer_base * depth
-			if (threshold[node] != -2):
-				print spacer + u"if ( " + features[node] + u" <= " + \
-					  unicode(threshold[node]) + u" ) {"
-				if left[node] != -1:
-					recurse(left, right, threshold, features,
-								 left[node], depth + 1)
-				print spacer + u"}\n" + spacer + u"else {"
-				if right[node] != -1:
-					recurse(left, right, threshold, features,
-								 right[node], depth + 1)
-				print spacer + u"}"
-			else:
-				target = value[node]
-				for i, v in izip(np.nonzero(target)[1],
-								target[np.nonzero(target)]):
-					target_name = target_names[i]
-					target_count = int(v)
-					print spacer + u"return " + unicode(target_name) + \
-						  u" ( " + unicode(target_count) + u" examples )"
-
-		recurse(left, right, threshold, features, 0, 0)
-
-		self.printTree(tree, u"NAMEmyTreeLATER", master_Role, class_list)
+	#### Below is code for tuning Decision Tree ####
 
 	def tune_Decision_Tree(self,classifierTest_paramsInput, best_classifier_str = None):
 		"""
@@ -929,7 +978,7 @@ class kb_genomeclfUtils(object):
 		plt.legend(loc=u'lower left')
 		#plt.savefig(u"./pics/"+ global_target +u"_gini_depth-met.png")
 		#fig.savefig(u"/kb/module/work/tmp/pics/" + classifier_name +u".png", format=u'png')
-		plt.savefig(u"/kb/module/work/tmp/forHTML/html2folder/" + classifierTest_paramsInput['classifier_name'] +u"_gini_depth-met.png")
+		plt.savefig(os.path.join(self.scratch, 'forHTML', 'html2folder', classifierTest_paramsInput['classifier_name'] +u"_gini_depth-met.png"))
 
 		gini_best_index = np.argmax(val_av)
 		print gini_best_index
@@ -959,7 +1008,7 @@ class kb_genomeclfUtils(object):
 		plt.ylabel(u'Accuracy', fontsize=12)
 		plt.legend(loc=u'lower left')
 		#plt.savefig(u"./pics/"+ global_target +u"_entropy_depth-met.png")
-		plt.savefig(u"/kb/module/work/tmp/forHTML/html2folder/"+ classifierTest_paramsInput['classifier_name'] +u"_entropy_depth-met.png")
+		plt.savefig(os.path.join(self.scratch, 'forHTML', 'html2folder', classifierTest_paramsInput['classifier_name'] +u"_entropy_depth-met.png"))
 
 		entropy_best_index = np.argmax(val_av)
 		print entropy_best_index
@@ -988,19 +1037,95 @@ class kb_genomeclfUtils(object):
 			self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy'), classifierTest_params['all_attributes'], classifierTest_params['all_classifications'], classifierTest_params['master_Role'], classifierTest_params['class_list'])
 
 
+	def tree_code(self, optimized_tree, all_attributes, all_classifications, master_Role, class_list, spacer_base=u"    "):
+		"""
+		args:
+		---optimized_tree this is a DecisionTree object that has been tuned
+		---spacer_base is string physically acting as a spacer
+		does:
+		---Produce psuedo-code for decision tree - based on http://stackoverflow.com/a/30104792.
+		---calls printTree
+		return:
+		---N/A but prints out a visual of what the DecisionTree object looks like on the inside
+		"""
+
+		tree = optimized_tree 
+		#tree = DecisionTreeClassifier(random_state=0, max_depth=3, criterion='entropy')
+
+		tree.fit(all_attributes, all_classifications)
+		feature_names = master_Role
+		target_names = class_list
+
+		left = tree.tree_.children_left
+		right = tree.tree_.children_right
+		threshold = tree.tree_.threshold
+		features = [feature_names[i] for i in tree.tree_.feature]
+		value = tree.tree_.value
+
+		def recurse(left, right, threshold, features, node, depth):
+			spacer = spacer_base * depth
+			if (threshold[node] != -2):
+				print spacer + u"if ( " + features[node] + u" <= " + \
+					  unicode(threshold[node]) + u" ) {"
+				if left[node] != -1:
+					recurse(left, right, threshold, features,
+								 left[node], depth + 1)
+				print spacer + u"}\n" + spacer + u"else {"
+				if right[node] != -1:
+					recurse(left, right, threshold, features,
+								 right[node], depth + 1)
+				print spacer + u"}"
+			else:
+				target = value[node]
+				for i, v in izip(np.nonzero(target)[1],
+								target[np.nonzero(target)]):
+					target_name = target_names[i]
+					target_count = int(v)
+					print spacer + u"return " + unicode(target_name) + \
+						  u" ( " + unicode(target_count) + u" examples )"
+
+		recurse(left, right, threshold, features, 0, 0)
+
+		self.printTree(tree, u"NAMEmyTreeLATER", master_Role, class_list)
+
+	def printTree(self,tree, pass_name, master_Role, class_list):
+		"""
+		args:
+		---tree is a DecisionTree object that has already been tuned
+		---pass_name is a string for what you want the tree named as (but this is not where the creation happens just pass)
+		---master_Role (same as classifierTest)
+		---class_list (same as classifierTest)
+		does:
+		---using graphviz feature it is able to geneate the dot file that has an "ugly" version of the tree inside
+		---call the parse_lookNice
+		return:
+		---N/A just makes an "ugly" dot file.
+		"""
+
+		not_dotfile = StringIO.StringIO()
+		export_graphviz(tree, out_file=not_dotfile, feature_names=master_Role,
+						class_names=class_list)
+
+		contents = not_dotfile.getvalue()
+		not_dotfile.close()
+
+		dotfile = open(os.path.join(self.scratch, 'dotFolder', 'mydotTree.dot'), u'w')
+		dotfile.write(contents)
+		dotfile.close()
+
+		self.parse_lookNice(pass_name, class_list)
+
 	def parse_lookNice(self, name, class_list):
 		"""
 		args:
 		---name is a string that is what you want the DecisionTree image saved as
+		---class_list (same as classifierTest)
 		does:
 		---this cleans up the dot file to produce a more visually appealing tree figure using graphviz
 		return:
 		---N/A but saves a .png of the name in the tmp folder
 		"""
-
-		import re
-
-		f = open(u"/kb/module/work/tmp/dotFolder/mydotTree.dot", u"r")
+		f = open(os.path.join(self.scratch, 'dotFolder', 'mydotTree.dot'), u"r")
 		allStr = f.read()
 		f.close()
 		new_allStr = allStr.replace(u'\\n', u'')
@@ -1016,26 +1141,49 @@ class kb_genomeclfUtils(object):
 			fourth_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[0], ur'\1, color = "0.5176 0.2314 0.9020"', third_fix)
 			fifth_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[1], ur'\1, color = "0.5725 0.6118 1.0000"', fourth_fix)
 			sixth_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[2], ur'\1, color = "0.5804 0.8824 0.8039"', fifth_fix)
-			f = open(u"/kb/module/work/tmp/dotFolder/niceTree.dot", u"w")
+			f = open(os.path.join(self.scratch, 'dotFolder', 'niceTree.dot'), u"w")
 			f.write(sixth_fix)
 			f.close()
 
-			os.system(u'dot -Tpng /kb/module/work/tmp/dotFolder/niceTree.dot >  '+ u"/kb/module/work/tmp/forHTML/html2folder/"  + name + u'.png ')
+			os.system(u'dot -Tpng ' + os.path.join(self.scratch, 'dotFolder', 'niceTree.dot') + ' >  '+ os.path.join(self.scratch, 'forHTML', 'html2folder', name + u'.png '))
 
 		if class_list.__len__() == 2:
 			fourth_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[0], ur'\1, color = "0.5176 0.2314 0.9020"', third_fix)
 			fifth_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[1], ur'\1, color = "0.5725 0.6118 1.0000"', fourth_fix)
-			f = open(u"/kb/module/work/tmp/dotFolder/niceTree.dot", u"w")
+			f = open(os.path.join(self.scratch, 'dotFolder', 'niceTree.dot'), u"w")
 			f.write(fifth_fix)
 			f.close()
 
-			os.system(u'dot -Tpng /kb/module/work/tmp/dotFolder/niceTree.dot >  '+ u"/kb/module/work/tmp/forHTML/html2folder/" + name + u'.png ')
+			os.system(u'dot -Tpng ' + os.path.join(self.scratch, 'dotFolder', 'niceTree.dot') + ' >  '+ os.path.join(self.scratch, 'forHTML', 'html2folder', name + u'.png '))
 
+
+	### Extra methods being used 
+	def _make_dir(self):
+		dir_path = os.path.join(self.scratch, str(uuid.uuid4()))
+		os.mkdir(dir_path)
+
+		return dir_path
+
+	def _download_shock(self, shock_id):
+		"""
+		does:
+		---using kbase dfu tool to allow users to insert excel files 
+		"""
+		dir_path = self._make_dir()
+
+		file_path = self.dfu.shock_to_file({'shock_id': shock_id,
+											'file_path': dir_path})['file_path']
+
+		return file_path
+
+	#### HTML templates below ####
+
+	### For Build_Classifier App
 	def html_report_1(self, global_target, classifier_type, classifier_name, best_classifier_str = None):
 		"""
 		does: creates an .html file that makes the frist report (first app).
 		"""
-		file = open(u"/kb/module/work/tmp/forHTML/html1folder/html1.html", u"w")
+		file = open(os.path.join(self.scratch, 'forHTML', 'html1folder', 'html1.html'), u"w")
 
 		html_string = u"""
 		<!DOCTYPE html>
@@ -1158,7 +1306,7 @@ class kb_genomeclfUtils(object):
 			"""
 			file.write(next_str)
 
-			another_file = open(u"/kb/module/work/tmp/forHTML/html1folder/newStatistics.html", u"r")
+			another_file = open(os.path.join(self.scratch, 'forHTML', 'html1folder', 'newStatistics.html'), u"r")
 			all_str = another_file.read()
 			another_file.close()
 
@@ -1189,7 +1337,7 @@ class kb_genomeclfUtils(object):
 			"""
 			file.write(next_str)
 
-			another_file = open(u"/kb/module/work/tmp/forHTML/html1folder/newStatistics.html", u"r")
+			another_file = open(os.path.join(self.scratch, 'forHTML', 'html1folder', 'newStatistics.html'), u"r")
 			all_str = another_file.read()
 			another_file.close()
 
@@ -1213,7 +1361,7 @@ class kb_genomeclfUtils(object):
 		"""
 		does: creates an .html file that makes the second report (first app).
 		"""
-		file = open(u"/kb/module/work/tmp/forHTML/html2folder/html2.html", u"w")
+		file = open(os.path.join(self.scratch, 'forHTML', 'html2folder', 'html2.html'), u"w")
 
 		html_string = u"""
 		<!DOCTYPE html>
@@ -1349,7 +1497,7 @@ class kb_genomeclfUtils(object):
 		"""
 		file.write(next_str)
 
-		another_file = open(u"/kb/module/work/tmp/forHTML/html2folder/postStatistics.html", u"r")
+		another_file = open(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'), u"r")
 		all_str = another_file.read()
 		another_file.close()
 
@@ -1369,7 +1517,7 @@ class kb_genomeclfUtils(object):
 		file.close()
 
 	def html_dual_12(self):
-		file = open(u"/kb/module/work/tmp/forHTML/dual_12.html", u"w")
+		file = open(os.path.join(self.scratch, 'forHTML', 'dual_12.html'), u"w")
 
 		html_string = u"""
 		<!DOCTYPE html>
@@ -1496,12 +1644,77 @@ class kb_genomeclfUtils(object):
 
 		return "dual_12.html"
 
+	### For Predict_Phenotype App	
+	def html_report_3(self):
+		"""
+		does: creates an .html file that makes the first report (second app).
+		"""
+		file = open(os.path.join(self.scratch, 'forSecHTML', 'html3.html'), u"w")
+
+		html_string = u"""
+		<!DOCTYPE html>
+		<html>
+		<head>
+		<style>
+		table, th, td {
+			border: 1px solid black;
+			border-collapse: collapse;
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		.column {
+			float: left;
+			width: 50%;
+			padding: 10px;
+		}
+
+		/* Clearfix (clear floats) */
+		.row::after {
+			content: "";
+			clear: both;
+			display: table;
+		}
+		</style>
+		</head>
+		<body>
+
+		<h1 style="text-align:center;">Prediction Results</h1>
+
+		<!-- <h2>Maybe we can add some more text here later?</h2> -->
+		<!--<p>How to create side-by-side images with the CSS float property:</p> -->
+
+		<p style="text-align:center; font-size:160%;">  Here is a simple table that shows the prediction for each sample and the probability of that prediction being correct </p>
+		<p style="text-align:center; font-size:100%;">  (Remember you can always increase the probabilty of the prediction being correct by adding in more data in the build classifier app and then re-running this app. Good Luck!) </p>
+
+
+		"""
+		file.write(html_string)
+
+		another_file = open(os.path.join(self.scratch, 'forSecHTML', 'html3folder', 'results.html'), u"r")
+		all_str = another_file.read()
+		another_file.close()
+
+		file.write(all_str)
+
+		next_str= u"""
+		</body>
+		</html>
+		"""
+		file.write(next_str)
+
+		file.close()
+
+		return "html3.html"
+
 	def html_nodual(self, location):
 
 		if location == "forHTML":
-			file = open(u"/kb/module/work/tmp/forHTML/nodual.html", u"w")
+			file = open(os.path.join(self.scratch, 'forHTML', 'nodual.html'), u"w")
 		else :
-			file = open(u"/kb/module/work/tmp/forSecHTML/nodual.html", u"w")
+			file = open(os.path.join(self.scratch, 'forSecHTML', 'nodual.html'), u"w")
 
 		html_string = u"""
 		<!DOCTYPE html>
@@ -1636,273 +1849,3 @@ class kb_genomeclfUtils(object):
 		file.close()
 
 		return "nodual.html"
-
-	def html_report_3(self):
-		"""
-		does: creates an .html file that makes the first report (second app).
-		"""
-		file = open(u"/kb/module/work/tmp/forSecHTML/html3.html", u"w")
-
-		html_string = u"""
-		<!DOCTYPE html>
-		<html>
-		<head>
-		<style>
-		table, th, td {
-			border: 1px solid black;
-			border-collapse: collapse;
-		}
-
-		* {
-			box-sizing: border-box;
-		}
-
-		.column {
-			float: left;
-			width: 50%;
-			padding: 10px;
-		}
-
-		/* Clearfix (clear floats) */
-		.row::after {
-			content: "";
-			clear: both;
-			display: table;
-		}
-		</style>
-		</head>
-		<body>
-
-		<h1 style="text-align:center;">Prediction Results</h1>
-
-		<!-- <h2>Maybe we can add some more text here later?</h2> -->
-		<!--<p>How to create side-by-side images with the CSS float property:</p> -->
-
-		<p style="text-align:center; font-size:160%;">  Here is a simple table that shows the prediction for each sample and the probability of that prediction being correct </p>
-		<p style="text-align:center; font-size:100%;">  (Remember you can always increase the probabilty of the prediction being correct by adding in more data in the build classifier app and then re-running this app. Good Luck!) </p>
-
-
-		"""
-		file.write(html_string)
-
-		another_file = open(u'/kb/module/work/tmp/forSecHTML/html3folder/results.html', u"r")
-		all_str = another_file.read()
-		another_file.close()
-
-		file.write(all_str)
-
-		next_str= u"""
-		</body>
-		</html>
-		"""
-		file.write(next_str)
-
-		file.close()
-
-		return "html3.html"
-
-	def printTree(self,tree, pass_name, master_Role, class_list):
-		"""
-		args:
-		---tree is a DecisionTree object that has already been tuned
-		---pass_name is a string for what you want the tree named as (but this is not where the creation happens just pass)
-		does:
-		---using graphviz feature it is able to geneate the dot file that has an "ugly" version of the tree inside
-		---call the parse_lookNice
-		return:
-		---N/A just makes an "ugly" dot file.
-		"""
-
-		"""
-		export_graphviz(tree, out_file="mytree.dot", feature_names=self.attribute_list,
-						class_names=class_list)
-		with open("mytree.dot") as f:
-			dot_graph = f.read()
-		os.system('dot -Tpng mytree.dot >  ' + name + '.png ')
-		"""
-
-		#dotfile = io.open(u"/kb/module/work/tmp/dotFolder/mydotTree.dot", u'w')
-		not_dotfile = StringIO.StringIO()
-		export_graphviz(tree, out_file=not_dotfile, feature_names=master_Role,
-						class_names=class_list)
-		#dotfile.close()
-
-		#print(type(dotfile))
-		#print(dotfile.getvalue())
-		contents = not_dotfile.getvalue()
-		not_dotfile.close()
-
-		dotfile = open(u"/kb/module/work/tmp/dotFolder/mydotTree.dot", u'w')
-		dotfile.write(contents)
-		dotfile.close()
-
-		self.parse_lookNice(pass_name, class_list)
-		#os.system('dot -Tpng ./mytree.dot >  ' + name + '.png ')
-
-	def create_report(self):
-		"""
-		at the moment not being used
-		"""
-		uuid_string = str(uuid.uuid4())
-
-		report_params = {
-			'direct_html_link_index': 0,
-			'file_links': output_zip_files,
-			'html_links': [u"/kb/module/work/tmp/forHTML/nice_html1.html", u"/kb/module/work/tmp/forHTML/nice_html2.html"],
-			'workspace_name': ws,
-			'report_object_name': 'kb_classifier_report_' + uuid_string
-		}
-
-		kbase_report_client = KBaseReport(self.callback_url, token=token)
-		output = kbase_report_client.create_extended_report(report_params)
-		return output
-
-	def incaseList_Names(self, list_name, for_predict = False):
-
-		#clean list_name to get rid of user formatting
-		#list_name = unicode(list_name)
-
-		list_name = list_name.replace("\"", "")
-		list_name = list_name.replace(", ", "\t")
-		#list_name = list_name.replace("-", "\t")
-
-		working_str = list_name.split("\\n")
-
-		#print(working_str) #['Genome_ID\tClassification', '262543.4\tfacultative', '1134785.3\tfacultative', '216432.3\taerobic', '269798.12\taerobic', '309807.19\taerobic', '411154.5\taerobic', '485917.5\taerobic', '485918.5\taerobic', '457391.3\tanaerobic', '470145.6\tanaerobic', '665954.3\tanaerobic', '679190.3\tanaerobic']
-
-		#open(u'kb/module/work/tmp/trialoutput.txt', u'w')
-		tem_file = codecs.open(u"/kb/module/work/tmp/trialoutput.txt", u"w", 'utf-8')
-		for index in working_str:
-			#print(index, file=tem_file)
-			#print index
-			print >>tem_file, index
-
-		print "before closing"
-
-		tem_file.close()
-
-		if not for_predict:
-			print "I'm inside the if not for_predict"
-			my_workPD = pd.read_csv(u"/kb/module/work/tmp/trialoutput.txt", delimiter="\s+")
-			#print my_workPD
-		else: 
-			my_workPD = pd.read_csv(u"/kb/module/work/tmp/trialoutput.txt")
-
-		os.remove(u"/kb/module/work/tmp/trialoutput.txt")
-
-		return my_workPD
-
-	def intake_method(self, just_DF, for_predict = False):
-		"""
-		does:
-		---with the excel file which has 2 columns: Genome_ID (same as my_input) and Classification
-			---it creates another dataframe with only classifications and rows as "index" which are genome names (my_input)
-		return:
-		---the dataframe with all_classifications (essentially the Y variable for ML)
-		"""
-
-		my_all_classifications = just_DF
-
-		#print my_all_classifications
-		print my_all_classifications.columns.values.tolist()
-
-		my_all_classifications.set_index('Genome_ID', inplace=True)
-
-		print "Below is my_all_classifications"
-
-		#print my_all_classifications
-
-		if not for_predict:
-			return my_all_classifications.index, my_all_classifications
-		else:
-			return my_all_classifications.index
-
-
-	def get_wholeClassification(self, listOfNames, my_current_ws, master_Role = None, for_predict = False):
-		"""
-		args:
-		---my_input is either a list of the names of the genomes in format "name1,name2" or "all" meaning everything in workspace will get used
-		does:
-		---creates a dataframe for the all the genomes given
-			---Rows are "index" which is the name of the genome(same as my_input)
-			---Colmuns are "master Role" which is a list of the all functional roles
-		return:
-		---returns the dataframe which contains all_attributes (this is the X matrix for ML)
-		"""
-
-		#file_input = pd.read_excel(file_path) #replace with location of file
-		#listOfNames = file_input['Genome_ID']
-
-		current_ws = my_current_ws
-
-		print current_ws
-
-		if not for_predict:
-			master_Role = [] #make this master_Role
-
-
-		name_and_roles = {}
-
-		for current_gName in listOfNames:
-			listOfFunctionalRoles = []
-			try:
-				functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['cdss']
-				for function in range(len (functionList)):
-					if str(functionList[function]['functions'][0]).lower() != 'hypothetical protein':
-						listOfFunctionalRoles.append(str(functionList[function]['functions'][0]))
-
-			except:
-				functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['features']
-				for function in range(len (functionList)):
-					if str(functionList[function]['function']).lower() != 'hypothetical protein':
-						listOfFunctionalRoles.append(str(functionList[function]['function']))
-
-			name_and_roles[current_gName] = listOfFunctionalRoles
-
-			print "I have arrived inside the desired for loop!!"
-
-		if not for_predict:
-			master_pre_Role = list(itertools.chain(*name_and_roles.values()))
-			master_Role = list(set(master_pre_Role))
-
-
-		data_dict = {}
-
-		for current_gName in listOfNames:
-			arrayofONEZERO = []
-
-			current_Roles = name_and_roles[current_gName]
-
-			for individual_role in master_Role:
-				if individual_role in current_Roles:
-					arrayofONEZERO.append(1)
-				else:
-					arrayofONEZERO.append(0)
-
-			data_dict[current_gName] = arrayofONEZERO
-
-		my_all_attributes = pd.DataFrame.from_dict(data_dict, orient='index', columns = master_Role)
-
-		if not for_predict:
-			return my_all_attributes, master_Role
-		else:
-			return my_all_attributes
-
-	def _valid_params(self, params):
-
-		pass
-
-	def _make_dir(self):
-		dir_path = os.path.join(self.scratch, str(uuid.uuid4()))
-		# if os # exists
-		os.mkdir(dir_path)
-
-		return dir_path
-
-	def _download_shock(self, shock_id):
-		dir_path = self._make_dir()
-
-		file_path = self.dfu.shock_to_file({'shock_id': shock_id,
-											'file_path': dir_path})['file_path']
-
-		return file_path

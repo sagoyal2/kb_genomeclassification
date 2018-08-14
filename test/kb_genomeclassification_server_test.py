@@ -78,18 +78,6 @@ class kb_genomeclassificationTest(unittest.TestCase):
 
     def getContext(self):
         return self.__class__.ctx
-
-    # def test_download_shock(self):
-
-    """
-    def test_workspace(self):
-        import biokbase.workspace.client
-
-        current_ws = 'my_current_ws'
-        ws = biokbase.narrative.clients.get("workspace")
-        ws_client = Workspace()
-    """
-
    
     def test_build_classifier(self):
         params = {
@@ -150,64 +138,3 @@ class kb_genomeclassificationTest(unittest.TestCase):
         }
 
         self.getImpl().predict_phenotype(self.getContext(), params)
-
-
-    """
-    def test_build_classifier(self):
-        #result = self.getImpl() #impl_kb_genomeclassification = kb_genomeclassification(u"Metabolism")
-        print("this first part is about to begin")
-
-        # result = 
-
-        print("this first part is done")
-
-        wsName = self.getWsName()
-
-        print(wsName)
-
-        params = {'phenotypeclass': 'Gram_Stain', #Metabolism Gram_Stain
-                  'classifier': 'KNeighborsClassifier',
-                  'input_ws': wsName} #run_all KNeighborsClassifier
-
-        print("here is wsName:")
-        print(params.get('input_ws'))
-
-        # params = {'target': 'Metabolism'}
-        #print(result.build_classifier(self.getContext(), {"gram negative", "xyz"})) #impl_kb_genomeclassification.build_classifier(u"Metabolism")
-        
-
-        #self.serviceImpl.build_classifier(self.getContext(), params)
-
-        #cls.cfg[u'which_target'] = u"Metabolism"
-
-        self.getImpl().build_classifier(self.getContext(), params)
-
-        # kb_genomeclassification("Gram_Stain").build_classifier(self.getContext(), params)
-
-        print("done with test_build_classifier")
-
-        #result.predict_phenotype(self.getContext(), {"unknown annotations"})
-        #print("done with predict_phenotype")
-
-        #print(result.tree_code()) # <-- prints the tree to see the "decisions" that the classifier is making)
-        #print("done with tree_code")
-
-
-        
-        test all classifiers so user can see results
-        (however you will also import these classification types)
-        result.classiferTest(KNeighborsClassifier(),"Metabolism_KNeighborsClassifier",True)
-        result.classiferTest(GaussianNB(),"Metabolism_GaussianNB",True)
-        result.classiferTest(LogisticRegression(random_state=0),"Metabolism_LogisticRegression",True)
-        result.classiferTest(DecisionTreeClassifier(random_state=0),"Metabolism_DecisionTreeClassifier",True)
-        result.classiferTest(svm.LinearSVC(random_state=0),"Metabolism_SVM",True)
-        
-
-
-        #print("done with test_build_classifier")
-
-        #result.build_classifier(self.getContext(), {"gram negative", "xyz"})
-        #result.classiferTest(KNeighborsClassifier(),"Metabolism-KNeighborsClassifier",True)
-
-        #impl_kb_genomeclassification.tree_code() # <-- prints the tree to see the "decisions" that the classifier is making
-    """
