@@ -32,8 +32,6 @@ class kb_genomeclassification:
 
     #END_CLASS_HEADER
 
-    # config contains contents of config file in a hash or None if it couldn't
-    # be found
     def __init__(self, config):
         #BEGIN_CONSTRUCTOR
 

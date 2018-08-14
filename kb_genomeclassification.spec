@@ -1,6 +1,6 @@
 /*
 A KBase module: kb_genomeclassification
-This module build a classifier and predict phenotypes based on the classifier
+This module build a classifier and predict phenotypes based on the classifier Another line
 */
 
 module kb_genomeclassification {
