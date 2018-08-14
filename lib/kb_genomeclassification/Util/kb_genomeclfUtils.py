@@ -617,8 +617,8 @@ class kb_genomeclfUtils(object):
 			pickle_out.close()
 
 
-			current_pickle = pickle.dumps(classifier.fit(all_attributes, all_classifications), protocol=0)
-			pickled = codecs.encode(current_pickle, "base64").decode()
+			#current_pickle = pickle.dumps(classifier.fit(all_attributes, all_classifications), protocol=0)
+			#pickled = codecs.encode(current_pickle, "base64").decode()
 
 
 			"""
@@ -634,6 +634,7 @@ class kb_genomeclfUtils(object):
 			print "This is printing out the classifier_object that needs to be saved down dump"
 			print ""
 
+			"""
 			classifier_object = {
 			'classifier_id' : '',
 			'classifier_type' : classifier_type, # Neural network
@@ -669,7 +670,7 @@ class kb_genomeclfUtils(object):
 
 			print obj_save_ref
 			print "done"        
-
+			"""
 
 		list_forDict = []
 
