@@ -3,7 +3,7 @@
 #
 name: Predict Phenotype
 tooltip: |
-    This module build a classifier based on selected atrribute
+    This module predict phenotypes for genomes based on a selected classifier
 screenshots: []
 
 icon: null
@@ -48,4 +48,4 @@ parameters :
         short-hint : |
             Select the phenotype to be predicted
 description : |
-    <p>This module build a classifier and predict phenotypes based on the classifier.</p>
+    <p>This module predict phenotypes for genomes based on a selected classifier.</p>

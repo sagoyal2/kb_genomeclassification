@@ -63,4 +63,4 @@ parameters :
         short-hint : |
             Name the classifier object
 description : |
-    <p>This module build a classifier and predict phenotypes based on the classifier.</p>
+    <p><b>This module build classifiers based on a training data set. </b></p> <p>This module takes Genomes and the associated functional roles as attributes to build classifiers.</p> <p> In this method we use six machine learning algorithms from ‘sklearn’ (http://scikit-learn.org/stable/#)  python library; K-Nearest Neighbors, Logistic Regression, Naive Gaussian Bayes Classifier, Support Vector Machine, Neural Network (black-box algorithms) and Decision Tree Classifier (white box algorithm) in building classifier objects that another KBase app ‘predict_phenotype’ could use these classifier objects and predict phenotypes for uncharacterized/unknown genomes.</p> <p>The paper associated with this method is in preparation.</p>
