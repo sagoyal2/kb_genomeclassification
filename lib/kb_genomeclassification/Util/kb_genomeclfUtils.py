@@ -275,8 +275,16 @@ class kb_genomeclfUtils(object):
 		after_classifier_result_forDF = []
 
 		for current_result in after_classifier_result:
-			after_classifier_result_forDF.extend(my_mapping.keys()[my_mapping.values().index(current_result)])
+			after_classifier_result_forDF.append(my_mapping.keys()[my_mapping.values().index(current_result)])
 
+		"""
+		print "I'm printing after_classifier_result_forDF"
+		print (after_classifier_result_forDF)
+
+		print "I'm printing all_attributes.index"
+		print (all_attributes.index)
+		"""
+		
 		after_classifier_df = pd.DataFrame(after_classifier_result_forDF, index=all_attributes.index, columns=[target])
 
 		#create a column for the probability of a prediction being accurate
