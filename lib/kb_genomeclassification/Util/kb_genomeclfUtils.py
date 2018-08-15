@@ -176,7 +176,7 @@ class kb_genomeclfUtils(object):
 				self.classifierTest(classifierTest_params)
 
 			best_classifier_str = self.to_HTML_Statistics(class_list, classifier_name)
-			best_classifier_str = classifier_name+u"_LogisticRegression"
+			#best_classifier_str = classifier_name+u"_LogisticRegression"
 			best_classifier_type = best_classifier_str[classifier_name.__len__() + 1:] #extract just the classifier_type aka. "LogisticRegression" from "myName_LogisticRegression"
 			
 			#to create another "best in html2"
@@ -192,6 +192,8 @@ class kb_genomeclfUtils(object):
 
 			self.html_report_1(global_target, classifier_type, classifier_name, best_classifier_str= best_classifier_str)
 
+			#classifierTest_params['classifier_type'] = "DecisionTreeClassifier"
+			classifierTest_params['classifier_name'] = classifier_name
 			classifierTest_params['htmlfolder'] = folderhtml2
 			self.tune_Decision_Tree(classifierTest_params, best_classifier_str)
 			
@@ -330,9 +332,15 @@ class kb_genomeclfUtils(object):
 		'shock_id': report_shock_id
 		}
 
+		"""output_zip_files.append({'path': os.path.join(read_file_path, file),
+																				 'name': file,
+																				 'label': label,
+																				 'description': desc})"""
+
 		report_params = {'message': '',
 			 'workspace_name': current_ws,#params.get('input_ws'),
 			 #'objects_created': objects_created,
+			 #'file_links': output_zip_files,
 			 'html_links': [htmloutput],
 			 'direct_html_link_index': 0,
 			 'html_window_height': 500,
@@ -1131,7 +1139,7 @@ class kb_genomeclfUtils(object):
 		f.close()
 		new_allStr = allStr.replace(u'\\n', u'')
 
-		first_fix = re.sub(ur'(\w\s\[label="[\w\s.,:()-]+)<=([\w\s.\[\]=,]+)("] ;)',
+		first_fix = re.sub(ur'(\w\s\[label="[\w\s.,:\/()-]+)<=([\w\s.\[\]=,]+)("] ;)',
 						   ur'\1 (Absent)" , color="0.650 0.200 1.000"] ;', new_allStr)
 		second_fix = re.sub(ur'(\w\s\[label=")(.+?class\s=\s)', ur'\1', first_fix)
 
@@ -1445,8 +1453,8 @@ class kb_genomeclfUtils(object):
 
 			<div class="row">
 			  <div class="column">
-				  <p style="text-align:left; font-size:160%;">A.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """.pickle" download> (Download) </a> </p>
-				<img src=" """+ classifier_name +""".png" alt="Snow" style="width:100%">
+				  <p style="text-align:left; font-size:160%;">A.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier.pickle" download> (Download) </a> </p>
+				<img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
 			  </div>
 			"""
 
