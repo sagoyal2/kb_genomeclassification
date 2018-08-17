@@ -26,7 +26,7 @@ This module build a classifier and predict phenotypes based on the classifier An
     ######################################### noqa
     VERSION = "0.0.1"
     GIT_URL = "https://github.com/janakagithub/kb_genomeclassification.git"
-    GIT_COMMIT_HASH = "82a015c5cbf57d0b3cd901eeadd1be03a9354fbb"
+    GIT_COMMIT_HASH = "c2dc07fe0afce59bd38ae5660e257fd0cb112a82"
 
     #BEGIN_CLASS_HEADER
 
