@@ -284,7 +284,7 @@ class kb_genomeclfUtils(object):
 		print "I'm printing all_attributes.index"
 		print (all_attributes.index)
 		"""
-		
+
 		after_classifier_df = pd.DataFrame(after_classifier_result_forDF, index=all_attributes.index, columns=[target])
 
 		#create a column for the probability of a prediction being accurate
@@ -662,7 +662,7 @@ class kb_genomeclfUtils(object):
 			'number_of_attributes' : class_list.__len__(),
 			'attribute_data' : master_Role,#["this is where master_role would go", "just a list"],#master_Role, #master_Role,
 			'class_list_mapping' : my_mapping, #{} my_mapping, #my_mapping,
-			'number_of_genomes' : all_attributes.shape[0],
+			'number_of_genomes' : all_attributes.shape[1],
 			'training_set_ref' : ''
 			}
 
@@ -1188,10 +1188,25 @@ class kb_genomeclfUtils(object):
 		"""
 		dir_path = self._make_dir()
 
-		file_path = self.dfu.shock_to_file({'shock_id': shock_id,
+		file_path = self.dfu.shock_to_file({'shock_id': shock_id, #also takes handles
 											'file_path': dir_path})['file_path']
 
 		return file_path
+
+	def _upload_to_shock(self, file_path):
+		"""
+		does:
+		---using kbase dfu tool to allow users to insert excel files 
+		"""
+		# dir_path = self._make_dir()
+
+		f2shock_out = self.dfu.file_to_shock({'file_path': dir_path,
+									          'make_handle': True})
+
+		shock_id = f2shock_out.get('shock_id')
+		handle_id = f2shock_out.get('handle').get('hid')
+
+		return shock_id, handle_id
 
 	#### HTML templates below ####
 
