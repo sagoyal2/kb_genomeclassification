@@ -20,17 +20,23 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
     "workspace",
-    "classifier_ref",
-    "phenotype"
+    "classifier_name",
+    "phenotypeclass",
+    "shock_id",
+    "list_name"
 })
 public class ClassifierPredictionInput {
 
     @JsonProperty("workspace")
     private String workspace;
-    @JsonProperty("classifier_ref")
-    private String classifierRef;
-    @JsonProperty("phenotype")
-    private String phenotype;
+    @JsonProperty("classifier_name")
+    private String classifierName;
+    @JsonProperty("phenotypeclass")
+    private String phenotypeclass;
+    @JsonProperty("shock_id")
+    private String shockId;
+    @JsonProperty("list_name")
+    private String listName;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonProperty("workspace")
@@ -48,33 +54,63 @@ public class ClassifierPredictionInput {
         return this;
     }
 
-    @JsonProperty("classifier_ref")
-    public String getClassifierRef() {
-        return classifierRef;
+    @JsonProperty("classifier_name")
+    public String getClassifierName() {
+        return classifierName;
     }
 
-    @JsonProperty("classifier_ref")
-    public void setClassifierRef(String classifierRef) {
-        this.classifierRef = classifierRef;
+    @JsonProperty("classifier_name")
+    public void setClassifierName(String classifierName) {
+        this.classifierName = classifierName;
     }
 
-    public ClassifierPredictionInput withClassifierRef(String classifierRef) {
-        this.classifierRef = classifierRef;
+    public ClassifierPredictionInput withClassifierName(String classifierName) {
+        this.classifierName = classifierName;
         return this;
     }
 
-    @JsonProperty("phenotype")
-    public String getPhenotype() {
-        return phenotype;
+    @JsonProperty("phenotypeclass")
+    public String getPhenotypeclass() {
+        return phenotypeclass;
     }
 
-    @JsonProperty("phenotype")
-    public void setPhenotype(String phenotype) {
-        this.phenotype = phenotype;
+    @JsonProperty("phenotypeclass")
+    public void setPhenotypeclass(String phenotypeclass) {
+        this.phenotypeclass = phenotypeclass;
     }
 
-    public ClassifierPredictionInput withPhenotype(String phenotype) {
-        this.phenotype = phenotype;
+    public ClassifierPredictionInput withPhenotypeclass(String phenotypeclass) {
+        this.phenotypeclass = phenotypeclass;
+        return this;
+    }
+
+    @JsonProperty("shock_id")
+    public String getShockId() {
+        return shockId;
+    }
+
+    @JsonProperty("shock_id")
+    public void setShockId(String shockId) {
+        this.shockId = shockId;
+    }
+
+    public ClassifierPredictionInput withShockId(String shockId) {
+        this.shockId = shockId;
+        return this;
+    }
+
+    @JsonProperty("list_name")
+    public String getListName() {
+        return listName;
+    }
+
+    @JsonProperty("list_name")
+    public void setListName(String listName) {
+        this.listName = listName;
+    }
+
+    public ClassifierPredictionInput withListName(String listName) {
+        this.listName = listName;
         return this;
     }
 
@@ -90,7 +126,7 @@ public class ClassifierPredictionInput {
 
     @Override
     public String toString() {
-        return ((((((((("ClassifierPredictionInput"+" [workspace=")+ workspace)+", classifierRef=")+ classifierRef)+", phenotype=")+ phenotype)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((("ClassifierPredictionInput"+" [workspace=")+ workspace)+", classifierName=")+ classifierName)+", phenotypeclass=")+ phenotypeclass)+", shockId=")+ shockId)+", listName=")+ listName)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

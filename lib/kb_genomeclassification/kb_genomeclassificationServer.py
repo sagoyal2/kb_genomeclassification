@@ -341,6 +341,10 @@ class Application(object):
                              name='kb_genomeclassification.predict_phenotype',
                              types=[dict])
         self.method_authentication['kb_genomeclassification.predict_phenotype'] = 'required'  # noqa
+        self.rpc_service.add(impl_kb_genomeclassification.upload_trainingset,
+                             name='kb_genomeclassification.upload_trainingset',
+                             types=[dict])
+        self.method_authentication['kb_genomeclassification.upload_trainingset'] = 'required'  # noqa
         self.rpc_service.add(impl_kb_genomeclassification.status,
                              name='kb_genomeclassification.status',
                              types=[dict])

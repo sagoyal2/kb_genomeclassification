@@ -58,13 +58,33 @@ class kb_genomeclassification(object):
         """
         :param params: instance of type "ClassifierPredictionInput" ->
            structure: parameter "workspace" of String, parameter
-           "classifier_ref" of String, parameter "phenotype" of String
+           "classifier_name" of String, parameter "phenotypeclass" of String,
+           parameter "shock_id" of String, parameter "list_name" of String
         :returns: instance of type "ClassifierPredictionOutput" -> structure:
            parameter "prediction_accuracy" of Double, parameter "predictions"
            of mapping from String to String
         """
         return self._client.call_method(
             'kb_genomeclassification.predict_phenotype',
+            [params], self._service_ver, context)
+
+    def upload_trainingset(self, params, context=None):
+        """
+        :param params: instance of type "UploadTrainingSetInput" ->
+           structure: parameter "phenotypeclass" of String, parameter
+           "workspace" of String, parameter "classifier_training_set" of
+           mapping from String to type "ClassifierTrainingSet" (typedef
+           string genome_id; typedef string phenotype;) -> structure:
+           parameter "phenotype" of String, parameter "genome_name" of
+           String, parameter "training_set_out" of String, parameter "target"
+           of String, parameter "shock_id" of String, parameter "list_name"
+           of String
+        :returns: instance of type "ClassifierPredictionOutput" -> structure:
+           parameter "prediction_accuracy" of Double, parameter "predictions"
+           of mapping from String to String
+        """
+        return self._client.call_method(
+            'kb_genomeclassification.upload_trainingset',
             [params], self._service_ver, context)
 
     def status(self, context=None):

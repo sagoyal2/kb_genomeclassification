@@ -17,7 +17,7 @@ import us.kbase.common.service.UnauthorizedException;
  * <p>Original spec-file module name: kb_genomeclassification</p>
  * <pre>
  * A KBase module: kb_genomeclassification
- * This module build a classifier and predict phenotypes based on the classifier
+ * This module build a classifier and predict phenotypes based on the classifier Another line
  * </pre>
  */
 public class KbGenomeclassificationClient {
@@ -198,6 +198,23 @@ public class KbGenomeclassificationClient {
         args.add(params);
         TypeReference<List<ClassifierPredictionOutput>> retType = new TypeReference<List<ClassifierPredictionOutput>>() {};
         List<ClassifierPredictionOutput> res = caller.jsonrpcCall("kb_genomeclassification.predict_phenotype", args, retType, true, true, jsonRpcContext, this.serviceVersion);
+        return res.get(0);
+    }
+
+    /**
+     * <p>Original spec-file function name: upload_trainingset</p>
+     * <pre>
+     * </pre>
+     * @param   params   instance of type {@link us.kbase.kbgenomeclassification.UploadTrainingSetInput UploadTrainingSetInput}
+     * @return   parameter "output" of type {@link us.kbase.kbgenomeclassification.ClassifierPredictionOutput ClassifierPredictionOutput}
+     * @throws IOException if an IO exception occurs
+     * @throws JsonClientException if a JSON RPC exception occurs
+     */
+    public ClassifierPredictionOutput uploadTrainingset(UploadTrainingSetInput params, RpcContext... jsonRpcContext) throws IOException, JsonClientException {
+        List<Object> args = new ArrayList<Object>();
+        args.add(params);
+        TypeReference<List<ClassifierPredictionOutput>> retType = new TypeReference<List<ClassifierPredictionOutput>>() {};
+        List<ClassifierPredictionOutput> res = caller.jsonrpcCall("kb_genomeclassification.upload_trainingset", args, retType, true, true, jsonRpcContext, this.serviceVersion);
         return res.get(0);
     }
 
