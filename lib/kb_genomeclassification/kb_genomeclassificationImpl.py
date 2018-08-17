@@ -26,7 +26,7 @@ This module build a classifier and predict phenotypes based on the classifier An
     ######################################### noqa
     VERSION = "0.0.1"
     GIT_URL = "https://github.com/janakagithub/kb_genomeclassification.git"
-    GIT_COMMIT_HASH = "c2dc07fe0afce59bd38ae5660e257fd0cb112a82"
+    GIT_COMMIT_HASH = "6a61599c51d991c92f26f26252ca3d109b8ceb42"
 
     #BEGIN_CLASS_HEADER
 
@@ -135,9 +135,8 @@ This module build a classifier and predict phenotypes based on the classifier An
            String, parameter "training_set_out" of String, parameter "target"
            of String, parameter "shock_id" of String, parameter "list_name"
            of String
-        :returns: instance of type "ClassifierPredictionOutput" -> structure:
-           parameter "prediction_accuracy" of Double, parameter "predictions"
-           of mapping from String to String
+        :returns: instance of type "UploadTrainingSetOut" -> structure:
+           parameter "report_name" of String, parameter "report_ref" of String
         """
         # ctx is the context object
         # return variables are: output

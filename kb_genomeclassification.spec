@@ -80,5 +80,5 @@ module kb_genomeclassification {
 
 
 	funcdef upload_trainingset(UploadTrainingSetInput params)
-        returns (ClassifierPredictionOutput output) authentication required;
+        returns (UploadTrainingSetOut output) authentication required;
 };

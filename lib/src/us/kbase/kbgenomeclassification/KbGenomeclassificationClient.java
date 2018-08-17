@@ -206,15 +206,15 @@ public class KbGenomeclassificationClient {
      * <pre>
      * </pre>
      * @param   params   instance of type {@link us.kbase.kbgenomeclassification.UploadTrainingSetInput UploadTrainingSetInput}
-     * @return   parameter "output" of type {@link us.kbase.kbgenomeclassification.ClassifierPredictionOutput ClassifierPredictionOutput}
+     * @return   parameter "output" of type {@link us.kbase.kbgenomeclassification.UploadTrainingSetOut UploadTrainingSetOut}
      * @throws IOException if an IO exception occurs
      * @throws JsonClientException if a JSON RPC exception occurs
      */
-    public ClassifierPredictionOutput uploadTrainingset(UploadTrainingSetInput params, RpcContext... jsonRpcContext) throws IOException, JsonClientException {
+    public UploadTrainingSetOut uploadTrainingset(UploadTrainingSetInput params, RpcContext... jsonRpcContext) throws IOException, JsonClientException {
         List<Object> args = new ArrayList<Object>();
         args.add(params);
-        TypeReference<List<ClassifierPredictionOutput>> retType = new TypeReference<List<ClassifierPredictionOutput>>() {};
-        List<ClassifierPredictionOutput> res = caller.jsonrpcCall("kb_genomeclassification.upload_trainingset", args, retType, true, true, jsonRpcContext, this.serviceVersion);
+        TypeReference<List<UploadTrainingSetOut>> retType = new TypeReference<List<UploadTrainingSetOut>>() {};
+        List<UploadTrainingSetOut> res = caller.jsonrpcCall("kb_genomeclassification.upload_trainingset", args, retType, true, true, jsonRpcContext, this.serviceVersion);
         return res.get(0);
     }
 

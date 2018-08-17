@@ -79,9 +79,8 @@ class kb_genomeclassification(object):
            String, parameter "training_set_out" of String, parameter "target"
            of String, parameter "shock_id" of String, parameter "list_name"
            of String
-        :returns: instance of type "ClassifierPredictionOutput" -> structure:
-           parameter "prediction_accuracy" of Double, parameter "predictions"
-           of mapping from String to String
+        :returns: instance of type "UploadTrainingSetOut" -> structure:
+           parameter "report_name" of String, parameter "report_ref" of String
         """
         return self._client.call_method(
             'kb_genomeclassification.upload_trainingset',

@@ -339,7 +339,7 @@ ClassifierPredictionOutput is a reference to a hash where the following keys are
 
 <pre>
 $params is a kb_genomeclassification.UploadTrainingSetInput
-$output is a kb_genomeclassification.ClassifierPredictionOutput
+$output is a kb_genomeclassification.UploadTrainingSetOut
 UploadTrainingSetInput is a reference to a hash where the following keys are defined:
 	phenotypeclass has a value which is a string
 	workspace has a value which is a string
@@ -351,9 +351,9 @@ UploadTrainingSetInput is a reference to a hash where the following keys are def
 ClassifierTrainingSet is a reference to a hash where the following keys are defined:
 	phenotype has a value which is a string
 	genome_name has a value which is a string
-ClassifierPredictionOutput is a reference to a hash where the following keys are defined:
-	prediction_accuracy has a value which is a float
-	predictions has a value which is a reference to a hash where the key is a string and the value is a string
+UploadTrainingSetOut is a reference to a hash where the following keys are defined:
+	report_name has a value which is a string
+	report_ref has a value which is a string
 
 </pre>
 
@@ -362,7 +362,7 @@ ClassifierPredictionOutput is a reference to a hash where the following keys are
 =begin text
 
 $params is a kb_genomeclassification.UploadTrainingSetInput
-$output is a kb_genomeclassification.ClassifierPredictionOutput
+$output is a kb_genomeclassification.UploadTrainingSetOut
 UploadTrainingSetInput is a reference to a hash where the following keys are defined:
 	phenotypeclass has a value which is a string
 	workspace has a value which is a string
@@ -374,9 +374,9 @@ UploadTrainingSetInput is a reference to a hash where the following keys are def
 ClassifierTrainingSet is a reference to a hash where the following keys are defined:
 	phenotype has a value which is a string
 	genome_name has a value which is a string
-ClassifierPredictionOutput is a reference to a hash where the following keys are defined:
-	prediction_accuracy has a value which is a float
-	predictions has a value which is a reference to a hash where the key is a string and the value is a string
+UploadTrainingSetOut is a reference to a hash where the following keys are defined:
+	report_name has a value which is a string
+	report_ref has a value which is a string
 
 
 =end text
