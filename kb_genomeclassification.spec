@@ -18,6 +18,7 @@ module kb_genomeclassification {
         string phenotypeclass;
         string attribute;
         string workspace;
+        string trainingset_name;
         mapping <string genome_id,ClassifierTrainingSet> classifier_training_set;
         string classifier_out;
         string target;

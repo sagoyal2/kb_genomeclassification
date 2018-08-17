@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "phenotypeclass",
     "attribute",
     "workspace",
+    "trainingset_name",
     "classifier_training_set",
     "classifier_out",
     "target",
@@ -38,6 +39,8 @@ public class BuildClassifierInput {
     private java.lang.String attribute;
     @JsonProperty("workspace")
     private java.lang.String workspace;
+    @JsonProperty("trainingset_name")
+    private java.lang.String trainingsetName;
     @JsonProperty("classifier_training_set")
     private Map<String, ClassifierTrainingSet> classifierTrainingSet;
     @JsonProperty("classifier_out")
@@ -96,6 +99,21 @@ public class BuildClassifierInput {
 
     public BuildClassifierInput withWorkspace(java.lang.String workspace) {
         this.workspace = workspace;
+        return this;
+    }
+
+    @JsonProperty("trainingset_name")
+    public java.lang.String getTrainingsetName() {
+        return trainingsetName;
+    }
+
+    @JsonProperty("trainingset_name")
+    public void setTrainingsetName(java.lang.String trainingsetName) {
+        this.trainingsetName = trainingsetName;
+    }
+
+    public BuildClassifierInput withTrainingsetName(java.lang.String trainingsetName) {
+        this.trainingsetName = trainingsetName;
         return this;
     }
 
@@ -216,7 +234,7 @@ public class BuildClassifierInput {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((((((((((("BuildClassifierInput"+" [phenotypeclass=")+ phenotypeclass)+", attribute=")+ attribute)+", workspace=")+ workspace)+", classifierTrainingSet=")+ classifierTrainingSet)+", classifierOut=")+ classifierOut)+", target=")+ target)+", classifier=")+ classifier)+", shockId=")+ shockId)+", listName=")+ listName)+", saveTs=")+ saveTs)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((((((((((("BuildClassifierInput"+" [phenotypeclass=")+ phenotypeclass)+", attribute=")+ attribute)+", workspace=")+ workspace)+", trainingsetName=")+ trainingsetName)+", classifierTrainingSet=")+ classifierTrainingSet)+", classifierOut=")+ classifierOut)+", target=")+ target)+", classifier=")+ classifier)+", shockId=")+ shockId)+", listName=")+ listName)+", saveTs=")+ saveTs)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

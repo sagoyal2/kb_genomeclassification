@@ -10,6 +10,17 @@
         "output": "no-display"
     },
     "parameters": [
+         {
+            "id": "trainingset_name",
+            "optional": false,
+            "advanced": false,
+            "allow_multiple": false,
+            "default_values": [ "" ],
+            "field_type": "text",
+            "text_options": {
+                "valid_ws_types": [ "KBaseClassifier.GenomeClassifierTrainingSet" ]
+            }
+        },
         {
           "id": "shock_id",
           "optional" : false,
@@ -174,6 +185,11 @@
                 {
                     "input_parameter": "list_name",
                     "target_property": "list_name"
+
+                },
+                {
+                    "input_parameter": "trainingset_name",
+                    "target_property": "trainingset_name"
 
                 },
                 {

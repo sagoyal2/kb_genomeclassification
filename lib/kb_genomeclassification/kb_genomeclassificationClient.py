@@ -40,13 +40,14 @@ class kb_genomeclassification(object):
         :param params: instance of type "BuildClassifierInput" -> structure:
            parameter "phenotypeclass" of String, parameter "attribute" of
            String, parameter "workspace" of String, parameter
-           "classifier_training_set" of mapping from String to type
-           "ClassifierTrainingSet" (typedef string genome_id; typedef string
-           phenotype;) -> structure: parameter "phenotype" of String,
-           parameter "genome_name" of String, parameter "classifier_out" of
-           String, parameter "target" of String, parameter "classifier" of
-           String, parameter "shock_id" of String, parameter "list_name" of
-           String, parameter "save_ts" of Long
+           "trainingset_name" of String, parameter "classifier_training_set"
+           of mapping from String to type "ClassifierTrainingSet" (typedef
+           string genome_id; typedef string phenotype;) -> structure:
+           parameter "phenotype" of String, parameter "genome_name" of
+           String, parameter "classifier_out" of String, parameter "target"
+           of String, parameter "classifier" of String, parameter "shock_id"
+           of String, parameter "list_name" of String, parameter "save_ts" of
+           Long
         :returns: instance of type "ClassifierOut" -> structure: parameter
            "report_name" of String, parameter "report_ref" of String
         """
