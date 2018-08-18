@@ -632,6 +632,9 @@ class kb_genomeclfUtils(object):
 			pickle.dump(classifier.fit(all_attributes, all_classifications), pickle_out, protocol = 2)
 			pickle_out.close()
 
+			"""
+			shock_id, handle_id = self._upload_to_shock(pickle_out)
+			"""
 
 			current_pickle = pickle.dumps(classifier.fit(all_attributes, all_classifications), protocol=0)
 			pickled = codecs.encode(current_pickle, "base64").decode()
