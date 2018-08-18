@@ -15,7 +15,7 @@ class kb_genomeclassification:
 
     Module Description:
     A KBase module: kb_genomeclassification
-	This module build a classifier and predict phenotypes based on the classifier
+This module build a classifier and predict phenotypes based on the classifier Another line
     '''
 
     ######## WARNING FOR GEVENT USERS ####### noqa
@@ -26,12 +26,14 @@ class kb_genomeclassification:
     ######################################### noqa
     VERSION = "0.0.1"
     GIT_URL = "https://github.com/janakagithub/kb_genomeclassification.git"
-    GIT_COMMIT_HASH = "511b3b0cbc447d38ea281a52806194aed7410016"
+    GIT_COMMIT_HASH = "346e01dd28a6eb6b08f577650fc634904b83586f"
 
     #BEGIN_CLASS_HEADER
 
     #END_CLASS_HEADER
 
+    # config contains contents of config file in a hash or None if it couldn't
+    # be found
     def __init__(self, config):
         #BEGIN_CONSTRUCTOR
 
@@ -56,13 +58,14 @@ class kb_genomeclassification:
         :param params: instance of type "BuildClassifierInput" -> structure:
            parameter "phenotypeclass" of String, parameter "attribute" of
            String, parameter "workspace" of String, parameter
-           "classifier_training_set" of mapping from String to type
-           "ClassifierTrainingSet" (typedef string genome_id; typedef string
-           phenotype;) -> structure: parameter "phenotype" of String,
-           parameter "genome_name" of String, parameter "classifier_out" of
-           String, parameter "target" of String, parameter "classifier" of
-           String, parameter "shock_id" of String, parameter "list_name" of
-           String, parameter "save_ts" of Long
+           "trainingset_name" of String, parameter "classifier_training_set"
+           of mapping from String to type "ClassifierTrainingSet" (typedef
+           string genome_id; typedef string phenotype;) -> structure:
+           parameter "phenotype" of String, parameter "genome_name" of
+           String, parameter "classifier_out" of String, parameter "target"
+           of String, parameter "classifier" of String, parameter "shock_id"
+           of String, parameter "list_name" of String, parameter "save_ts" of
+           Long
         :returns: instance of type "ClassifierOut" -> structure: parameter
            "report_name" of String, parameter "report_ref" of String
         """
@@ -83,17 +86,18 @@ class kb_genomeclassification:
         #END build_classifier
 
         # At some point might do deeper type checking...
-        if not isinstance(report_output, dict):
+        if not isinstance(output, dict):
             raise ValueError('Method build_classifier return value ' +
                              'output is not type dict as required.')
         # return the results
-        return [report_output]
+        return [output]
 
     def predict_phenotype(self, ctx, params):
         """
         :param params: instance of type "ClassifierPredictionInput" ->
            structure: parameter "workspace" of String, parameter
-           "classifier_ref" of String, parameter "phenotype" of String
+           "classifier_name" of String, parameter "phenotypeclass" of String,
+           parameter "shock_id" of String, parameter "list_name" of String
         :returns: instance of type "ClassifierPredictionOutput" -> structure:
            parameter "prediction_accuracy" of Double, parameter "predictions"
            of mapping from String to String
@@ -115,12 +119,37 @@ class kb_genomeclassification:
         #END predict_phenotype
 
         # At some point might do deeper type checking...
-        if not isinstance(report_output, dict):
+        if not isinstance(output, dict):
             raise ValueError('Method predict_phenotype return value ' +
                              'output is not type dict as required.')
         # return the results
-        return [report_output]
+        return [output]
 
+    def upload_trainingset(self, ctx, params):
+        """
+        :param params: instance of type "UploadTrainingSetInput" ->
+           structure: parameter "phenotypeclass" of String, parameter
+           "workspace" of String, parameter "classifier_training_set" of
+           mapping from String to type "ClassifierTrainingSet" (typedef
+           string genome_id; typedef string phenotype;) -> structure:
+           parameter "phenotype" of String, parameter "genome_name" of
+           String, parameter "training_set_out" of String, parameter "target"
+           of String, parameter "shock_id" of String, parameter "list_name"
+           of String
+        :returns: instance of type "UploadTrainingSetOut" -> structure:
+           parameter "report_name" of String, parameter "report_ref" of String
+        """
+        # ctx is the context object
+        # return variables are: output
+        #BEGIN upload_trainingset
+        #END upload_trainingset
+
+        # At some point might do deeper type checking...
+        if not isinstance(output, dict):
+            raise ValueError('Method upload_trainingset return value ' +
+                             'output is not type dict as required.')
+        # return the results
+        return [output]
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK",

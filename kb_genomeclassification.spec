@@ -18,6 +18,7 @@ module kb_genomeclassification {
         string phenotypeclass;
         string attribute;
         string workspace;
+        string trainingset_name;
         mapping <string genome_id,ClassifierTrainingSet> classifier_training_set;
         string classifier_out;
         string target;
@@ -44,7 +45,7 @@ module kb_genomeclassification {
 
 
 
-   typedef structure { 
+   typedef structure {
         string workspace;
         string classifier_name;
         string phenotypeclass;
@@ -62,4 +63,23 @@ module kb_genomeclassification {
    funcdef predict_phenotype(ClassifierPredictionInput params)
         returns (ClassifierPredictionOutput output) authentication required;
 
+
+	typedef structure {
+        string phenotypeclass;
+        string workspace;
+        mapping <string genome_id,ClassifierTrainingSet> classifier_training_set;
+        string training_set_out;
+        string target;
+        string shock_id;
+        string list_name;
+    }UploadTrainingSetInput;
+
+    typedef structure {
+        string report_name;
+        string report_ref;
+    }UploadTrainingSetOut;
+
+
+	funcdef upload_trainingset(UploadTrainingSetInput params)
+        returns (UploadTrainingSetOut output) authentication required;
 };
