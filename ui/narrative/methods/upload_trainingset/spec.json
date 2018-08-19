@@ -60,7 +60,7 @@
         "service-mapping": {
             "url": "",
             "name":"kb_genomeclassification",
-            "method": "predict_phenotype",
+            "method": "upload_trainingset",
             "input_mapping": [
                 {
                     "input_parameter": "shock_id",
