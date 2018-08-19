@@ -141,6 +141,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         
         }
         """
+        """
         params = {
         "shock_id": "bbf98000-860b-403a-bcd3-2fe1a10bd572",
         "list_name": "",
@@ -149,3 +150,44 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "workspace" : "sagoyal:narrative_1534292322496"
         }
         self.getImpl().predict_phenotype(self.getContext(), params)
+        """
+
+    def test_upload_trainingset(self):
+    
+
+        params = {
+            "shock_id": "2b596bec-4327-4e4b-a094-c8a7b5af8b33",
+            "list_name": "Genome_ID Classification\nNC_003197    P\ngenBankGO   N\nShewanella_ondeisensis_MR-1_GenBank  N",
+            "phenotypeclass": "DoesnotMatter",
+            "training_set_out": "my_first_trainingSetNAME2",
+            "workspace" : "sagoyal:narrative_1533659119242" #sagoyal:narrative_1534292322496"
+        }
+
+        self.getImpl().upload_trainingset(self.getContext(), params)
+
+    def test_2build_classifier(self):
+
+        params = {
+            "trainingset_name": "my_first_trainingSetNAME2",
+            "phenotypeclass": "myPhenotypeforTrain",
+            "classifier": "DecisionTreeClassifier",
+            "attribute": "functional_roles",
+            "save_ts": 0,
+            "classifier_out": "clfTrainingSet",
+            "workspace" : "sagoyal:narrative_1533659119242"
+        }
+
+        self.getImpl().build_classifier(self.getContext(), params)
+
+
+    def test_2predict_phenotype(self):
+        params = {
+        "shock_id": "bbf98000-860b-403a-bcd3-2fe1a10bd572",
+        "list_name": "Genome_ID\ngenBankGO\nNC_003197\nShewanella_ondeisensis_MR-1_GenBank",
+        "classifier_name": "clfTrainingSet",
+        "phenotypeclass": "myPhenotypeforTrain",
+        "workspace" : "sagoyal:narrative_1533659119242"
+        }
+        self.getImpl().predict_phenotype(self.getContext(), params)
+
+
