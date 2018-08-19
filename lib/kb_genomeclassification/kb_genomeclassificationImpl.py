@@ -142,6 +142,17 @@ This module build a classifier and predict phenotypes based on the classifier An
         # ctx is the context object
         # return variables are: output
         #BEGIN upload_trainingset
+        print params
+
+        self.config['ctx'] = ctx
+        upload_Runner = kb_genomeclfUtils(self.config)
+
+        location_of_report = upload_Runner.fullUpload(params, params.get('workspace'))
+
+        """report_output = pred_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'pred_Runner')
+                                output = {'report_name': report_output['name'], 'report_ref': report_output['ref']}"""
+
+        output = {'random':'random','dict':'dict'}
         #END upload_trainingset
 
         # At some point might do deeper type checking...

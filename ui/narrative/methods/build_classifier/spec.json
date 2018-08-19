@@ -21,28 +21,6 @@
                 "valid_ws_types": [ "KBaseClassifier.GenomeClassifierTrainingSet" ]
             }
         },
-        {
-          "id": "shock_id",
-          "optional" : false,
-          "advanced" : false,
-          "allow_multiple" : false,
-          "default_values" : [ "" ],
-          "field_type" : "file",
-          "text_options" : {
-            "valid_ws_types" : [ ]
-          }
-        },
-        {
-        "id": "list_name",
-        "optional": true,
-        "advanced": false,
-        "allow_multiple": false,
-        "default_values": [ "" ],
-        "field_type": "textarea",
-        "textarea_options" : {
-            "n_rows" : 15
-        }
-    },
     {
             "id" : "phenotypeclass",
             "optional" : false,
@@ -183,18 +161,8 @@
                     "target_property": "workspace"
                 },
                 {
-                    "input_parameter": "list_name",
-                    "target_property": "list_name"
-
-                },
-                {
                     "input_parameter": "trainingset_name",
                     "target_property": "trainingset_name"
-
-                },
-                {
-                    "input_parameter": "shock_id",
-                    "target_property": "shock_id"
 
                 },
                 {

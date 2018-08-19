@@ -32,7 +32,6 @@
             "n_rows" : 15
             }
         },
-    
         {
             "id": "classifier_name",
             "optional": false,

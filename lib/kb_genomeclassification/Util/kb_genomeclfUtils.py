@@ -83,6 +83,8 @@ class kb_genomeclfUtils(object):
 		"""
 		
 		#SETUP of X & Y trainging and testing sets
+		
+		"""
 		if params.get('list_name'):
 			#checks if empty string bool("") --> False
 			print ("taking this path rn")
@@ -93,6 +95,11 @@ class kb_genomeclfUtils(object):
 			file_path = self._download_shock(params.get('shock_id'))
 			listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
 			all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
+		"""
+
+		toEdit_all_classifications = self.unloadGenomeClassifierTrainingSet(current_ws, params['trainingset_name'])
+		listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
+		all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 
 		full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
 
@@ -308,6 +315,24 @@ class kb_genomeclfUtils(object):
 
 		return htmloutput_name
 
+	def fullUpload(self, params, current_ws):
+
+		if params.get('list_name'):
+			#checks if empty string bool("") --> False
+			print ("taking this path rn")
+			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
+			myGenomeClassifierTrainingSet = self.createGenomeClassifierTrainingSet(current_ws, params['training_set_out'], just_DF = toEdit_all_classifications)
+			#listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
+			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
+		else:
+			file_path = self._download_shock(params.get('shock_id'))
+			myGenomeClassifierTrainingSet = self.createGenomeClassifierTrainingSet(current_ws, params['training_set_out'], just_DF = pd.read_excel(file_path))
+			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
+			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
+
+		#full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
+
+
 	def makeHtmlReport(self, htmloutput_name, current_ws, which_report):
 		"""
 		args:
@@ -407,6 +432,107 @@ class kb_genomeclfUtils(object):
 		os.remove(os.path.join(self.scratch, 'trialoutput.txt'))
 
 		return my_workPD
+
+	def createGenomeClassifierTrainingSet(self, current_ws, trainingset_object_Name, just_DF):
+		ctx = self.ctx
+
+		listGNames = just_DF['Genome_ID']
+		listClassification = just_DF['Classification']
+
+		list_GenomeClass = []
+
+		for index in range(len(listGNames)):
+			list_GenomeClass.append({'genome_ref': self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
+										'genome_classification': listClassification[index],
+										'genome_name': listGNames[index],
+										'genome_id': 'my_genome_id',
+										'references': ['some','list'],
+										'evidence_types': ['another','some','list'],
+										})
+
+		"""/*
+								GenomeClassifierTrainingSet Object
+								@optional genome_name genome_id references evidence_types
+								*/
+								typedef structure {
+								  genome_ref genome_ref;
+								  string genome_classification;
+								  string genome_name;
+								  string genome_id;
+								  list<string> references;
+								  list<string> evidence_types;
+								} GenomeClass;"""
+
+		"""/*
+								@optional description number_of_genomes classification_type classification_type
+								@metadata ws name as Training Set Name
+									@metadata ws description as Training Set Description
+									@metadata ws number_of_genomes as Number of Genomes
+									@metadata ws number_of_classes as Number of Classes
+								*/"""
+		
+		trainingset_object = {
+		'name': 'my_name',
+		'description': 'my_description',
+		'classification_type': 'my_classification_type',
+		'number_of_genomes': len(listGNames),
+		'number_of_classes': len(list(set(listClassification))),
+		'classes': list(set(listClassification)),
+		'classification_data': list_GenomeClass
+		}
+
+		"""typedef structure {
+								  string name;
+								  string description;
+								  string classification_type;
+								  int number_of_genomes;
+								  int number_of_classes;
+								  list<string> classes;
+								  list<GenomeClass> classification_data;
+								} GenomeClassifierTrainingSet;"""
+
+		obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
+													  'objects':[{
+													  'type': 'KBaseClassifier.GenomeClassifierTrainingSet',
+													  'data': trainingset_object,
+													  'name': trainingset_object_Name,  
+													  'provenance': ctx.get('provenance')  # ctx should be passed into this func.
+													  }]
+													})[0]
+
+		print "I'm print out the obj_save_ref"
+		print ""
+		print ""
+		print ""
+
+		print obj_save_ref
+		print "done"
+
+	def unloadGenomeClassifierTrainingSet(self, current_ws, trainingset_name):
+
+		input_trainingset_object = self.ws_client.get_objects([{'workspace':current_ws, 'name':trainingset_name}])
+		trainingset_object = input_trainingset_object[0]['data']['classification_data']
+
+		iterations = len(trainingset_object)
+
+		listGNames = [] #just_DF['Genome_ID']
+		listClassification = [] #just_DF['Classification']
+
+		for example in range(iterations):
+			print(trainingset_object[example]['genome_name'])
+			listGNames.append(trainingset_object[example]['genome_name'])
+			listClassification.append(trainingset_object[example]['genome_classification'])
+
+		print(listGNames)
+		print(listClassification)
+
+		detailsDF = {'Genome_ID': listGNames,
+					'Classification': listClassification
+					}
+
+		remadeDF = pd.DataFrame.from_dict(detailsDF)
+
+		return remadeDF
 
 	def intake_method(self, just_DF, for_predict = False):
 		"""
@@ -632,10 +758,21 @@ class kb_genomeclfUtils(object):
 			pickle.dump(classifier.fit(all_attributes, all_classifications), pickle_out, protocol = 2)
 			pickle_out.close()
 
+			#just temporary trial thing
 			"""
-			shock_id, handle_id = self._upload_to_shock(pickle_out)
+			Pickle_folder = os.path.join('savingPickle')
+			os.mkdir(Pickle_folder)
+
+			pickle_out = open(os.path.join(Pickle_folder, unicode(classifier_name) + u".pickle"), u"wb")
+			pickle.dump(classifier.fit(all_attributes, all_classifications), pickle_out, protocol = 2)
+			pickle_out.close()
+
+			shock_id, handle_id = self._upload_to_shock(os.path.join(Pickle_folder, unicode(classifier_name) + u".pickle"))
 			"""
 
+			handle_id = 'will fix later'
+			
+			#base64
 			current_pickle = pickle.dumps(classifier.fit(all_attributes, all_classifications), protocol=0)
 			pickled = codecs.encode(current_pickle, "base64").decode()
 
@@ -659,6 +796,7 @@ class kb_genomeclfUtils(object):
 			'classifier_type' : classifier_type, # Neural network
 			'classifier_name' : classifier_name,
 			'classifier_data' : pickled,
+			'classifier_handle_ref' : handle_id,
 			'classifier_description' : 'this is my description',
 			'lib_name' : 'sklearn',
 			'attribute_type' : 'functional_roles',
@@ -1203,8 +1341,12 @@ class kb_genomeclfUtils(object):
 		"""
 		# dir_path = self._make_dir()
 
-		f2shock_out = self.dfu.file_to_shock({'file_path': dir_path,
-									          'make_handle': True})
+		"""print('here is the file_path')
+								print(type(file_path))
+								print(file_path)"""
+
+		f2shock_out = self.dfu.file_to_shock({'file_path': file_path,
+											  'make_handle': True})
 
 		shock_id = f2shock_out.get('shock_id')
 		handle_id = f2shock_out.get('handle').get('hid')
