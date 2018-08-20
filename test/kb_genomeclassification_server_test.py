@@ -153,8 +153,6 @@ class kb_genomeclassificationTest(unittest.TestCase):
         """
     
     def test_upload_trainingset(self):
-    
-
         params = {
             "shock_id": "2b596bec-4327-4e4b-a094-c8a7b5af8b33",
             "list_name": "Genome_ID Classification\nNC_003197    P\ngenBankGO   N\nShewanella_ondeisensis_MR-1_GenBank  N",

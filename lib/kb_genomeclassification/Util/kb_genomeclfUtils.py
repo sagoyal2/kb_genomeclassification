@@ -326,17 +326,23 @@ class kb_genomeclfUtils(object):
 			#checks if empty string bool("") --> False
 			print ("taking this path rn")
 			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
-			myGenomeClassifierTrainingSet = self.createGenomeClassifierTrainingSet(current_ws, params['training_set_out'], just_DF = toEdit_all_classifications)
+			missingGenomes = self.createGenomeClassifierTrainingSet(current_ws, params['training_set_out'], just_DF = toEdit_all_classifications)
 			#listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
 			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 		else:
 			file_path = self._download_shock(params.get('shock_id'))
-			myGenomeClassifierTrainingSet = self.createGenomeClassifierTrainingSet(current_ws, params['training_set_out'], just_DF = pd.read_excel(file_path))
+			missingGenomes = self.createGenomeClassifierTrainingSet(current_ws, params['training_set_out'], just_DF = pd.read_excel(file_path))
 			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
 			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 
-		#full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
 
+		out_path = os.path.join(self.scratch, 'forZeroHTML')
+		os.makedirs(out_path)
+
+		self.html_report_0(missingGenomes)
+		htmloutput_name = self.html_nodual("forZeroHTML")
+
+		return htmloutput_name
 
 	def makeHtmlReport(self, htmloutput_name, current_ws, which_report, for_predict = False):
 		"""
@@ -359,6 +365,9 @@ class kb_genomeclfUtils(object):
 		
 		if which_report == 'pred_Runner':
 			saved_html = 'forSecHTML'
+
+		if which_report == 'upload_Runner':
+			saved_html = 'forZeroHTML'
 
 		output_directory = os.path.join(self.scratch, saved_html)
 		report_shock_id = self.dfu.file_to_shock({'file_path': output_directory,'pack': 'zip'})['shock_id']
@@ -480,10 +489,11 @@ class kb_genomeclfUtils(object):
 		list_GenomeClass = []
 		list_allGenomesinWS = []
 
+		missingGenomes = []
+
 		back = self.ws_client.list_objects({'workspaces':[current_ws],'type':'KBaseGenomes.Genome'})
 
 		print(back)
-
 
 		for item in back:
 			list_allGenomesinWS.append(item[1])
@@ -508,6 +518,7 @@ class kb_genomeclfUtils(object):
 			except:
 				print (listGNames[index])
 				print ('The above Genome does not exist in workspace')
+				missingGenomes.append(listGNames[index])
 		
 		trainingset_object = {
 		'name': 'my_name',
@@ -535,6 +546,8 @@ class kb_genomeclfUtils(object):
 
 		print obj_save_ref
 		print "done"
+
+		return missingGenomes
 
 	def unloadGenomeClassifierTrainingSet(self, current_ws, trainingset_name):
 		"""
@@ -1396,6 +1409,27 @@ class kb_genomeclfUtils(object):
 	#### HTML templates below ####
 
 	### For Build_Classifier App
+
+	def html_report_0(self, missingGenomes):
+		file = open(os.path.join(self.scratch, 'forZeroHTML', 'html0.html'), u"w")
+
+		html_string = u"""
+		<!DOCTYPE html>
+		<html>
+		<body>
+
+		<p>If you have any missing genomes they are listed below (ie. these were included in your excel / pasted file but are not present in the workspace)</p>
+		<p>The missing genomes are: """ + str(missingGenomes) + """ </p>
+		<p>If there were missing genomes, we went ahead and still created a training set object excluding the missing genomes</p>
+
+		</body>
+		</html>
+		"""
+		file.write(html_string)
+		file.close()
+
+		#return "html0.html"
+
 	def html_report_1(self, global_target, classifier_type, classifier_name, best_classifier_str = None):
 		"""
 		does: creates an .html file that makes the frist report (first app).
@@ -1930,8 +1964,10 @@ class kb_genomeclfUtils(object):
 
 		if location == "forHTML":
 			file = open(os.path.join(self.scratch, 'forHTML', 'nodual.html'), u"w")
-		else :
+		elif location == "forSecHTML":
 			file = open(os.path.join(self.scratch, 'forSecHTML', 'nodual.html'), u"w")
+		else:
+			file = open(os.path.join(self.scratch, 'forZeroHTML', 'nodual.html'), u"w")
 
 		html_string = u"""
 		<!DOCTYPE html>
@@ -2031,10 +2067,17 @@ class kb_genomeclfUtils(object):
 			  </div>
 			  """
 			file.write(next_str)
-		else :
+		elif location == "forSecHTML" :
 			next_str = u"""
 			  <div id="Overview" class="tabcontent">
 				  <iframe src="html3.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
+			  </div>
+			  """         
+			file.write(next_str)  
+		else:
+			next_str = u"""
+			  <div id="Overview" class="tabcontent">
+				  <iframe src="html0.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
 			  </div>
 			  """         
 			file.write(next_str)  
