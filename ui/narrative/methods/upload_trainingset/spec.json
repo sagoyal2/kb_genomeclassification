@@ -93,6 +93,10 @@
                   "target_property": "type"
                 },
                 {
+                  "input_parameter": "training_set_out",
+                  "target_property": "obj"
+                },
+                {
                     "service_method_output_path": [0,"report_name"],
                     "target_property": "report_name"
                 },
