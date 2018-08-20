@@ -150,11 +150,12 @@ This module build a classifier and predict phenotypes based on the classifier An
         location_of_report = upload_Runner.fullUpload(params, params.get('workspace'))
 
         report_output = upload_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'upload_Runner', for_predict = True)
-
+        output = {'report_name': report_output['name'], 'report_ref': report_output['ref']}
+        
         """report_output = pred_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'pred_Runner')
                                 output = {'report_name': report_output['name'], 'report_ref': report_output['ref']}"""
 
-        output = {'random':'random','dict':'dict'}
+        #output = {'random':'random','dict':'dict'}
         #END upload_trainingset
 
         # At some point might do deeper type checking...
