@@ -147,7 +147,9 @@ This module build a classifier and predict phenotypes based on the classifier An
         self.config['ctx'] = ctx
         upload_Runner = kb_genomeclfUtils(self.config)
 
-        upload_Runner.fullUpload(params, params.get('workspace'))
+        location_of_report = upload_Runner.fullUpload(params, params.get('workspace'))
+
+        report_output = upload_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'upload_Runner', for_predict = True)
 
         """report_output = pred_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'pred_Runner')
                                 output = {'report_name': report_output['name'], 'report_ref': report_output['ref']}"""
