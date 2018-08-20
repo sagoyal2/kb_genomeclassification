@@ -338,7 +338,7 @@ class kb_genomeclfUtils(object):
 		#full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
 
 
-	def makeHtmlReport(self, htmloutput_name, current_ws, which_report):
+	def makeHtmlReport(self, htmloutput_name, current_ws, which_report, for_predict = False):
 		"""
 		args:
 		---htmloutput_name the name of the html file 'something.html'
@@ -370,31 +370,43 @@ class kb_genomeclfUtils(object):
 		'shock_id': report_shock_id
 		}
 
-		list_PickleFiles = os.listdir(os.path.join(self.scratch, 'forHTML', 'forDATA'))
+		if not for_predict:
+			list_PickleFiles = os.listdir(os.path.join(self.scratch, 'forHTML', 'forDATA'))
 
-		output_file_links = []
+			output_file_links = []
 
-		for file in list_PickleFiles:
-			output_file_links.append({'path' : os.path.join(self.scratch, 'forHTML', 'forDATA', file),
-										'name' : file,
-										'lable': 'lable' + str(file),
-										'description': 'my_description'
-										})
+			for file in list_PickleFiles:
+				output_file_links.append({'path' : os.path.join(self.scratch, 'forHTML', 'forDATA', file),
+											'name' : file,
+											'lable': 'lable' + str(file),
+											'description': 'my_description'
+											})
 
-		"""output_zip_files.append({'path': os.path.join(read_file_path, file),
-																				 'name': file,
-																				 'label': label,
-																				 'description': desc})"""
+			"""output_zip_files.append({'path': os.path.join(read_file_path, file),
+																					 'name': file,
+																					 'label': label,
+																					 'description': desc})"""
 
-		report_params = {'message': '',
-			 'workspace_name': current_ws,#params.get('input_ws'),
-			 #'objects_created': objects_created,
-			 'file_links': output_file_links,
-			 'html_links': [htmloutput],
-			 'direct_html_link_index': 0,
-			 'html_window_height': 500,
-			 'report_object_name': 'kb_classifier_report_' + str(uuid.uuid4())
-			 }
+			report_params = {'message': '',
+				 'workspace_name': current_ws,#params.get('input_ws'),
+				 #'objects_created': objects_created,
+				 'file_links': output_file_links,
+				 'html_links': [htmloutput],
+				 'direct_html_link_index': 0,
+				 'html_window_height': 500,
+				 'report_object_name': 'kb_classifier_report_' + str(uuid.uuid4())
+				 }
+
+		else:
+			report_params = {'message': '',
+				 'workspace_name': current_ws,#params.get('input_ws'),
+				 #'objects_created': objects_created,
+				 #'file_links': output_file_links,
+				 'html_links': [htmloutput],
+				 'direct_html_link_index': 0,
+				 'html_window_height': 500,
+				 'report_object_name': 'kb_classifier_report_' + str(uuid.uuid4())
+				 }
 
 		kbase_report_client = KBaseReport(self.callback_url, token=token)
 		report_output = kbase_report_client.create_extended_report(report_params)
