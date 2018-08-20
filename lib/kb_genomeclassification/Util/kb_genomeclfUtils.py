@@ -260,11 +260,16 @@ class kb_genomeclfUtils(object):
 		#getting user selected classifer from workspace and then "unpickling & unbase64ing" it into a usable classifier
 		classifier_object = self.ws_client.get_objects([{'workspace':current_ws, 'name':classifier_name}])
 
-		base64str = str(classifier_object[0]['data']['classifier_data'])
+		#base64str = str(classifier_object[0]['data']['classifier_data'])
+		clf_shock_id = classifier_object[0]['data']['classifier_handle_ref']
+		clf_file_path = self._download_shock(clf_shock_id)
+
 		master_Role = classifier_object[0]['data']['attribute_data']
 		my_mapping = classifier_object[0]['data']['class_list_mapping']
 
-		after_classifier = pickle.loads(codecs.decode(base64str.encode(), "base64"))
+		#after_classifier = pickle.loads(codecs.decode(base64str.encode(), "base64"))
+		pickle_in = open(clf_file_path, "rb")
+		after_classifier = pickle.load(pickle_in)
 
 		if params.get('list_name'):
 			#checks if empty string bool("") --> False
@@ -365,6 +370,17 @@ class kb_genomeclfUtils(object):
 		'shock_id': report_shock_id
 		}
 
+		list_PickleFiles = os.listdir(os.path.join(self.scratch, 'forHTML', 'forDATA'))
+
+		output_file_links = []
+
+		for file in list_PickleFiles:
+			output_file_links.append({'path' : os.path.join(self.scratch, 'forHTML', 'forDATA', file),
+										'name' : file,
+										'lable': 'lable' + str(file),
+										'description': 'my_description'
+										})
+
 		"""output_zip_files.append({'path': os.path.join(read_file_path, file),
 																				 'name': file,
 																				 'label': label,
@@ -373,7 +389,7 @@ class kb_genomeclfUtils(object):
 		report_params = {'message': '',
 			 'workspace_name': current_ws,#params.get('input_ws'),
 			 #'objects_created': objects_created,
-			 #'file_links': output_zip_files,
+			 'file_links': output_file_links,
 			 'html_links': [htmloutput],
 			 'direct_html_link_index': 0,
 			 'html_window_height': 500,
@@ -434,6 +450,16 @@ class kb_genomeclfUtils(object):
 		return my_workPD
 
 	def createGenomeClassifierTrainingSet(self, current_ws, trainingset_object_Name, just_DF):
+		"""
+		args:
+		---current_ws is same as before
+		---trainingset_object_Name is the training set defined/input by the user
+		---just_DF is a dataframe that is given by the user in the form of an excel file or pasted in a text box, however converted in a data frame
+		does:
+		---takes the dataframe and pulls the Genome_ID and Classification and creates a trainingset_object (list of GenomeClass which holds Genome_ID and Classification
+		return:
+		---N/A just creates a trainingset_object in the workspace
+		"""
 		ctx = self.ctx
 
 		listGNames = just_DF['Genome_ID']
@@ -449,27 +475,6 @@ class kb_genomeclfUtils(object):
 										'references': ['some','list'],
 										'evidence_types': ['another','some','list'],
 										})
-
-		"""/*
-								GenomeClassifierTrainingSet Object
-								@optional genome_name genome_id references evidence_types
-								*/
-								typedef structure {
-								  genome_ref genome_ref;
-								  string genome_classification;
-								  string genome_name;
-								  string genome_id;
-								  list<string> references;
-								  list<string> evidence_types;
-								} GenomeClass;"""
-
-		"""/*
-								@optional description number_of_genomes classification_type classification_type
-								@metadata ws name as Training Set Name
-									@metadata ws description as Training Set Description
-									@metadata ws number_of_genomes as Number of Genomes
-									@metadata ws number_of_classes as Number of Classes
-								*/"""
 		
 		trainingset_object = {
 		'name': 'my_name',
@@ -480,16 +485,6 @@ class kb_genomeclfUtils(object):
 		'classes': list(set(listClassification)),
 		'classification_data': list_GenomeClass
 		}
-
-		"""typedef structure {
-								  string name;
-								  string description;
-								  string classification_type;
-								  int number_of_genomes;
-								  int number_of_classes;
-								  list<string> classes;
-								  list<GenomeClass> classification_data;
-								} GenomeClassifierTrainingSet;"""
 
 		obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
 													  'objects':[{
@@ -509,6 +504,15 @@ class kb_genomeclfUtils(object):
 		print "done"
 
 	def unloadGenomeClassifierTrainingSet(self, current_ws, trainingset_name):
+		"""
+		args:
+		---current_ws is same as before
+		---trainingset_name is the training set selected by the user
+		does:
+		---from the training set object it extracts the Genome_ID and Classification and creates a dataframe of them
+		return:
+		---the dataframe
+		"""
 
 		input_trainingset_object = self.ws_client.get_objects([{'workspace':current_ws, 'name':trainingset_name}])
 		trainingset_object = input_trainingset_object[0]['data']['classification_data']
@@ -767,14 +771,16 @@ class kb_genomeclfUtils(object):
 			pickle.dump(classifier.fit(all_attributes, all_classifications), pickle_out, protocol = 2)
 			pickle_out.close()
 
-			shock_id, handle_id = self._upload_to_shock(os.path.join(Pickle_folder, unicode(classifier_name) + u".pickle"))
 			"""
 
-			handle_id = 'will fix later'
+			shock_id, handle_id = self._upload_to_shock(os.path.join(self.scratch, 'forHTML', 'forDATA', unicode(classifier_name) + u".pickle"))
+			
+
+			#handle_id = 'will fix later'
 			
 			#base64
-			current_pickle = pickle.dumps(classifier.fit(all_attributes, all_classifications), protocol=0)
-			pickled = codecs.encode(current_pickle, "base64").decode()
+			#current_pickle = pickle.dumps(classifier.fit(all_attributes, all_classifications), protocol=0)
+			#pickled = codecs.encode(current_pickle, "base64").decode()
 
 
 			"""
@@ -784,7 +790,7 @@ class kb_genomeclfUtils(object):
 					f.write(line)
 			"""
 
-			#pickled = "this is what the pickled string would be"
+			pickled = "this is what the pickled string would be"
 
 			print ""
 			print "This is printing out the classifier_object that needs to be saved down dump"
@@ -796,7 +802,7 @@ class kb_genomeclfUtils(object):
 			'classifier_type' : classifier_type, # Neural network
 			'classifier_name' : classifier_name,
 			'classifier_data' : pickled,
-			'classifier_handle_ref' : handle_id,
+			'classifier_handle_ref' : shock_id,
 			'classifier_description' : 'this is my description',
 			'lib_name' : 'sklearn',
 			'attribute_type' : 'functional_roles',
