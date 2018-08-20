@@ -151,7 +151,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         }
         self.getImpl().predict_phenotype(self.getContext(), params)
         """
-
+    """
     def test_upload_trainingset(self):
     
 
@@ -164,11 +164,11 @@ class kb_genomeclassificationTest(unittest.TestCase):
         }
 
         self.getImpl().upload_trainingset(self.getContext(), params)
+    """
 
     def test_2build_classifier(self):
-
         params = {
-            "trainingset_name": "my_first_trainingSetNAME2",
+            "trainingset_name": "trainsetAPPDEV",
             "phenotypeclass": "myPhenotypeforTrain",
             "classifier": "DecisionTreeClassifier",
             "attribute": "functional_roles",
@@ -178,8 +178,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         }
 
         self.getImpl().build_classifier(self.getContext(), params)
-
-
+    
     def test_2predict_phenotype(self):
         params = {
         "shock_id": "bbf98000-860b-403a-bcd3-2fe1a10bd572",
@@ -188,6 +187,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "phenotypeclass": "myPhenotypeforTrain",
         "workspace" : "sagoyal:narrative_1533659119242"
         }
+        
         self.getImpl().predict_phenotype(self.getContext(), params)
-
+    
 

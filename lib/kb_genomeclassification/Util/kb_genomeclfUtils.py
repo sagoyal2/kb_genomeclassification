@@ -260,11 +260,16 @@ class kb_genomeclfUtils(object):
 		#getting user selected classifer from workspace and then "unpickling & unbase64ing" it into a usable classifier
 		classifier_object = self.ws_client.get_objects([{'workspace':current_ws, 'name':classifier_name}])
 
-		base64str = str(classifier_object[0]['data']['classifier_data'])
+		#base64str = str(classifier_object[0]['data']['classifier_data'])
+		clf_shock_id = classifier_object[0]['data']['classifier_handle_ref']
+		clf_file_path = self._download_shock(clf_shock_id)
+
 		master_Role = classifier_object[0]['data']['attribute_data']
 		my_mapping = classifier_object[0]['data']['class_list_mapping']
 
-		after_classifier = pickle.loads(codecs.decode(base64str.encode(), "base64"))
+		#after_classifier = pickle.loads(codecs.decode(base64str.encode(), "base64"))
+		pickle_in = open(clf_file_path, "rb")
+		after_classifier = pickle.load(pickle_in)
 
 		if params.get('list_name'):
 			#checks if empty string bool("") --> False
@@ -767,14 +772,16 @@ class kb_genomeclfUtils(object):
 			pickle.dump(classifier.fit(all_attributes, all_classifications), pickle_out, protocol = 2)
 			pickle_out.close()
 
-			shock_id, handle_id = self._upload_to_shock(os.path.join(Pickle_folder, unicode(classifier_name) + u".pickle"))
 			"""
 
-			handle_id = 'will fix later'
+			shock_id, handle_id = self._upload_to_shock(os.path.join(self.scratch, 'forHTML', 'forDATA', unicode(classifier_name) + u".pickle"))
+			
+
+			#handle_id = 'will fix later'
 			
 			#base64
-			current_pickle = pickle.dumps(classifier.fit(all_attributes, all_classifications), protocol=0)
-			pickled = codecs.encode(current_pickle, "base64").decode()
+			#current_pickle = pickle.dumps(classifier.fit(all_attributes, all_classifications), protocol=0)
+			#pickled = codecs.encode(current_pickle, "base64").decode()
 
 
 			"""
@@ -784,7 +791,7 @@ class kb_genomeclfUtils(object):
 					f.write(line)
 			"""
 
-			#pickled = "this is what the pickled string would be"
+			pickled = "this is what the pickled string would be"
 
 			print ""
 			print "This is printing out the classifier_object that needs to be saved down dump"
@@ -796,7 +803,7 @@ class kb_genomeclfUtils(object):
 			'classifier_type' : classifier_type, # Neural network
 			'classifier_name' : classifier_name,
 			'classifier_data' : pickled,
-			'classifier_handle_ref' : handle_id,
+			'classifier_handle_ref' : shock_id,
 			'classifier_description' : 'this is my description',
 			'lib_name' : 'sklearn',
 			'attribute_type' : 'functional_roles',
