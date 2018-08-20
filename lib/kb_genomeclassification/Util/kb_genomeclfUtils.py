@@ -370,6 +370,17 @@ class kb_genomeclfUtils(object):
 		'shock_id': report_shock_id
 		}
 
+		list_PickleFiles = os.listdir(os.path.join(self.scratch, 'forHTML', 'forDATA'))
+
+		output_file_links = []
+
+		for file in list_PickleFiles:
+			output_file_links.append({'path' : os.path.join(self.scratch, 'forHTML', 'forDATA', file),
+										'name' : file,
+										'lable': 'lable' + str(file),
+										'description': 'my_description'
+										})
+
 		"""output_zip_files.append({'path': os.path.join(read_file_path, file),
 																				 'name': file,
 																				 'label': label,
@@ -378,7 +389,7 @@ class kb_genomeclfUtils(object):
 		report_params = {'message': '',
 			 'workspace_name': current_ws,#params.get('input_ws'),
 			 #'objects_created': objects_created,
-			 #'file_links': output_zip_files,
+			 'file_links': output_file_links,
 			 'html_links': [htmloutput],
 			 'direct_html_link_index': 0,
 			 'html_window_height': 500,
@@ -439,6 +450,16 @@ class kb_genomeclfUtils(object):
 		return my_workPD
 
 	def createGenomeClassifierTrainingSet(self, current_ws, trainingset_object_Name, just_DF):
+		"""
+		args:
+		---current_ws is same as before
+		---trainingset_object_Name is the training set defined/input by the user
+		---just_DF is a dataframe that is given by the user in the form of an excel file or pasted in a text box, however converted in a data frame
+		does:
+		---takes the dataframe and pulls the Genome_ID and Classification and creates a trainingset_object (list of GenomeClass which holds Genome_ID and Classification
+		return:
+		---N/A just creates a trainingset_object in the workspace
+		"""
 		ctx = self.ctx
 
 		listGNames = just_DF['Genome_ID']
@@ -454,27 +475,6 @@ class kb_genomeclfUtils(object):
 										'references': ['some','list'],
 										'evidence_types': ['another','some','list'],
 										})
-
-		"""/*
-								GenomeClassifierTrainingSet Object
-								@optional genome_name genome_id references evidence_types
-								*/
-								typedef structure {
-								  genome_ref genome_ref;
-								  string genome_classification;
-								  string genome_name;
-								  string genome_id;
-								  list<string> references;
-								  list<string> evidence_types;
-								} GenomeClass;"""
-
-		"""/*
-								@optional description number_of_genomes classification_type classification_type
-								@metadata ws name as Training Set Name
-									@metadata ws description as Training Set Description
-									@metadata ws number_of_genomes as Number of Genomes
-									@metadata ws number_of_classes as Number of Classes
-								*/"""
 		
 		trainingset_object = {
 		'name': 'my_name',
@@ -485,16 +485,6 @@ class kb_genomeclfUtils(object):
 		'classes': list(set(listClassification)),
 		'classification_data': list_GenomeClass
 		}
-
-		"""typedef structure {
-								  string name;
-								  string description;
-								  string classification_type;
-								  int number_of_genomes;
-								  int number_of_classes;
-								  list<string> classes;
-								  list<GenomeClass> classification_data;
-								} GenomeClassifierTrainingSet;"""
 
 		obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
 													  'objects':[{
@@ -514,6 +504,15 @@ class kb_genomeclfUtils(object):
 		print "done"
 
 	def unloadGenomeClassifierTrainingSet(self, current_ws, trainingset_name):
+		"""
+		args:
+		---current_ws is same as before
+		---trainingset_name is the training set selected by the user
+		does:
+		---from the training set object it extracts the Genome_ID and Classification and creates a dataframe of them
+		return:
+		---the dataframe
+		"""
 
 		input_trainingset_object = self.ws_client.get_objects([{'workspace':current_ws, 'name':trainingset_name}])
 		trainingset_object = input_trainingset_object[0]['data']['classification_data']
