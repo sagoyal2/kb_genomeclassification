@@ -478,15 +478,36 @@ class kb_genomeclfUtils(object):
 		listClassification = just_DF['Classification']
 
 		list_GenomeClass = []
+		list_allGenomesinWS = []
+
+		back = self.ws_client.list_objects({'workspaces':[current_ws],'type':'KBaseGenomes.Genome'})
+
+		print(back)
+
+
+		for item in back:
+			list_allGenomesinWS.append(item[1])
+
+		print(list_allGenomesinWS)
 
 		for index in range(len(listGNames)):
-			list_GenomeClass.append({'genome_ref': self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
-										'genome_classification': listClassification[index],
-										'genome_name': listGNames[index],
-										'genome_id': 'my_genome_id',
-										'references': ['some','list'],
-										'evidence_types': ['another','some','list'],
-										})
+
+			try:
+				position = list_allGenomesinWS.index(listGNames[index])
+
+				print('printing positions')
+				print(position)
+
+				list_GenomeClass.append({'genome_ref': str(back[position][6]) + '/' + str(back[position][0]) + '/' + str(back[position][4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
+											'genome_classification': listClassification[index],
+											'genome_name': listGNames[index],
+											'genome_id': 'my_genome_id',
+											'references': ['some','list'],
+											'evidence_types': ['another','some','list'],
+											})
+			except:
+				print (listGNames[index])
+				print ('The above Genome does not exist in workspace')
 		
 		trainingset_object = {
 		'name': 'my_name',
@@ -620,6 +641,7 @@ class kb_genomeclfUtils(object):
 			name_and_roles[current_gName] = listOfFunctionalRoles
 
 			print "I have arrived inside the desired for loop!!"
+			print(current_gName)
 
 		if not for_predict:
 			master_pre_Role = list(itertools.chain(*name_and_roles.values()))
