@@ -483,7 +483,13 @@ class kb_genomeclfUtils(object):
 		"""
 		ctx = self.ctx
 
-		listGNames = just_DF['Genome_ID']
+		listintGNames = just_DF['Genome_ID']
+		
+		#vigorous string matching izip(self.list_name, self.list_statistics)
+		listGNames = list(map(str, listintGNames))
+		for string, index in izip(listGNames, range(len(listGNames))):
+			listGNames[index] = string.replace(" ", "")
+
 		listClassification = just_DF['Classification']
 
 		list_GenomeClass = []
