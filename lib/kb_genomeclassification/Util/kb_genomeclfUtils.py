@@ -142,9 +142,9 @@ class kb_genomeclfUtils(object):
 		train_index = []
 		test_index = []
 
-		splits = 2 #10
+		splits = 10 #10 #2
 
-
+		#This cross-validation object is a variation of KFold that returns stratified folds. The folds are made by preserving the percentage of samples for each class.
 		skf = StratifiedKFold(n_splits=splits, random_state=0, shuffle=True)
 		for train_idx, test_idx in skf.split(all_attributes, all_classifications):
 			train_index.append(train_idx)
