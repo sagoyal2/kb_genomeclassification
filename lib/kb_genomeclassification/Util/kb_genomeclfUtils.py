@@ -101,6 +101,10 @@ class kb_genomeclfUtils(object):
 		listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
 		all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 
+		#with open(os.path.join(self.scratch, "another.txt"), "w") as f:
+		#	f.write(unicode(str(master_Role)))
+
+		
 		full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
 
 		print "Below is full_dataFrame"
@@ -649,13 +653,33 @@ class kb_genomeclfUtils(object):
 				functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['cdss']
 				for function in range(len (functionList)):
 					if str(functionList[function]['functions'][0]).lower() != 'hypothetical protein':
-						listOfFunctionalRoles.append(str(functionList[function]['functions'][0]))
+						#print(str(functionList[function]['functions'][0]).find(" @ " ))
+						#if (str(functionList[function]['functions'][0]).find(" @ " ) > 0):
+						if " @ " in str(functionList[function]['functions'][0]):
+							listOfFunctionalRoles.extend(str(functionList[function]['functions'][0]).split(" @ "))
+							print("I went inside the if statement")
+						elif " / " in str(functionList[function]['functions'][0]):
+							listOfFunctionalRoles.extend(str(functionList[function]['functions'][0]).split(" / "))
+						elif "; " in str(functionList[function]['functions'][0]):
+							listOfFunctionalRoles.extend(str(functionList[function]['functions'][0]).split("; "))
+						else:
+							listOfFunctionalRoles.append(str(functionList[function]['functions'][0]))
 
 			except:
 				functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['features']
 				for function in range(len (functionList)):
 					if str(functionList[function]['function']).lower() != 'hypothetical protein':
-						listOfFunctionalRoles.append(str(functionList[function]['function']))
+						#print(str(functionList[function]['functions'][0]).find(" @ " ))
+						#if (str(functionList[function]['functions'][0]).find(" @ " ) > 0):
+						if " @ " in str(functionList[function]['function']):
+							listOfFunctionalRoles.extend(str(functionList[function]['function']).split(" @ "))
+							print("I went inside the if statement #2")
+						elif " / " in str(functionList[function]['function']):
+							listOfFunctionalRoles.extend(str(functionList[function]['function']).split(" / "))
+						elif "; " in str(functionList[function]['function']):
+							listOfFunctionalRoles.extend(str(functionList[function]['function']).split("; "))
+						else:
+							listOfFunctionalRoles.append(str(functionList[function]['function']))
 
 			name_and_roles[current_gName] = listOfFunctionalRoles
 

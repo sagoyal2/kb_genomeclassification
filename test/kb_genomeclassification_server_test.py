@@ -152,6 +152,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         self.getImpl().predict_phenotype(self.getContext(), params)
         """
     
+    """
     def test_upload_trainingset(self):
         params = {
             "shock_id": "2b596bec-4327-4e4b-a094-c8a7b5af8b33",
@@ -164,23 +165,23 @@ class kb_genomeclassificationTest(unittest.TestCase):
         }
 
         self.getImpl().upload_trainingset(self.getContext(), params)
-    
-
     """
+
+    
     def test_2build_classifier(self):
         params = {
-            "trainingset_name": "Tset3",
+            "trainingset_name": "TSetRespiration",
             "phenotypeclass": "myPheno",
-            "classifier": "DecisionTreeClassifier",
+            "classifier": "LogisticRegression",
             "attribute": "functional_roles",
             "save_ts": 0,
-            "classifier_out": "newClf3T",
-            "workspace" : "sagoyal:narrative_1533659119242"#"sagoyal:narrative_1534292322496"#"sagoyal:narrative_1533659119242"
+            "classifier_out": "forMRole",
+            "workspace" : "janakakbase:narrative_1534966345663"#"sagoyal:narrative_1533659119242"#"sagoyal:narrative_1534292322496"#"sagoyal:narrative_1533659119242"
         }
 
         self.getImpl().build_classifier(self.getContext(), params)
     
-    
+    """
     def test_2predict_phenotype(self):
         params = {
         "shock_id": "bbf98000-860b-403a-bcd3-2fe1a10bd572",

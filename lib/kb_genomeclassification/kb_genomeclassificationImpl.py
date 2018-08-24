@@ -3,6 +3,8 @@
 # The header block is where all import statments should live
 
 import os
+
+from biokbase.workspace.client import Workspace as workspaceService
 from kb_genomeclassification.Util.kb_genomeclfUtils import kb_genomeclfUtils
 
 #END_HEADER
@@ -42,6 +44,7 @@ This module build a classifier and predict phenotypes based on the classifier An
         self.workspaceURL = config.get('workspace-url')
         self.scratch = os.path.abspath(config.get('scratch'))
         self.callback_url = os.environ['SDK_CALLBACK_URL']
+        self.ws_client = workspaceService(self.workspaceURL)
 
         self.config['workspaceURL'] = self.workspaceURL
         self.config['scratch'] = self.scratch
@@ -78,10 +81,13 @@ This module build a classifier and predict phenotypes based on the classifier An
         self.config['ctx'] = ctx
         clf_Runner = kb_genomeclfUtils(self.config)
 
+        #clf_Runner.fullClassify(params, params.get('workspace'))
+        #output = {'random':'random','dict':'dict'}
+
         location_of_report = clf_Runner.fullClassify(params, params.get('workspace'))
 
         report_output = clf_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'clf_Runner')
-    	output = {'report_name': report_output['name'], 'report_ref': report_output['ref']}
+        output = {'report_name': report_output['name'], 'report_ref': report_output['ref']}
 
         #END build_classifier
 
@@ -114,7 +120,7 @@ This module build a classifier and predict phenotypes based on the classifier An
         location_of_report = pred_Runner.fullPredict(params, params.get('workspace'))
 
         report_output = pred_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'pred_Runner', for_predict = True)
-    	output = {'report_name': report_output['name'], 'report_ref': report_output['ref']}
+        output = {'report_name': report_output['name'], 'report_ref': report_output['ref']}
 
         #END predict_phenotype
 
@@ -142,6 +148,7 @@ This module build a classifier and predict phenotypes based on the classifier An
         # ctx is the context object
         # return variables are: output
         #BEGIN upload_trainingset
+        
         print params
 
         self.config['ctx'] = ctx
@@ -151,11 +158,16 @@ This module build a classifier and predict phenotypes based on the classifier An
 
         report_output = upload_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'upload_Runner', for_predict = True)
         output = {'report_name': report_output['name'], 'report_ref': report_output['ref']}
-        
-        """report_output = pred_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'pred_Runner')
-                                output = {'report_name': report_output['name'], 'report_ref': report_output['ref']}"""
 
-        #output = {'random':'random','dict':'dict'}
+        """
+        mylist = self.ws_client.get_objects([{'workspace':params.get('workspace'), 'name':'forMRole'}])
+
+        with open(os.path.join(self.scratch, "another.txt"), "w") as f:
+            f.write(str(mylist[0]['data']['attribute_data']))
+
+
+        output = {'random':'random','dict':'dict'}
+        """
         #END upload_trainingset
 
         # At some point might do deeper type checking...
