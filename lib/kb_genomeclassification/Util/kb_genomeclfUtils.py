@@ -6,12 +6,13 @@ from __future__ import division
 
 import os
 import re
-import uuid
 import sys
+import uuid
+import xlrd
+import json
 import codecs
 import graphviz
 import StringIO
-import xlrd
 
 import pickle
 import numpy as np
@@ -83,28 +84,50 @@ class kb_genomeclfUtils(object):
 		"""
 		
 		#SETUP of X & Y trainging and testing sets
-		
-		"""
-		if params.get('list_name'):
-			#checks if empty string bool("") --> False
-			print ("taking this path rn")
-			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
-			listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
-			all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
-		else:
-			file_path = self._download_shock(params.get('shock_id'))
-			listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
-			all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
-		"""
 
 		toEdit_all_classifications = self.unloadGenomeClassifierTrainingSet(current_ws, params['trainingset_name'])
 		listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
 		all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
+	
+		#Load in 'cached' data from the data folder
+		"""
+		pickle_in = open("/kb/module/data/Classifications_DF.pickle", "rb")
+		all_classifications = pickle.load(pickle_in)
+		listOfNames = all_classifications.index
 
-		#with open(os.path.join(self.scratch, "another.txt"), "w") as f:
-		#	f.write(unicode(str(master_Role)))
+		pickle_in = open("/kb/module/data/fromKBASE_MR.pickle", "rb")
+		master_Role = pickle.load(pickle_in)
 
-		
+		pickle_in = open("/kb/module/data/fromKBASE_attributes.pickle", "rb")
+		all_attributes = pickle.load(pickle_in)
+		"""
+
+		all_attributes = all_attributes.T[listOfNames].T
+
+
+		#mapping of string classes to integers
+		correctClassifications_list = []
+
+		for index in range(len(all_classifications['Classification'])):
+		    correctClassifications_list.append(all_classifications['Classification'][index])
+		    
+		class_list = list(set(correctClassifications_list))
+
+		my_mapping = {} #my_mapping = {'aerobic': '0', 'anaerobic': '1', 'facultative': '2'}
+		for current_class,num in zip(class_list, range(0, len(class_list))):
+			my_mapping[current_class] = num
+
+		my_class_mapping = []
+
+		for index in range(len(correctClassifications_list)):
+		    my_class_mapping.append(my_mapping[correctClassifications_list[index]])
+		    
+		print(len(my_class_mapping))
+
+		all_attributes = all_attributes.values.astype(int)
+		all_classifications = np.array(my_class_mapping)
+
+		"""
 		full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
 
 		print "Below is full_dataFrame"
@@ -130,6 +153,13 @@ class kb_genomeclfUtils(object):
 		print "Below is full_attribute_array and full_classification_array round 2"
 		print all_attributes
 		print all_classifications
+		"""
+
+		#np.save(os.path.join(self.scratch,'full_attribute_array.npy'), all_attributes)
+		#np.save(os.path.join(self.scratch, 'full_classification_array.npy'), all_classifications)
+
+		#pickle_out = open(os.path.join(self.scratch,"attribute_list.pickle"), "wb")
+		#pickle.dump(master_Role, pickle_out)
 
 		self.createHoldingDirs()
 
@@ -198,12 +228,8 @@ class kb_genomeclfUtils(object):
 			classifierTest_params['htmlfolder'] = folderhtml2
 			self.classifierTest(classifierTest_params)
 
-			#self.classifierTest(ctx, current_ws, self.whichClassifier(best_classifier_type),best_classifier_type, classifier_name+u"_" + best_classifier_type, my_mapping, master_Role, splits, train_index, test_index, all_attributes, all_classifications, class_list, folderhtml2, True)
-
-
 			self.html_report_1(global_target, classifier_type, classifier_name, best_classifier_str= best_classifier_str)
 
-			#classifierTest_params['classifier_type'] = "DecisionTreeClassifier"
 			classifierTest_params['classifier_name'] = classifier_name
 			classifierTest_params['htmlfolder'] = folderhtml2
 			self.tune_Decision_Tree(classifierTest_params, best_classifier_str)
@@ -237,7 +263,7 @@ class kb_genomeclfUtils(object):
 			htmloutput_name = self.html_nodual("forHTML")
 
 		return htmloutput_name
-
+		
 	def fullPredict(self, params, current_ws):
 		"""
 		args:
@@ -293,13 +319,6 @@ class kb_genomeclfUtils(object):
 		for current_result in after_classifier_result:
 			after_classifier_result_forDF.append(my_mapping.keys()[my_mapping.values().index(current_result)])
 
-		"""
-		print "I'm printing after_classifier_result_forDF"
-		print (after_classifier_result_forDF)
-
-		print "I'm printing all_attributes.index"
-		print (all_attributes.index)
-		"""
 
 		after_classifier_df = pd.DataFrame(after_classifier_result_forDF, index=all_attributes.index, columns=[target])
 
@@ -613,13 +632,15 @@ class kb_genomeclfUtils(object):
 		print my_all_classifications.columns.values.tolist()
 
 		my_all_classifications.set_index('Genome_ID', inplace=True)
+		#my_all_classifications.reset_index()
+		#my_all_classifications.set_index(list(my_all_classifications.index),inplace=True)
 
 		print "Below is my_all_classifications"
 
 		#print my_all_classifications
 
 		if not for_predict:
-			return my_all_classifications.index, my_all_classifications
+			return list(my_all_classifications.index), my_all_classifications
 		else:
 			return my_all_classifications.index
 
@@ -690,7 +711,18 @@ class kb_genomeclfUtils(object):
 			master_pre_Role = list(itertools.chain(*name_and_roles.values()))
 			master_Role = list(set(master_pre_Role))
 
+		#In case you want to save functional roles (master_Role) and the dictionary containing {Genome_ID: [Functional Roles]}
+		"""
+		with open(os.path.join(self.scratch, "KBASEfunctionalRoles.txt"), "w") as f:
+			f.write(unicode(str(master_Role)))
 
+		import json
+
+		my_json = json.dumps(name_and_roles)
+		with open(os.path.join(self.scratch,"KBASEname_and_roles.json"),"w") as f:
+			f.write(unicode(my_json))
+		"""
+		
 		data_dict = {}
 
 		for current_gName in listOfNames:
@@ -712,6 +744,7 @@ class kb_genomeclfUtils(object):
 			return my_all_attributes, master_Role
 		else:
 			return my_all_attributes
+		
 
 	def createHoldingDirs(self, clf = True):
 		"""
@@ -808,13 +841,15 @@ class kb_genomeclfUtils(object):
 		if print_cfm:
 			print classifier_name
 			self.list_name.extend([classifier_name])
+		
 		train_score = np.zeros(splits)
 		validate_score = np.zeros(splits)
 		matrix_size = class_list.__len__()
 
 		cnf_matrix = np.zeros(shape=(matrix_size, matrix_size))
 		cnf_matrix_f = np.zeros(shape=(matrix_size, matrix_size))
-		for c in xrange(splits):
+		
+		for c in range(splits):
 			X_train = all_attributes[train_index[c]]
 			y_train = all_classifications[train_index[c]]
 			X_test = all_attributes[test_index[c]]
@@ -825,8 +860,8 @@ class kb_genomeclfUtils(object):
 			y_pred = classifier.predict(X_test)
 			cnf = confusion_matrix(y_test, y_pred)
 			cnf_f = cnf.astype(u'float') / cnf.sum(axis=1)[:, np.newaxis]
-			for i in xrange(len(cnf)):
-				for j in xrange(len(cnf)):
+			for i in range(len(cnf)):
+				for j in range(len(cnf)):
 					cnf_matrix[i][j] += cnf[i][j]
 					cnf_matrix_f[i][j] += cnf_f[i][j]
 
@@ -896,7 +931,7 @@ class kb_genomeclfUtils(object):
 	
 			obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
 														  'objects':[{
-														  'type': 'KBaseClassifier.GenomeClassifier',
+														  'type': 'KBaseClassifier.GenomeCategorizer',
 														  'data': classifier_object,
 														  'name': classifier_name,  
 														  'provenance': ctx.get('provenance')  # ctx should be passed into this func.
