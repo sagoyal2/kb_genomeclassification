@@ -34,12 +34,12 @@ parameters :
             File Name
     list_name :
         ui-name : |
-            Classifier Training Set
+            Categorizer Training Set
         short-hint : |
             Paste the list of traning set data
     classifier_name :
         ui-name : |
-            Classifier
+            Categorizer
         short-hint : |
             Select the classifier
     phenotypeclass:
