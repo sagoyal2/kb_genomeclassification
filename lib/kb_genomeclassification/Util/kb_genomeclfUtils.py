@@ -13,6 +13,7 @@ import json
 import codecs
 import graphviz
 import StringIO
+import xlsxwriter
 
 import pickle
 import numpy as np
@@ -85,9 +86,9 @@ class kb_genomeclfUtils(object):
 		
 		#SETUP of X & Y trainging and testing sets
 
-		#toEdit_all_classifications, training_set_ref = self.unloadGenomeClassifierTrainingSet(current_ws, params['trainingset_name'])
-		#listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
-		#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
+		toEdit_all_classifications, training_set_ref = self.unloadGenomeClassifierTrainingSet(current_ws, params['trainingset_name'])
+		listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
+		all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 	
 
 		if params.get('save_ts') != 1:
@@ -96,6 +97,7 @@ class kb_genomeclfUtils(object):
 
 		#Load in 'cached' data from the data folder
 		
+		"""
 		training_set_ref = 'User Denied'
 		pickle_in = open("/kb/module/data/Classifications_DF.pickle", "rb")
 		all_classifications = pickle.load(pickle_in)
@@ -106,7 +108,7 @@ class kb_genomeclfUtils(object):
 
 		pickle_in = open("/kb/module/data/fromKBASE_attributes.pickle", "rb")
 		all_attributes = pickle.load(pickle_in)
-		
+		"""
 
 		all_attributes = all_attributes.T[listOfNames].T
 
@@ -1478,7 +1480,6 @@ class kb_genomeclfUtils(object):
 		pd.set_option('display.max_colwidth', old_width)
 
 		#create a downloadable link to all functional roles and weights
-		"""
 		top = forImportance.sort_values('importance', ascending=False)['attribute_list']
 		top_weight = forImportance.sort_values('importance', ascending=False)['importance']
 		list_top = list(top)
@@ -1486,10 +1487,9 @@ class kb_genomeclfUtils(object):
 
 		df_top = pd.DataFrame.from_dict({'Top Prioritized Roles': list_top, 'Weights': list_top_weight})
 
-		writer = pd.ExcelWriter('pandas_simple.xlsx', engine='xlsxwriter')
+		writer = pd.ExcelWriter(os.path.join(self.scratch, 'forHTML', 'forDATA', 'prioritized_weights.xlsx'), engine='xlsxwriter')
 		df_top.to_excel(writer, sheet_name='Sheet1')
 		writer.save()
-		"""
 
 	### Extra methods being used 
 	def _make_dir(self):
@@ -1884,6 +1884,8 @@ class kb_genomeclfUtils(object):
 
 		<br>
 		<br>
+
+		<p style="text-align:left; font-size:160%;">D.) Table with prioritized_weights <a href="../forDATA/prioritized_weights.xlsx" download> (Download) </a> </p>
 		"""
 		file.write(next_str)
 

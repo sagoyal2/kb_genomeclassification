@@ -25,6 +25,8 @@ RUN pip install --upgrade pip
 
 RUN pip install coverage
 
+RUN pip install xlsxwriter
+
 RUN apt-get install python-tk -y
 ENV DISPLAY :0
 
