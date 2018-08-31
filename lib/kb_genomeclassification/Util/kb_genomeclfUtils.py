@@ -85,10 +85,15 @@ class kb_genomeclfUtils(object):
 		
 		#SETUP of X & Y trainging and testing sets
 
-		toEdit_all_classifications = self.unloadGenomeClassifierTrainingSet(current_ws, params['trainingset_name'])
+		toEdit_all_classifications, training_set_ref = self.unloadGenomeClassifierTrainingSet(current_ws, params['trainingset_name'])
 		listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
 		all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 	
+
+		if params.get('save_ts') != 1:
+			training_set_ref = 'User Denied'
+
+
 		#Load in 'cached' data from the data folder
 		"""
 		pickle_in = open("/kb/module/data/Classifications_DF.pickle", "rb")
@@ -199,7 +204,8 @@ class kb_genomeclfUtils(object):
 				'all_classifications' : all_classifications,
 				'class_list' : class_list,
 				'htmlfolder' : folderhtml1,
-				'print_cfm' : True
+				'print_cfm' : True,
+				'training_set_ref' : training_set_ref
 				}
 
 		#RUNNING the classifiers depending on classifier_type
@@ -591,6 +597,7 @@ class kb_genomeclfUtils(object):
 
 		input_trainingset_object = self.ws_client.get_objects([{'workspace':current_ws, 'name':trainingset_name}])
 		trainingset_object = input_trainingset_object[0]['data']['classification_data']
+		training_set_ref = input_trainingset_object[0]['path'][0]
 
 		iterations = len(trainingset_object)
 
@@ -611,7 +618,7 @@ class kb_genomeclfUtils(object):
 
 		remadeDF = pd.DataFrame.from_dict(detailsDF)
 
-		return remadeDF
+		return remadeDF, training_set_ref
 
 	def intake_method(self, just_DF, for_predict = False):
 		"""
@@ -740,6 +747,8 @@ class kb_genomeclfUtils(object):
 
 		my_all_attributes = pd.DataFrame.from_dict(data_dict, orient='index', columns = master_Role)
 
+		print("I'm done creating the all_attributes data frame")
+
 		if not for_predict:
 			return my_all_attributes, master_Role
 		else:
@@ -837,6 +846,7 @@ class kb_genomeclfUtils(object):
 		class_list = classifierTest_params['class_list']
 		htmlfolder = classifierTest_params['htmlfolder']
 		print_cfm = classifierTest_params['print_cfm']
+		training_set_ref = classifierTest_params['training_set_ref']
 
 		if print_cfm:
 			print classifier_name
@@ -918,11 +928,11 @@ class kb_genomeclfUtils(object):
 			'classifier_description' : 'this is my description',
 			'lib_name' : 'sklearn',
 			'attribute_type' : 'functional_roles',
-			'number_of_attributes' : class_list.__len__(),
+			'number_of_attributes' : all_attributes.shape[1],#class_list.__len__(),
 			'attribute_data' : master_Role,#["this is where master_role would go", "just a list"],#master_Role, #master_Role,
 			'class_list_mapping' : my_mapping, #{} my_mapping, #my_mapping,
-			'number_of_genomes' : all_attributes.shape[1],
-			'training_set_ref' : ''
+			'number_of_genomes' : class_list.__len__(), #all_attributes.shape[1],
+			'training_set_ref' : self.dfu.get_objects({'object_refs': [training_set_ref]}) #training_set_ref
 			}
 
 			#print classifier_object
@@ -1406,7 +1416,7 @@ class kb_genomeclfUtils(object):
 		f.close()
 		new_allStr = allStr.replace(u'\\n', u'')
 
-		first_fix = re.sub(ur'(\w\s\[label="[\w\s.,:\/()-]+)<=([\w\s.\[\]=,]+)("] ;)',
+		first_fix = re.sub(ur'(\w\s\[label="[\w\s.,:\'\/()-]+)<=([\w\s.\[\]=,]+)("] ;)',
 						   ur'\1 (Absent)" , color="0.650 0.200 1.000"] ;', new_allStr)
 		second_fix = re.sub(ur'(\w\s\[label=")(.+?class\s=\s)', ur'\1', first_fix)
 
