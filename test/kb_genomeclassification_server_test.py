@@ -172,7 +172,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         params = {
             "trainingset_name": "my290",
             "phenotypeclass": "myPheno",
-            "classifier": 'KNeighborsClassifier',#'run_all', #"KNeighborsClassifier",
+            "classifier": "DecisionTreeClassifier",#'KNeighborsClassifier',#'run_all', #"KNeighborsClassifier",
             "attribute": "functional_roles",
             "save_ts": 0,
             "classifier_out": "forMRole",
