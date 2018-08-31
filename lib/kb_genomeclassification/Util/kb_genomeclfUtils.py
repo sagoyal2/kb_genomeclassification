@@ -85,9 +85,9 @@ class kb_genomeclfUtils(object):
 		
 		#SETUP of X & Y trainging and testing sets
 
-		toEdit_all_classifications, training_set_ref = self.unloadGenomeClassifierTrainingSet(current_ws, params['trainingset_name'])
-		listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
-		all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
+		#toEdit_all_classifications, training_set_ref = self.unloadGenomeClassifierTrainingSet(current_ws, params['trainingset_name'])
+		#listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
+		#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 	
 
 		if params.get('save_ts') != 1:
@@ -95,7 +95,8 @@ class kb_genomeclfUtils(object):
 
 
 		#Load in 'cached' data from the data folder
-		"""
+		
+		training_set_ref = 'User Denied'
 		pickle_in = open("/kb/module/data/Classifications_DF.pickle", "rb")
 		all_classifications = pickle.load(pickle_in)
 		listOfNames = all_classifications.index
@@ -105,7 +106,7 @@ class kb_genomeclfUtils(object):
 
 		pickle_in = open("/kb/module/data/fromKBASE_attributes.pickle", "rb")
 		all_attributes = pickle.load(pickle_in)
-		"""
+		
 
 		all_attributes = all_attributes.T[listOfNames].T
 
@@ -181,7 +182,7 @@ class kb_genomeclfUtils(object):
 		train_index = []
 		test_index = []
 
-		splits = 10 #10 #2
+		splits = 2 #10 #10 #2
 
 		#This cross-validation object is a variation of KFold that returns stratified folds. The folds are made by preserving the percentage of samples for each class.
 		skf = StratifiedKFold(n_splits=splits, random_state=0, shuffle=True)
@@ -932,7 +933,7 @@ class kb_genomeclfUtils(object):
 			'attribute_data' : master_Role,#["this is where master_role would go", "just a list"],#master_Role, #master_Role,
 			'class_list_mapping' : my_mapping, #{} my_mapping, #my_mapping,
 			'number_of_genomes' : class_list.__len__(), #all_attributes.shape[1],
-			'training_set_ref' : self.dfu.get_objects({'object_refs': [training_set_ref]}) #training_set_ref
+			'training_set_ref' : training_set_ref #self.dfu.get_objects({'object_refs': [training_set_ref]}) #training_set_ref
 			}
 
 			#print classifier_object
@@ -1236,7 +1237,8 @@ class kb_genomeclfUtils(object):
 				'all_classifications' : classifierTest_paramsInput['all_classifications'],
 				'class_list' : classifierTest_paramsInput['class_list'],
 				'htmlfolder' : classifierTest_paramsInput['htmlfolder'],
-				'print_cfm' : True
+				'print_cfm' : True,
+				'training_set_ref' : classifierTest_paramsInput['training_set_ref']
 				}
 
 		#below code is for gini-criterion
@@ -1399,12 +1401,14 @@ class kb_genomeclfUtils(object):
 		dotfile.write(contents)
 		dotfile.close()
 
-		self.parse_lookNice(pass_name, class_list)
+		self.parse_lookNice(pass_name,tree, master_Role, class_list)
 
-	def parse_lookNice(self, name, class_list):
+	def parse_lookNice(self, name, tree, master_Role, class_list):
 		"""
 		args:
 		---name is a string that is what you want the DecisionTree image saved as
+		---tree is a DecisionTree object that has already been tuned
+		---master_Role (same as classifierTest)
 		---class_list (same as classifierTest)
 		does:
 		---this cleans up the dot file to produce a more visually appealing tree figure using graphviz
@@ -1432,6 +1436,7 @@ class kb_genomeclfUtils(object):
 			f.close()
 
 			os.system(u'dot -Tpng ' + os.path.join(self.scratch, 'dotFolder', 'niceTree.dot') + ' >  '+ os.path.join(self.scratch, 'forHTML', 'html2folder', name + u'.png '))
+			self.top20Important(tree, master_Role)
 
 		if class_list.__len__() == 2:
 			fourth_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[0], ur'\1, color = "0.5176 0.2314 0.9020"', third_fix)
@@ -1441,7 +1446,50 @@ class kb_genomeclfUtils(object):
 			f.close()
 
 			os.system(u'dot -Tpng ' + os.path.join(self.scratch, 'dotFolder', 'niceTree.dot') + ' >  '+ os.path.join(self.scratch, 'forHTML', 'html2folder', name + u'.png '))
+			self.top20Important(tree, master_Role)
 
+	def top20Important(self,tree, master_Role):
+		"""
+		args:
+		---tree is a DecisionTree object that has already been tuned
+		---master_Role (same as classifierTest)
+		does:
+		---find the list of the top20 most important roles in determining classification
+		return:
+		---creates a dataframe that is displayed in the html report
+		"""
+
+
+		data = {'attribute_list': master_Role, 'importance': tree.feature_importances_}
+
+		forImportance = pd.DataFrame.from_dict(data)
+
+		#display the top 20 most important functional roles and weights
+		top20 = forImportance.sort_values('importance', ascending=False)['attribute_list'].head(20)
+		top20_weight = forImportance.sort_values('importance', ascending=False)['importance'].head(20)*100
+		list_top20 = list(top20)
+		list_top20_weight = list(top20_weight)
+
+		df_top20 = pd.DataFrame.from_dict({'Top 20 Prioritized Roles': list_top20, 'Weights': list_top20_weight})
+
+		old_width = pd.get_option('display.max_colwidth')
+		pd.set_option('display.max_colwidth', -1)
+		df_top20.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'top20.html'), index=False, justify='center')
+		pd.set_option('display.max_colwidth', old_width)
+
+		#create a downloadable link to all functional roles and weights
+		"""
+		top = forImportance.sort_values('importance', ascending=False)['attribute_list']
+		top_weight = forImportance.sort_values('importance', ascending=False)['importance']
+		list_top = list(top)
+		list_top_weight = list(top_weight)
+
+		df_top = pd.DataFrame.from_dict({'Top Prioritized Roles': list_top, 'Weights': list_top_weight})
+
+		writer = pd.ExcelWriter('pandas_simple.xlsx', engine='xlsxwriter')
+		df_top.to_excel(writer, sheet_name='Sheet1')
+		writer.save()
+		"""
 
 	### Extra methods being used 
 	def _make_dir(self):
@@ -1826,7 +1874,6 @@ class kb_genomeclfUtils(object):
 		another_file = open(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'), u"r")
 		all_str = another_file.read()
 		another_file.close()
-
 		file.write(all_str)
 
 		next_str= u"""
@@ -1835,6 +1882,17 @@ class kb_genomeclfUtils(object):
 
 		<img src="NAMEmyTreeLATER.png" alt="Snow" style="width:100%">
 
+		<br>
+		<br>
+		"""
+		file.write(next_str)
+
+		another_file = open(os.path.join(self.scratch, 'forHTML', 'html2folder', 'top20.html'), u"r")
+		all_str = another_file.read()
+		another_file.close()
+		file.write(all_str)
+
+		next_str = u"""
 		</body>
 		</html>
 		"""
