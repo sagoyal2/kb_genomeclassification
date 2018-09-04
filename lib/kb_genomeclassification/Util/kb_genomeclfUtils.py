@@ -98,7 +98,7 @@ class kb_genomeclfUtils(object):
 		#Load in 'cached' data from the data folder
 		
 		"""
-		training_set_ref = 'User Denied'
+		training_set_ref = '35609/403/1'
 		pickle_in = open("/kb/module/data/Classifications_DF.pickle", "rb")
 		all_classifications = pickle.load(pickle_in)
 		listOfNames = all_classifications.index
@@ -108,7 +108,7 @@ class kb_genomeclfUtils(object):
 
 		pickle_in = open("/kb/module/data/fromKBASE_attributes.pickle", "rb")
 		all_attributes = pickle.load(pickle_in)
-		"""
+		"""		
 
 		all_attributes = all_attributes.T[listOfNames].T
 
@@ -184,7 +184,7 @@ class kb_genomeclfUtils(object):
 		train_index = []
 		test_index = []
 
-		splits = 2 #10 #10 #2
+		splits = 10 #10 #2
 
 		#This cross-validation object is a variation of KFold that returns stratified folds. The folds are made by preserving the percentage of samples for each class.
 		skf = StratifiedKFold(n_splits=splits, random_state=0, shuffle=True)
@@ -419,7 +419,7 @@ class kb_genomeclfUtils(object):
 			for file in list_PickleFiles:
 				output_file_links.append({'path' : os.path.join(self.scratch, 'forHTML', 'forDATA', file),
 											'name' : file,
-											'lable': 'lable' + str(file),
+											'label': 'label' + str(file),
 											'description': 'my_description'
 											})
 
@@ -921,12 +921,15 @@ class kb_genomeclfUtils(object):
 			print "This is printing out the classifier_object that needs to be saved down dump"
 			print ""
 
+			print "your training_set_ref is below"
+			print(training_set_ref)
+
 			
 			classifier_object = {
 			'classifier_id' : '',
 			'classifier_type' : classifier_type, # Neural network
 			'classifier_name' : classifier_name,
-			'classifier_data' : pickled,
+			#'classifier_data' : pickled,
 			'classifier_handle_ref' : shock_id,
 			'classifier_description' : 'this is my description',
 			'lib_name' : 'sklearn',
@@ -938,6 +941,8 @@ class kb_genomeclfUtils(object):
 			'training_set_ref' : training_set_ref #self.dfu.get_objects({'object_refs': [training_set_ref]}) #training_set_ref
 			}
 
+			if training_set_ref == 'User Denied':
+				del classifier_object['training_set_ref']
 			#print classifier_object
 
 			#Saving the Classifier object
@@ -1624,7 +1629,7 @@ class kb_genomeclfUtils(object):
 		on a set of test data for which the true values are known - showing the comparision between the predicted labels and true labels. (In our case we used 
 		K-fold Cross Validation and the below confusion matrices represent the "average" of k-folds.) 
 		The number in each cell of the confusion matrix is the percentage of samples with a certain label. Confusion matrices are read by row. 
-		For example: ___number %___ of the ___row[0] lable___ were predicted as being ___column[0] lable___.
+		For example: ___number %___ of the ___row[0] label___ were predicted as being ___column[0] label___.
 		A strong classifier is one that has a central diagonal with the highest percentages, meaning that the majority of the predicted labels match the true label.
 		</p>,
 
