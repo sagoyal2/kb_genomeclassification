@@ -152,7 +152,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         self.getImpl().predict_phenotype(self.getContext(), params)
         """
     
-    """
+    
     def test_upload_trainingset(self):
         params = {
             "shock_id": "2b596bec-4327-4e4b-a094-c8a7b5af8b33",
@@ -165,21 +165,35 @@ class kb_genomeclassificationTest(unittest.TestCase):
         }
 
         self.getImpl().upload_trainingset(self.getContext(), params)
-    """
-
     
     def test_2build_classifier(self):
+        """
         params = {
             "trainingset_name": "my290",
             "phenotypeclass": "myPheno",
-            "classifier": "DecisionTreeClassifier",#'KNeighborsClassifier',#'run_all', #"KNeighborsClassifier",
+            "classifier": 'KNeighborsClassifier',#"DecisionTreeClassifier",#'KNeighborsClassifier',#'run_all', #"KNeighborsClassifier",
             "attribute": "functional_roles",
-            "save_ts": 0,
+            "save_ts": 1,
             "classifier_out": "forMRole",
             "workspace" : "janakakbase:narrative_1534966345663"#"sagoyal:narrative_1533659119242"#"sagoyal:narrative_1534292322496"#"sagoyal:narrative_1533659119242"
         }
+        """
 
+        """
+        params = {
+        "trainingset_name": "myTSet",
+        "phenotypeclass": "Gram",
+        "classifier": "DecisionTreeClassifier",
+        "attribute": "functional_roles",
+        "save_ts": 1,
+        "classifier_out": "myDTCLF",
+        "workspace" : "avi2:narrative_1534266317055"
+        }
+        """
+
+        """
         self.getImpl().build_classifier(self.getContext(), params)
+        """
     
     """
     def test_2predict_phenotype(self):
