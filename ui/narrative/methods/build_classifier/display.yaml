@@ -3,7 +3,7 @@
 #
 name: Build Genome Classifier
 tooltip: |
-    This module build a classifier based on selected atrribute
+    This module build a classifier based on selected atrribute and specified parameters
 screenshots: []
 
 icon: null
@@ -32,11 +32,6 @@ parameters :
             Training Set Name
         short-hint : |
             Training Set Name
-    classifier :
-        ui-name : |
-            Select the Classification algorithm
-        short-hint : |
-            Select the Classifier algorithm, by deafult all classifier algorithms will run
     phenotypeclass :
         ui-name : |
             Phenotype or Condition [e.g.; Gram type, Respiration]
@@ -57,5 +52,398 @@ parameters :
             Classifier Name
         short-hint : |
             Name the classifier object
+    classifier :
+        ui-name : |
+            Select the Classification algorithm
+        short-hint : |
+            Select the Classifier algorithm, by deafult all classifier algorithms will run
+    description:
+        ui-name : |
+            Description
+        short-hint : |
+            Describe Purpose or Contents of Classifiers
+        placeholder: |
+            Enter Description
+    n_neighbors :
+        ui-name : |
+            Number of Neighbors
+        short-hint : |
+            Number of neighbors to use by default for kneighbors queries.
+    weights :
+        ui-name : |
+            Weights
+        short-hint : |
+            Weight function used in prediction. Possible values: ‘uniform’ : uniform weights. All points in each neighborhood are weighted equally. ‘distance’ : weight points by the inverse of their distance. in this case, closer neighbors of a query point will have a greater influence than neighbors which are further away. [callable] : a user-defined function which accepts an array of distances, and returns an array of the same shape containing the weights. 
+    algorithm :
+        ui-name : |
+            Algorithm to Compute the Nearest Neighbors
+        short-hint : |
+            Algorithm used to compute the nearest neighbors: ‘ball_tree’ will use BallTree ‘kd_tree’ will use KDTree ‘brute’ will use a brute-force search. ‘auto’ will attempt to decide the most appropriate algorithm based on the values passed to fit method. Note: fitting on sparse input will override the setting of this parameter, using brute force.
+    leaf_size :
+        ui-name : |
+            Leaf Size
+        short-hint : |
+            Leaf size passed to BallTree or KDTree. This can affect the speed of the construction and query, as well as the memory required to store the tree. The optimal value depends on the nature of the problem.
+    p :
+        ui-name : |
+            Power Parameter
+        short-hint : |
+            Power parameter for the Minkowski metric. When p = 1, this is equivalent to using manhattan_distance (l1), and euclidean_distance (l2) for p = 2. For arbitrary p, minkowski_distance (l_p) is used.
+    metric :
+        ui-name : |
+            Tree Metric
+        short-hint : |
+            The distance metric to use for the tree. The default metric is minkowski, and with p=2 is equivalent to the standard Euclidean metric. See the documentation of the DistanceMetric class for a list of available metrics
+    metric_params :
+        ui-name : |
+            Addition Metrics
+        short-hint : |
+            Additional keyword arguments for the metric function.
+    knn_n_jobs :
+        ui-name : |
+            Number of Jobs
+        short-hint : |
+            The number of parallel jobs to run for neighbors search. If -1, then the number of jobs is set to the number of CPU cores. Doesn’t affect fit method.
+    priors :
+        ui-name: |
+            Prior Probability
+        short-hint: |
+            Prior probabilities of the classes. If specified the priors are not adjusted according to the data.
+    penalty :
+        ui-name : |
+            Penalty algorithm
+        short-hint : |
+            Used to specify the norm used in the penalization. The ‘newton-cg’, ‘sag’ and ‘lbfgs’ solvers support only l2 penalties.
+    dual :
+        ui-name : |
+            Dual
+        short-hint : |
+            Dual or primal formulation. Dual formulation is only implemented for l2 penalty with liblinear solver. Prefer dual=False when n_samples > n_feature
+    lr_tolerance :
+        ui-name : |
+            Tolerance
+        short-hint : |
+            Tolerance for stopping criteria.
+    lr_C :
+        ui-name : |
+            C
+        short-hint : |
+            Inverse of regularization strength; must be a positive float. Like in support vector machines, smaller values specify stronger regularization.
+    fit_intercept :
+        ui-name : |
+            Fit Intercept
+        short-hint : |
+            Specifies if a constant (a.k.a. bias or intercept) should be added to the decision function.
+    intercept_scaling :
+        ui-name : |
+            Intercept Scaling
+        short-hint : |
+            Useful only when the solver ‘liblinear’ is used and self.fit_intercept is set to True. In this case, x becomes [x, self.intercept_scaling], i.e. a “synthetic” feature with constant value equal to intercept_scaling is appended to the instance vector. The intercept becomes intercept_scaling * synthetic_feature_weight. Note! the synthetic feature weight is subject to l1/l2 regularization as all other features. To lessen the effect of regularization on synthetic feature weight (and therefore on the intercept) intercept_scaling has to be increased.
+    lr_class_weight :
+        ui-name : |
+            Class Weight
+        short-hint : |
+            Weights associated with classes in the form {class_label: weight}. If not given, all classes are supposed to have weight one. The “balanced” mode uses the values of y to automatically adjust weights inversely proportional to class frequencies in the input data as n_samples / (n_classes * np.bincount(y)). Note that these weights will be multiplied with sample_weight (passed through the fit method) if sample_weight is specified.    
+    lr_random_state :
+        ui-name : |
+            Random State
+        short-hint : |
+            The seed of the pseudo random number generator to use when shuffling the data. If int, random_state is the seed used by the random number generator; If RandomState instance, random_state is the random number generator; If None, the random number generator is the RandomState instance used by np.random. Used when solver == ‘sag’ or ‘liblinear’.   
+    lr_solver :
+        ui-name : |
+            Solver algorithm
+        short-hint : |
+            For small datasets, ‘liblinear’ is a good choice, whereas ‘sag’ and ‘saga’ are faster for large ones. For multiclass problems, only ‘newton-cg’, ‘sag’, ‘saga’ and ‘lbfgs’ handle multinomial loss; ‘liblinear’ is limited to one-versus-rest schemes. ‘newton-cg’, ‘lbfgs’ and ‘sag’ only handle L2 penalty, whereas ‘liblinear’ and ‘saga’ handle L1 penalty.
+    lr_max_iter :
+        ui-name : |
+            Maximum Iteration
+        short-hint : |
+            Useful only for the newton-cg, sag and lbfgs solvers. Maximum number of iterations taken for the solvers to converge.
+    multi_class :
+        ui-name : |
+            Multi Class
+        short-hint : |
+            Multiclass option can be either ‘ovr’ or ‘multinomial’. If the option chosen is ‘ovr’, then a binary problem is fit for each label. Else the loss minimised is the multinomial loss fit across the entire probability distribution. Does not work for liblinear solver.
+    lr_verbose :
+        ui-name : |
+            Verbose
+        short-hint : |
+            For the liblinear and lbfgs solvers set verbose to 1 for verbosity.
+    lr_warm_start :
+        ui-name : |
+            Warm Start
+        short-hint : |
+            When set to True, reuse the solution of the previous call to fit as initialization, otherwise, just erase the previous solution. Useless for liblinear solver.
+    lr_n_jobs :
+        ui-name : |
+            Number of Jobs
+        short-hint : |
+            Number of CPU cores used when parallelizing over classes if multi_class=’ovr’”. This parameter is ignored when the ``solver``is set to ‘liblinear’ regardless of whether ‘multi_class’ is specified or not. If given a value of -1, all cores are used.
+    criterion :
+        ui-name : |
+            Criterion
+        short-hint : |
+            The function to measure the quality of a split. Supported criteria are “gini” for the Gini impurity and “entropy” for the information gain.
+    splitter :
+        ui-name : |
+            Splitter
+        short-hint : |
+            The strategy used to choose the split at each node. Supported strategies are “best” to choose the best split and “random” to choose the best random split.
+    max_depth :
+        ui-name : |
+            Maximum Depth
+        short-hint : |
+            The maximum depth of the tree. If None, then nodes are expanded until all leaves are pure or until all leaves contain less than min_samples_split samples.
+    min_samples_split :
+        ui-name : |
+            Minimum Samples Split
+        short-hint : |
+            The minimum number of samples required to split an internal node: If int, then consider min_samples_split as the minimum number. If float, then min_samples_split is a percentage and ceil(min_samples_split * n_samples) are the minimum number of samples for each split.
+    min_samples_leaf :
+        ui-name : |
+            Minimum Samples Leaf
+        short-hint : |
+            The minimum number of samples required to be at a leaf node: If int, then consider min_samples_leaf as the minimum number. If float, then min_samples_leaf is a percentage and ceil(min_samples_leaf * n_samples) are the minimum number of samples for each node.
+    min_weight_fraction_leaf :
+        ui-name : |
+            Minimum Weight Fraction Leaf
+        short-hint : |
+            The minimum weighted fraction of the sum total of weights (of all the input samples) required to be at a leaf node. Samples have equal weight when sample_weight is not provided.
+    max_features :
+        ui-name : |
+            Maximum Features
+        short-hint : |
+            For the liblinear and lbfgs solvers set verbose to 1 for verbosity.
+    dt_random_state :
+        ui-name : |
+            Random State
+        short-hint : |
+            If int, random_state is the seed used by the random number generator; If RandomState instance, random_state is the random number generator; If None, the random number generator is the RandomState instance used by np.random.
+    max_leaf_nodes :
+        ui-name : |
+            Maximum Leaf Nodes
+        short-hint : |
+            Grow a tree with max_leaf_nodes in best-first fashion. Best nodes are defined as relative reduction in impurity. If None then unlimited number of leaf nodes.
+    min_impurity_decrease :
+        ui-name : |
+            Minimum Impurity Decrease
+        short-hint : |
+            A node will be split if this split induces a decrease of the impurity greater than or equal to this value. The weighted impurity decrease equation is the following: N_t / N * (impurity - N_t_R / N_t * right_impurity - N_t_L / N_t * left_impurity) where N is the total number of samples, N_t is the number of samples at the current node, N_t_L is the number of samples in the left child, and N_t_R is the number of samples in the right child. N, N_t, N_t_R and N_t_L all refer to the weighted sum, if sample_weight is passed.
+    dt_class_weight :
+        ui-name : |
+            Class Weight
+        short-hint : |
+            Weights associated with classes in the form {class_label: weight}. If not given, all classes are supposed to have weight one. For multi-output problems, a list of dicts can be provided in the same order as the columns of y. Note that for multioutput (including multilabel) weights should be defined for each class of every column in its own dict. For example, for four-class multilabel classification weights should be [{0: 1, 1: 1}, {0: 1, 1: 5}, {0: 1, 1: 1}, {0: 1, 1: 1}] instead of [{1:1}, {2:5}, {3:1}, {4:1}]. The “balanced” mode uses the values of y to automatically adjust weights inversely proportional to class frequencies in the input data as n_samples / (n_classes * np.bincount(y)) For multi-output, the weights of each column of y will be multiplied. Note that these weights will be multiplied with sample_weight (passed through the fit method) if sample_weight is specified.
+    presort :
+        ui-name : |
+            Presort
+        short-hint : |
+            Whether to presort the data to speed up the finding of best splits in fitting. For the default settings of a decision tree on large datasets, setting this to true may slow down the training process. When using either a smaller dataset or a restricted depth, this may speed up the training.
+    svm_C :
+        ui-name : |
+            C
+        short-hint : |
+            Penalty parameter C of the error term.
+    kernel :
+        ui-name : |
+            kernel
+        short-hint : |
+            Specifies the kernel type to be used in the algorithm. It must be one of ‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’ or a callable. If none is given, ‘rbf’ will be used. If a callable is given it is used to pre-compute the kernel matrix from data matrices; that matrix should be an array of shape (n_samples, n_samples).
+    degree :
+        ui-name : |
+            Degree
+        short-hint : |
+            Degree of the polynomial kernel function (‘poly’). Ignored by all other kernels.
+    gamma :
+        ui-name : |
+            Gamma
+        short-hint : |
+            Kernel coefficient for ‘rbf’, ‘poly’ and ‘sigmoid’. If gamma is ‘auto’ then 1/n_features will be used instead.
+    coef0 :
+        ui-name : |
+            Coef0
+        short-hint : |
+            Independent term in kernel function. It is only significant in ‘poly’ and ‘sigmoid’.
+    probability :
+        ui-name : |
+            Probability
+        short-hint : |
+            Whether to enable probability estimates. This must be enabled prior to calling fit, and will slow down that method.
+    shrinking :
+        ui-name : |
+            Shrinking
+        short-hint : |
+            Whether to use the shrinking heuristic.
+    svm_tolerance :
+        ui-name : |
+            Tolerance
+        short-hint : |
+            Tolerance for stopping criterion
+    cache_size :
+        ui-name : |
+            Cache Size
+        short-hint : |
+            Specify the size of the kernel cache (in MB).
+    svm_class_weight :
+        ui-name : |
+            Class Weight
+        short-hint : |
+            Set the parameter C of class i to class_weight[i]*C for SVC. If not given, all classes are supposed to have weight one. The “balanced” mode uses the values of y to automatically adjust weights inversely proportional to class frequencies in the input data as n_samples / (n_classes * np.bincount(y))
+    svm_verbose :
+        ui-name : |
+            Verbose
+        short-hint : |
+            Enable verbose output. Note that this setting takes advantage of a per-process runtime setting in libsvm that, if enabled, may not work properly in a multithreaded context.
+    svm_max_iter :
+        ui-name : |
+            Maximum Iterations
+        short-hint : |
+            Hard limit on iterations within solver, or -1 for no limit.
+    decision_function_shape :
+        ui-name : |
+            Decision Function Shape
+        short-hint : |
+            Whether to return a one-vs-rest (‘ovr’) decision function of shape (n_samples, n_classes) as all other classifiers, or the original one-vs-one (‘ovo’) decision function of libsvm which has shape (n_samples, n_classes * (n_classes - 1) / 2).
+    svm_random_state :
+        ui-name : |
+            Random State
+        short-hint : |
+            The seed of the pseudo random number generator to use when shuffling the data. If int, random_state is the seed used by the random number generator; If RandomState instance, random_state is the random number generator; If None, the random number generator is the RandomState instance used by np.random.
+    hidden_layer_sizes :
+        ui-name : |
+            Hidden Layer Sizes
+        short-hint : |
+            The ith element represents the number of neurons in the ith hidden layer.
+    activation :
+        ui-name : |
+            Activation
+        short-hint : |
+            Activation function for the hidden layer. ‘identity’, no-op activation, useful to implement linear bottleneck, returns f(x) = x ‘logistic’, the logistic sigmoid function, returns f(x) = 1 / (1 + exp(-x)). ‘tanh’, the hyperbolic tan function, returns f(x) = tanh(x). ‘relu’, the rectified linear unit function, returns f(x) = max(0, x)
+    mlp_solver :
+        ui-name : |
+            Solver
+        short-hint : |
+            The solver for weight optimization. ‘lbfgs’ is an optimizer in the family of quasi-Newton methods. ‘sgd’ refers to stochastic gradient descent. ‘adam’ refers to a stochastic gradient-based optimizer proposed by Kingma, Diederik, and Jimmy Ba
+    alpha :
+        ui-name : |
+            Alpha
+        short-hint : |
+            L2 penalty (regularization term) parameter.
+    batch_size :
+        ui-name : |
+            Batch Size
+        short-hint : |
+            Size of minibatches for stochastic optimizers. If the solver is ‘lbfgs’, the classifier will not use minibatch. When set to “auto”, batch_size=min(200, n_samples)
+    learning_rate :
+        ui-name : |
+            Learning Rate
+        short-hint : |
+            Learning rate schedule for weight updates. ‘constant’ is a constant learning rate given by ‘learning_rate_init’. ‘invscaling’ gradually decreases the learning rate learning_rate_ at each time step ‘t’ using an inverse scaling exponent of ‘power_t’. effective_learning_rate = learning_rate_init / pow(t, power_t) ‘adaptive’ keeps the learning rate constant to ‘learning_rate_init’ as long as training loss keeps decreasing.
+    learning_rate_init :
+        ui-name : |
+            Learning Rate Initialization
+        short-hint : |
+            The initial learning rate used. It controls the step-size in updating the weights. Only used when solver=’sgd’ or ‘adam’.
+    power_t :
+        ui-name : |
+            Power T
+        short-hint : |
+            The exponent for inverse scaling learning rate. It is used in updating effective learning rate when the learning_rate is set to ‘invscaling’. Only used when solver=’sgd’.
+    mlp_max_iter :
+        ui-name : |
+            Maximum Iterations
+        short-hint : |
+           Maximum number of iterations. The solver iterates until convergence (determined by ‘tol’) or this number of iterations. For stochastic solvers (‘sgd’, ‘adam’), note that this determines the number of epochs (how many times each data point will be used), not the number of gradient steps.
+    shuffle :
+        ui-name : |
+            Shuffle
+        short-hint : |
+            Whether to shuffle samples in each iteration. Only used when solver=’sgd’ or ‘adam’.
+    mlp_random_state :
+        ui-name : |
+            Random State
+        short-hint : |
+            If int, random_state is the seed used by the random number generator; If RandomState instance, random_state is the random number generator; If None, the random number generator is the RandomState instance used by np.random.
+    mlp_tolerance :
+        ui-name : |
+            Tolerance
+        short-hint : |
+            Tolerance for the optimization. When the loss or score is not improving by at least tol for two consecutive iterations, unless learning_rate is set to ‘adaptive’, convergence is considered to be reached and training stops.
+    mlp_verbose :
+        ui-name : |
+            Verbose
+        short-hint : |
+            Whether to print progress messages to stdout.
+    mlp_warm_start :
+        ui-name : |
+            Warm Start
+        short-hint : |
+            When set to True, reuse the solution of the previous call to fit as initialization, otherwise, just erase the previous solution.
+    momentum :
+        ui-name : |
+            Momentum
+        short-hint : |
+            Momentum for gradient descent update. Should be between 0 and 1. Only used when solver=’sgd’.
+    nesterovs_momentum :
+        ui-name : |
+            Nesterov’s Momentum
+        short-hint : |
+            Whether to use Nesterov’s momentum. Only used when solver=’sgd’ and momentum > 0.
+    early_stopping :
+        ui-name : |
+            Early Stopping
+        short-hint : |
+            Whether to use early stopping to terminate training when validation score is not improving. If set to true, it will automatically set aside 10% of training data as validation and terminate training when validation score is not improving by at least tol for two consecutive epochs. Only effective when solver=’sgd’ or ‘adam’.
+    validation_fraction :
+        ui-name : |
+            Validation Fraction
+        short-hint : |
+            The proportion of training data to set aside as validation set for early stopping. Must be between 0 and 1. Only used if early_stopping is True.
+    beta_1 :
+        ui-name : |
+            Beta 1
+        short-hint : |
+            Exponential decay rate for estimates of first moment vector in adam, should be in [0, 1). Only used when solver=’adam’.
+    beta_2 :
+        ui-name : |
+            Beta 2
+        short-hint : |
+            Exponential decay rate for estimates of second moment vector in adam, should be in [0, 1). Only used when solver=’adam’
+    epsilon :
+        ui-name : |
+            Epsilon
+        short-hint : |
+            Value for numerical stability in adam. Only used when solver=’adam’.
+parameter-groups :
+    k_nearest_neighbors :
+        ui-name: |
+            K Nearest Neighbors
+        short-hint : |
+            Additional user adjustable parameters for K Nearest Neighbors Algorithm
+    gaussian_nb :
+        ui-name: |
+            Gaussian Naive Bayes
+        short-hint : |
+            Additional user adjustable parameters for Gaussian Naive Bayes Algorithm
+    logistic_regression :
+        ui-name: |
+            Logistic Regression
+        short-hint : |
+            Additional user adjustable parameters for Logistic Regression Algorithm
+    decision_tree_classifier :
+        ui-name: |
+            Decision Tree Classifier
+        short-hint : |
+            Additional user adjustable parameters for Decision Tree Classifier Algorithm
+    support_vector_machine :
+        ui-name: |
+            Support Vector Machine
+        short-hint : |
+            Additional user adjustable parameters for Support Vector Machine Algorithm
+    neural_network :
+        ui-name: |
+            Neural Network
+        short-hint : |
+            Additional user adjustable parameters for Neural Network
 description : |
-    <p><b>This module build classifiers based on a training data set. </b></p> <p>This module takes Genomes and the associated functional roles as attributes to build classifiers.</p> <p> In this method we use six machine learning algorithms from ‘sklearn’ (http://scikit-learn.org/stable/#)  python library; K-Nearest Neighbors, Logistic Regression, Naive Gaussian Bayes Classifier, Support Vector Machine, Neural Network (black-box algorithms) and Decision Tree Classifier (white box algorithm) in building classifier objects that another KBase app ‘predict_phenotype’ could use these classifier objects and predict phenotypes for uncharacterized/unknown genomes.</p> <p>The paper associated with this method is in preparation.</p>
+    <p>This method allows the user to split a Reads Library into a randomly subsampled Reads Libraries, organized into a ReadsSet.</p>"""

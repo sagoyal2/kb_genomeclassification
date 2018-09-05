@@ -37,6 +37,13 @@ parameters :
             Categorizer Training Set
         short-hint : |
             Paste the list of traning set data
+    description:
+        ui-name : |
+            Description
+        short-hint : |
+            Describe Purpose or Contents of Training Set
+        placeholder: |
+            Enter Description
     classifier_name :
         ui-name : |
             Categorizer

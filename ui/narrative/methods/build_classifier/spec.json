@@ -1,211 +1,1772 @@
 {
-    "ver": "0.0.1",
-    "authors": [
-        "janakakbase", "sagoyal"
-    ],
-    "contact": "https://kbase.us/contact-us/",
-    "categories": ["active"],
-    "widgets": {
-        "input": null,
-        "output": "no-display"
-    },
-    "parameters": [
-         {
-            "id": "trainingset_name",
-            "optional": false,
-            "advanced": false,
-            "allow_multiple": false,
-            "default_values": [ "" ],
-            "field_type": "text",
-            "text_options": {
-                "valid_ws_types": [ "KBaseClassifier.GenomeClassifierTrainingSet" ]
-            }
+  "authors": [
+    "janakakbase",
+    "sagoyal"
+  ],
+  "behavior": {
+    "service-mapping": {
+      "input_mapping": [
+        {
+          "narrative_system_variable": "workspace",
+          "target_property": "workspace_name"
         },
-    {
-            "id" : "phenotypeclass",
-            "optional" : false,
-            "advanced" : false,
-            "allow_multiple" : false,
-            "default_values" : [ "" ],
-            "field_type" : "text"
-
-    },
-    {
-       "id": "classifier",
-       "optional": false,
-       "advanced": false,
-       "allow_multiple": false,
-       "default_values": [ "Run all classifiers" ],
-       "field_type": "dropdown",
-       "dropdown_options": {
-           "options": [
-               {
-                 "value": "run_all",
-                 "display": "Run all classifiers",
-                 "id": "run_all",
-                 "ui_name": "Run all classifiers"
-               },
-               {
-                 "value": "KNeighborsClassifier",
-                 "display": "K Neighbors Classifier",
-                 "id": "KNeighborsClassifier",
-                 "ui_name": "K Neighbors Classifier"
-               },
-               {
-                 "value": "GaussianNB",
-                 "display": "Gaussian Naive Base",
-                 "id": "GaussianNB",
-                 "ui_name": "Gaussian Naive Base"
-               },
-               {
-                 "value": "NeuralNetwork",
-                 "display": "Neural Network",
-                 "id": "NeuralNetwork",
-                 "ui_name": "Neural Network"
-               },
-               {
-                 "value": "SVM",
-                 "display": "Support Vector Machine",
-                 "id": "SVM",
-                 "ui_name": "Support Vector Machine"
-               },
-               {
-                 "value": "DecisionTreeClassifier",
-                 "display": "Decision Tree Classifier",
-                 "id": "DecisionTreeClassifier",
-                 "ui_name": "Decision Tree Classifier"
-               },
-               {
-                 "value": "LogisticRegression",
-                 "display": "Logistic Regression",
-                 "id": "LogisticRegression",
-                 "ui_name": "Logistic Regression"
-               }
-            ]
+        {
+          "input_parameter": "save_ts",
+          "target_property": "save_ts"
+        },
+        {
+          "input_parameter": "description",
+          "target_property": "description"
+        },
+        {
+          "input_parameter": "trainingset_name",
+          "target_property": "trainingset_name"
+        },
+        {
+          "input_parameter": "classifier_out",
+          "target_property": "classifier_out"
+        },
+        {
+          "input_parameter": "classifier",
+          "target_property": "classifier"
+        },
+        {
+          "input_parameter": "phenotypeclass",
+          "target_property": "phenotypeclass"
+        },
+        {
+          "input_parameter": "attribute",
+          "target_property": "attribute"
+        },
+        {
+          "input_parameter": "logistic_regression",
+          "target_property": "logistic_regression"
+        },
+        {
+          "input_parameter": "k_nearest_neighbors",
+          "target_property": "k_nearest_neighbors"
+        },
+        {
+          "input_parameter": "svm_verbose",
+          "target_property": "svm_verbose"
+        },
+        {
+          "input_parameter": "neural_network",
+          "target_property": "neural_network"
         }
-    },
-    {
-       "id": "attribute",
-       "optional": false,
-       "advanced": false,
-       "allow_multiple": false,
-       "default_values": [ "Functional annotations" ],
-       "field_type": "dropdown",
-       "dropdown_options": {
-           "options": [
-               {
-                 "value": "functional_roles",
-                 "display": "Functional annotations",
-                 "id": "functional_roles",
-                 "ui_name": "Functional annotations"
-               },
-               {
-                 "value": "prot_seq",
-                 "display": "Protein sequences",
-                 "id": "prot_seq",
-                 "ui_name": "Protein sequences"
-               },
-               {
-                 "value": "dnakmer",
-                 "display": "DNA K-mers 18mer",
-                 "id": "dnakmer",
-                 "ui_name": "DNA K-mers 18mer"
-               },
-               {
-                 "value": "protkmer",
-                 "display": "Protein K-mers 18mer",
-                 "id": "protkmer",
-                 "ui_name": "Protein K-mers 18mer"
-               }
-            ]
+      ],
+      "method": "build_classifier",
+      "name": "kb_genomeclassification",
+      "output_mapping": [
+        {
+          "narrative_system_variable": "workspace",
+          "target_property": "workspace_name"
+        },
+        {
+          "service_method_output_path": [
+            0,
+            "report_name"
+          ],
+          "target_property": "report_name"
+        },
+        {
+          "service_method_output_path": [
+            0,
+            "report_ref"
+          ],
+          "target_property": "report_ref"
         }
-    },
-    {
-         "field_type" : "checkbox",
-         "allow_multiple" : false,
-         "optional" : true,
-         "id" : "save_ts",
-         "advanced" : true,
-         "default_values" : [
-            "1"
-         ],
-          "checkbox_options" : {
-            "unchecked_value" : 0,
-            "checked_value" : 1
-          },
-          "text_options" : {
-            "valid_ws_types" : []
-          }
-    },
-    {
-            "id" : "classifier_out",
-            "optional" : false,
-            "advanced" : false,
-            "allow_multiple" : false,
-            "default_values" : [ "" ],
-            "field_type" : "text",
-            "text_options" : {
-            "valid_ws_types" : [ "KBaseClassifier.GenomeClassifier" ],
-            "is_output_name":true
-            }
+      ],
+      "url": ""
     }
-    ],
-    "behavior": {
-        "service-mapping": {
-            "url": "",
-            "name":"kb_genomeclassification",
-            "method": "build_classifier",
-            "input_mapping": [
-                {
-                    "narrative_system_variable": "workspace",
-                    "target_property": "workspace"
-                },
-                {
-                    "input_parameter": "trainingset_name",
-                    "target_property": "trainingset_name"
-
-                },
-                {
-                    "input_parameter": "classifier_out",
-                    "target_property": "classifier_out"
-
-                },
-                {
-                    "input_parameter": "classifier",
-                    "target_property": "classifier"
-
-                },
-                {
-                    "input_parameter": "phenotypeclass",
-                    "target_property": "phenotypeclass"
-
-                },
-                {
-
-                    "input_parameter": "save_ts",
-                    "target_property": "save_ts"
-
-                },
-                {
-                    "input_parameter": "attribute",
-                    "target_property": "attribute"
-                }
-            ],
-            "output_mapping": [
-                {
-                    "service_method_output_path": [0,"report_name"],
-                    "target_property": "report_name"
-                },
-                {
-                    "service_method_output_path": [0,"report_ref"],
-                    "target_property": "report_ref"
-                },
-                {
-                    "narrative_system_variable": "workspace",
-                    "target_property": "workspace"
-                }
-            ]
-        }
+  },
+  "categories": [
+    "active"
+  ],
+  "contact": "http://kbase.us/contact-us/",
+  "job_id_output_field": "docker",
+  "parameter-groups": [
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "id": "k_nearest_neighbors",
+      "optional": true,
+      "parameters": [
+        "n_neighbors",
+        "weights",
+        "algorithm",
+        "leaf_size",
+        "p",
+        "metric",
+        "metric_params",
+        "knn_n_jobs"
+      ],
+      "with_border": true
     },
-    "job_id_output_field": "docker"
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "id": "logistic_regression",
+      "optional": true,
+      "parameters": [
+        "penalty",
+        "dual",
+        "lr_tolerance",
+        "lr_C",
+        "fit_intercept",
+        "intercept_scaling",
+        "lr_class_weight",
+        "lr_random_state",
+        "lr_solver",
+        "lr_max_iter",
+        "multi_class",
+        "lr_verbose",
+        "lr_warm_start",
+        "lr_n_jobs"
+      ],
+      "with_border": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "id": "gaussian_nb",
+      "optional": true,
+      "parameters": [
+        "priors"
+      ],
+      "with_border": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "id": "decision_tree_classifier",
+      "optional": true,
+      "parameters": [
+        "criterion",
+        "splitter",
+        "max_depth",
+        "min_samples_split",
+        "min_samples_leaf",
+        "min_weight_fraction_leaf",
+        "max_features",
+        "dt_random_state",
+        "max_leaf_nodes",
+        "min_impurity_decrease",
+        "dt_class_weight",
+        "presort"
+      ],
+      "with_border": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "id": "support_vector_machine",
+      "optional": true,
+      "parameters": [
+        "svm_C",
+        "kernel",
+        "degree",
+        "gamma",
+        "coef0",
+        "probability",
+        "shrinking",
+        "svm_tolerance",
+        "cache_size",
+        "svm_class_weight",
+        "svm_verbose",
+        "svm_max_iter",
+        "decision_function_shape",
+        "svm_random_state"
+      ],
+      "with_border": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "id": "neural_network",
+      "optional": true,
+      "parameters": [
+        "hidden_layer_sizes",
+        "activation",
+        "mlp_solver",
+        "alpha",
+        "batch_size",
+        "learning_rate",
+        "learning_rate_init",
+        "power_t",
+        "mlp_max_iter",
+        "shuffle",
+        "mlp_random_state",
+        "mlp_tolerance",
+        "mlp_verbose",
+        "mlp_warm_start",
+        "momentum",
+        "nesterovs_momentum",
+        "early_stopping",
+        "validation_fraction",
+        "beta_1",
+        "beta_2",
+        "epsilon"
+      ],
+      "with_border": true
+    }
+  ],
+  "parameters": [
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "checkbox_options": {
+        "checked_value": 1,
+        "unchecked_value": 0
+      },
+      "default_values": [
+        "1"
+      ],
+      "field_type": "checkbox",
+      "id": "save_ts",
+      "optional": true,
+      "text_options": {
+        "valid_ws_types": []
+      }
+    },
+    {
+      "advanced": false,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "id": "description",
+      "optional": false,
+      "text_options": {
+        "is_output_name": false
+      }
+    },
+    {
+      "advanced": false,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "id": "trainingset_name",
+      "optional": false,
+      "text_options": {
+        "valid_ws_types": [
+          "KBaseClassifier.GenomeClassifierTrainingSet"
+        ]
+      }
+    },
+    {
+      "advanced": false,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "id": "phenotypeclass",
+      "optional": false
+    },
+    {
+      "advanced": false,
+      "allow_multiple": false,
+      "default_values": [
+        "Run all classifiers"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "Run all classifiers",
+            "id": "run_all",
+            "ui_name": "Run all classifiers",
+            "value": "run_all"
+          },
+          {
+            "display": "K Neighbors Classifier",
+            "id": "KNeighborsClassifier",
+            "ui_name": "K Neighbors Classifier",
+            "value": "KNeighborsClassifier"
+          },
+          {
+            "display": "Gaussian Naive Base",
+            "id": "GaussianNB",
+            "ui_name": "Gaussian Naive Base",
+            "value": "GaussianNB"
+          },
+          {
+            "display": "Neural Network",
+            "id": "NeuralNetwork",
+            "ui_name": "Neural Network",
+            "value": "NeuralNetwork"
+          },
+          {
+            "display": "Support Vector Machine",
+            "id": "SVM",
+            "ui_name": "Support Vector Machine",
+            "value": "SVM"
+          },
+          {
+            "display": "Decision Tree Classifier",
+            "id": "DecisionTreeClassifier",
+            "ui_name": "Decision Tree Classifier",
+            "value": "DecisionTreeClassifier"
+          },
+          {
+            "display": "Logistic Regression",
+            "id": "LogisticRegression",
+            "ui_name": "Logistic Regression",
+            "value": "LogisticRegression"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "classifier",
+      "optional": false
+    },
+    {
+      "advanced": false,
+      "allow_multiple": false,
+      "default_values": [
+        "Functional annotations"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "Functional annotations",
+            "id": "functional_roles",
+            "ui_name": "Functional annotations",
+            "value": "functional_roles"
+          },
+          {
+            "display": "Protein sequences",
+            "id": "prot_seq",
+            "ui_name": "Protein sequences",
+            "value": "prot_seq"
+          },
+          {
+            "display": "DNA K-mers 18mer",
+            "id": "dnakmer",
+            "ui_name": "DNA K-mers 18mer",
+            "value": "dnakmer"
+          },
+          {
+            "display": "Protein K-mers 18mer",
+            "id": "protkmer",
+            "ui_name": "Protein K-mers 18mer",
+            "value": "protkmer"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "attribute",
+      "optional": false
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "5"
+      ],
+      "field_type": "text",
+      "id": "n_neighbors",
+      "optional": true,
+      "text_options": {
+        "max_int": 100,
+        "min_int": 3,
+        "validate_as": "int"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "uniform"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "uniform",
+            "id": "uniform",
+            "ui_name": "uniform",
+            "value": "uniform"
+          },
+          {
+            "display": "distance",
+            "id": "distance",
+            "ui_name": "distance",
+            "value": "distance"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "weights",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "auto"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "auto",
+            "id": "auto",
+            "ui_name": "auto",
+            "value": "auto"
+          },
+          {
+            "display": "ball_tree",
+            "id": "ball_tree",
+            "ui_name": "ball_tree",
+            "value": "ball_tree"
+          },
+          {
+            "display": "kd_tree",
+            "id": "kd_tree",
+            "ui_name": "kd_tree",
+            "value": "kd_tree"
+          },
+          {
+            "display": "brute",
+            "id": "brute",
+            "ui_name": "brute",
+            "value": "brute"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "algorithm",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "30"
+      ],
+      "field_type": "text",
+      "id": "leaf_size",
+      "optional": true,
+      "text_options": {
+        "max_int": 100,
+        "min_int": 5,
+        "validate_as": "int"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "2"
+      ],
+      "field_type": "text",
+      "id": "p",
+      "optional": true,
+      "text_options": {
+        "max_int": 10,
+        "min_int": 1,
+        "validate_as": "int"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "minkowski"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "minkowski",
+            "id": "minkowski",
+            "ui_name": "minkowski",
+            "value": "minkowski"
+          },
+          {
+            "display": "euclidean",
+            "id": "euclidean",
+            "ui_name": "euclidean",
+            "value": "euclidean"
+          },
+          {
+            "display": "manhattan",
+            "id": "manhattan",
+            "ui_name": "manhattan",
+            "value": "manhattan"
+          },
+          {
+            "display": "chebyshev",
+            "id": "chebyshev",
+            "ui_name": "chebyshev",
+            "value": "chebyshev"
+          },
+          {
+            "display": "wminkowski",
+            "id": "wminkowski",
+            "ui_name": "wminkowski",
+            "value": "wminkowski"
+          },
+          {
+            "display": "seuclidean",
+            "id": "seuclidean",
+            "ui_name": "seuclidean",
+            "value": "seuclidean"
+          },
+          {
+            "display": "mahalanobis",
+            "id": "mahalanobis",
+            "ui_name": "mahalanobis",
+            "value": "mahalanobis"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "metric",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "id": "metric_params",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "1"
+      ],
+      "field_type": "text",
+      "id": "knn_n_jobs",
+      "optional": true,
+      "text_options": {
+        "max_int": 64,
+        "min_int": -1,
+        "validate_as": "int"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "id": "priors",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "l2"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "l1",
+            "id": "l1",
+            "ui_name": "l1",
+            "value": "l1"
+          },
+          {
+            "display": "l2",
+            "id": "l2",
+            "ui_name": "l2",
+            "value": "l2"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "penalty",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "False"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "True",
+            "id": "True",
+            "ui_name": "True",
+            "value": "True"
+          },
+          {
+            "display": "False",
+            "id": "False",
+            "ui_name": "False",
+            "value": "False"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "dual",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0.0001"
+      ],
+      "field_type": "text",
+      "id": "lr_tolerance",
+      "optional": true,
+      "text_options": {
+        "max_float": 0.01,
+        "min_float": 0.000001,
+        "validate_as": "float"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "1.0"
+      ],
+      "field_type": "text",
+      "id": "lr_C",
+      "optional": true,
+      "text_options": {
+        "max_float": 10.0,
+        "min_float": 0.01,
+        "validate_as": "float"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "True"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "True",
+            "id": "True",
+            "ui_name": "True",
+            "value": "True"
+          },
+          {
+            "display": "False",
+            "id": "False",
+            "ui_name": "False",
+            "value": "False"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "fit_intercept",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "1.0"
+      ],
+      "field_type": "text",
+      "id": "intercept_scaling",
+      "optional": true,
+      "text_options": {
+        "max_float": 10.0,
+        "min_float": 0.01,
+        "validate_as": "float"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "id": "lr_class_weight",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0"
+      ],
+      "field_type": "text",
+      "id": "lr_random_state",
+      "optional": true,
+      "text_options": {
+        "max_int": 1000,
+        "min_int": 0,
+        "validate_as": "int"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "newton-cg"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "newton-cg",
+            "id": "newton_cg",
+            "ui_name": "newton-cg",
+            "value": "newton_cg"
+          },
+          {
+            "display": "lbfgs",
+            "id": "lbfgs",
+            "ui_name": "lbfgs",
+            "value": "lbfgs"
+          },
+          {
+            "display": "liblinear",
+            "id": "liblinear",
+            "ui_name": "liblinear",
+            "value": "liblinear"
+          },
+          {
+            "display": "sag",
+            "id": "sag",
+            "ui_name": "sag",
+            "value": "sag"
+          },
+          {
+            "display": "saga",
+            "id": "saga",
+            "ui_name": "saga",
+            "value": "saga"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "lr_solver",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "100"
+      ],
+      "field_type": "text",
+      "id": "lr_max_iter",
+      "optional": true,
+      "text_options": {
+        "max_int": 100000,
+        "min_int": 0,
+        "validate_as": "int"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "ovr"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "ovr",
+            "id": "ovr",
+            "ui_name": "ovr",
+            "value": "ovr"
+          },
+          {
+            "display": "multinomial",
+            "id": "multinomial",
+            "ui_name": "multinomial",
+            "value": "multinomial"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "multi_class",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "False"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "True",
+            "id": "True",
+            "ui_name": "True",
+            "value": "True"
+          },
+          {
+            "display": "False",
+            "id": "False",
+            "ui_name": "False",
+            "value": "False"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "lr_warm_start",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0"
+      ],
+      "field_type": "text",
+      "id": "lr_verbose",
+      "optional": true,
+      "text_options": {
+        "max_int": 1,
+        "min_int": 0,
+        "validate_as": "int"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "1"
+      ],
+      "field_type": "text",
+      "id": "lr_n_jobs",
+      "optional": true,
+      "text_options": {
+        "max_int": 64,
+        "min_int": -1,
+        "validate_as": "int"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "gini"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "gini",
+            "id": "gini",
+            "ui_name": "gini",
+            "value": "gini"
+          },
+          {
+            "display": "entropy",
+            "id": "entropy",
+            "ui_name": "entropy",
+            "value": "entropy"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "criterion",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "best"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "best",
+            "id": "best",
+            "ui_name": "best",
+            "value": "best"
+          },
+          {
+            "display": "random",
+            "id": "random",
+            "ui_name": "random",
+            "value": "random"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "splitter",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "id": "max_depth",
+      "optional": true,
+      "text_options": {
+        "max_int": 20,
+        "min_int": 1,
+        "validate_as": "int"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "2"
+      ],
+      "field_type": "text",
+      "id": "min_samples_split",
+      "optional": true,
+      "text_options": {
+        "max_int": 20,
+        "min_int": 1,
+        "validate_as": "int"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "1"
+      ],
+      "field_type": "text",
+      "id": "min_samples_leaf",
+      "optional": true,
+      "text_options": {
+        "max_int": 20,
+        "min_int": 1,
+        "validate_as": "int"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0.0"
+      ],
+      "field_type": "text",
+      "id": "min_weight_fraction_leaf",
+      "optional": true,
+      "text_options": {
+        "max_float": 20.0,
+        "min_float": 0.0,
+        "validate_as": "float"
+      }
+    },
+    {
+      "advanced": false,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "id": "max_features",
+      "optional": true,
+      "text_options": {
+        "is_output_name": false
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0"
+      ],
+      "field_type": "text",
+      "id": "dt_random_state",
+      "optional": true,
+      "text_options": {
+        "max_int": 1000,
+        "min_int": 0,
+        "validate_as": "int"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "id": "max_leaf_nodes",
+      "optional": true,
+      "text_options": {
+        "max_int": 1000,
+        "min_int": 0,
+        "validate_as": "int"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0.0"
+      ],
+      "field_type": "text",
+      "id": "min_impurity_decrease",
+      "optional": true,
+      "text_options": {
+        "max_float": 1.0,
+        "min_float": 0.0,
+        "validate_as": "float"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "id": "dt_class_weight",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "False"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "True",
+            "id": "True",
+            "ui_name": "True",
+            "value": "True"
+          },
+          {
+            "display": "False",
+            "id": "False",
+            "ui_name": "False",
+            "value": "False"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "presort",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "1.0"
+      ],
+      "field_type": "text",
+      "id": "svm_C",
+      "optional": true,
+      "text_options": {
+        "max_float": 10.0,
+        "min_float": 0.01,
+        "validate_as": "float"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "linear"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "linear",
+            "id": "linear",
+            "ui_name": "linear",
+            "value": "linear"
+          },
+          {
+            "display": "poly",
+            "id": "poly",
+            "ui_name": "poly",
+            "value": "poly"
+          },
+          {
+            "display": "rbf",
+            "id": "rbf",
+            "ui_name": "rbf",
+            "value": "rbf"
+          },
+          {
+            "display": "sigmoid",
+            "id": "sigmoid",
+            "ui_name": "sigmoid",
+            "value": "sigmoid"
+          },
+          {
+            "display": "precomputed",
+            "id": "precomputed",
+            "ui_name": "precomputed",
+            "value": "precomputed"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "kernel",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "3"
+      ],
+      "field_type": "text",
+      "id": "degree",
+      "optional": true,
+      "text_options": {
+        "max_int": 100,
+        "min_int": 1,
+        "validate_as": "int"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "auto"
+      ],
+      "field_type": "text",
+      "id": "gamma",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0.0"
+      ],
+      "field_type": "text",
+      "id": "coef0",
+      "optional": true,
+      "text_options": {
+        "max_float": 10.0,
+        "min_float": 0.0,
+        "validate_as": "float"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "False"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "True",
+            "id": "True",
+            "ui_name": "True",
+            "value": "True"
+          },
+          {
+            "display": "False",
+            "id": "False",
+            "ui_name": "False",
+            "value": "False"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "probability",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "True"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "True",
+            "id": "True",
+            "ui_name": "True",
+            "value": "True"
+          },
+          {
+            "display": "False",
+            "id": "False",
+            "ui_name": "False",
+            "value": "False"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "shrinking",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0.001"
+      ],
+      "field_type": "text",
+      "id": "svm_tolerance",
+      "optional": true,
+      "text_options": {
+        "max_float": 0.01,
+        "min_float": 0.000001,
+        "validate_as": "float"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "200"
+      ],
+      "field_type": "text",
+      "id": "cache_size",
+      "optional": true,
+      "text_options": {
+        "max_float": 300.0,
+        "min_float": 0.0,
+        "validate_as": "float"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "id": "svm_class_weight",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "False"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "True",
+            "id": "True",
+            "ui_name": "True",
+            "value": "True"
+          },
+          {
+            "display": "False",
+            "id": "False",
+            "ui_name": "False",
+            "value": "False"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "svm_verbose",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "-1"
+      ],
+      "field_type": "text",
+      "id": "svm_max_iter",
+      "optional": true,
+      "text_options": {
+        "max_int": 100000,
+        "min_int": -1,
+        "validate_as": "int"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "ovr"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "ovo",
+            "id": "ovo",
+            "ui_name": "ovo",
+            "value": "ovo"
+          },
+          {
+            "display": "ovr",
+            "id": "ovr",
+            "ui_name": "ovr",
+            "value": "ovr"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "decision_function_shape",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0"
+      ],
+      "field_type": "text",
+      "id": "svm_random_state",
+      "optional": true,
+      "text_options": {
+        "max_int": 1000,
+        "min_int": 0,
+        "validate_as": "int"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "(100,)"
+      ],
+      "field_type": "text",
+      "id": "hidden_layer_sizes",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "relu"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "identity",
+            "id": "identity",
+            "ui_name": "identity",
+            "value": "identity"
+          },
+          {
+            "display": "logistic",
+            "id": "logistic",
+            "ui_name": "logistic",
+            "value": "logistic"
+          },
+          {
+            "display": "tanh",
+            "id": "tanh",
+            "ui_name": "tanh",
+            "value": "tanh"
+          },
+          {
+            "display": "relu",
+            "id": "relu",
+            "ui_name": "relu",
+            "value": "relu"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "activation",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "adam"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "lbfgs",
+            "id": "lbfgs",
+            "ui_name": "lbfgs",
+            "value": "lbfgs"
+          },
+          {
+            "display": "adam",
+            "id": "adam",
+            "ui_name": "adam",
+            "value": "adam"
+          },
+          {
+            "display": "sgd",
+            "id": "sgd",
+            "ui_name": "sgd",
+            "value": "sgd"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "mlp_solver",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0.0001"
+      ],
+      "field_type": "text",
+      "id": "alpha",
+      "optional": true,
+      "text_options": {
+        "max_float": 1.0,
+        "min_float": 0.0,
+        "validate_as": "float"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "auto"
+      ],
+      "field_type": "text",
+      "id": "batch_size",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "constant"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "constant",
+            "id": "constant",
+            "ui_name": "constant",
+            "value": "constant"
+          },
+          {
+            "display": "invscaling",
+            "id": "invscaling",
+            "ui_name": "invscaling",
+            "value": "invscaling"
+          },
+          {
+            "display": "adaptive",
+            "id": "adaptive",
+            "ui_name": "adaptive",
+            "value": "adaptive"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "learning_rate",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0.001"
+      ],
+      "field_type": "text",
+      "id": "learning_rate_init",
+      "optional": true,
+      "text_options": {
+        "max_float": 1.0,
+        "min_float": 0.0,
+        "validate_as": "float"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0.05"
+      ],
+      "field_type": "text",
+      "id": "power_t",
+      "optional": true,
+      "text_options": {
+        "max_float": 1.0,
+        "min_float": 0.0,
+        "validate_as": "float"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "200"
+      ],
+      "field_type": "text",
+      "id": "mlp_max_iter",
+      "optional": true,
+      "text_options": {
+        "max_int": 100000,
+        "min_int": 0,
+        "validate_as": "int"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "True"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "True",
+            "id": "True",
+            "ui_name": "True",
+            "value": "True"
+          },
+          {
+            "display": "False",
+            "id": "False",
+            "ui_name": "False",
+            "value": "False"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "shuffle",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0"
+      ],
+      "field_type": "text",
+      "id": "mlp_random_state",
+      "optional": true,
+      "text_options": {
+        "max_int": 1000,
+        "min_int": 0,
+        "validate_as": "int"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0.0001"
+      ],
+      "field_type": "text",
+      "id": "mlp_tolerance",
+      "optional": true,
+      "text_options": {
+        "max_float": 0.01,
+        "min_float": 0.000001,
+        "validate_as": "float"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "False"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "True",
+            "id": "True",
+            "ui_name": "True",
+            "value": "True"
+          },
+          {
+            "display": "False",
+            "id": "False",
+            "ui_name": "False",
+            "value": "False"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "mlp_verbose",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "False"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "True",
+            "id": "True",
+            "ui_name": "True",
+            "value": "True"
+          },
+          {
+            "display": "False",
+            "id": "False",
+            "ui_name": "False",
+            "value": "False"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "mlp_warm_start",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0.9"
+      ],
+      "field_type": "text",
+      "id": "momentum",
+      "optional": true,
+      "text_options": {
+        "max_float": 1.0,
+        "min_float": 0.0,
+        "validate_as": "float"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "True"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "True",
+            "id": "True",
+            "ui_name": "True",
+            "value": "True"
+          },
+          {
+            "display": "False",
+            "id": "False",
+            "ui_name": "False",
+            "value": "False"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "nesterovs_momentum",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "False"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "True",
+            "id": "True",
+            "ui_name": "True",
+            "value": "True"
+          },
+          {
+            "display": "False",
+            "id": "False",
+            "ui_name": "False",
+            "value": "False"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "early_stopping",
+      "optional": true
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0.1"
+      ],
+      "field_type": "text",
+      "id": "validation_fraction",
+      "optional": true,
+      "text_options": {
+        "max_float": 1.0,
+        "min_float": 0.0,
+        "validate_as": "float"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0.9"
+      ],
+      "field_type": "text",
+      "id": "beta_1",
+      "optional": true,
+      "text_options": {
+        "max_float": 0.9999999,
+        "min_float": 0.0,
+        "validate_as": "float"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0.999"
+      ],
+      "field_type": "text",
+      "id": "beta_2",
+      "optional": true,
+      "text_options": {
+        "max_float": 0.9999999,
+        "min_float": 0.0,
+        "validate_as": "float"
+      }
+    },
+    {
+      "advanced": true,
+      "allow_multiple": false,
+      "default_values": [
+        "0.00000001"
+      ],
+      "field_type": "text",
+      "id": "epsilon",
+      "optional": true,
+      "text_options": {
+        "max_float": 1.0,
+        "min_float": 0.0,
+        "validate_as": "float"
+      }
+    },
+    {
+      "advanced": false,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "id": "classifier_out",
+      "optional": false,
+      "text_options": {
+        "is_output_name": true,
+        "valid_ws_types": [
+          "KBaseClassifier.GenomeClassifier"
+        ]
+      }
+    }
+  ],
+  "ver": "0.0.1",
+  "visible": true,
+  "widgets": {
+    "input": null,
+    "output": "no-display"
+  }
 }

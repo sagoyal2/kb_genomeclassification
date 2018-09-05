@@ -154,18 +154,21 @@ class kb_genomeclassificationTest(unittest.TestCase):
     
     
     def test_upload_trainingset(self):
+        """
         params = {
             "shock_id": "2b596bec-4327-4e4b-a094-c8a7b5af8b33",
             #"list_name": "Genome_ID Classification\nNC_003197    P\ngenBankGO   N\nShewanella_ondeisensis_MR-1_GenBank  N",
             #"list_name": "Genome_ID Classification\n204669.6    N\n234267.13    N\n240015.3 N\n1806.1   P\n83331.1  P\n106370.11    P\n164756.6 P\n216594.1 P\n227882.1 P\n233413.1 P\n246196.1 P\n262316.1 P\n266117.6 P\n272631.1 P\n313589.3 P\n321955.4 P\n350058.5 P\n351607.5 P\n369723.3 P\n391037.3 P\n443906.13    P\n446470.4 P\n471857.4 P\n479431.5 P\n526225.5 P\n698972.3 P\n994479.3 P\n1146883.3    P\n1206734.4    P\n1206739.4    P\n469378.5 P\n518634.7 P\n722911.3 P\n435830.3 P\n783.1    N\n955.1    N\n35793.1  N\n48935.1  N\n52598.3  N\n190650.1 N\n204722.1 N\n205920.8 N\n212042.5 N\n216596.1 N\n224911.1 N\n224914.1 N\n228405.5 N\n234826.3 N\n237727.3 N\n246200.3 N\n252305.3 N\n254945.3 N\n257363.1 N\n262698.3 N\n264203.3 N\n266779.1 N\n266834.1 N\n266835.1 N\n269484.4 N\n272944.1 N\n272947.1 N\n288000.5 N\n290633.1 N\n292414.1 N\n292805.3 N\n293614.3 N\n314225.3 N\n314232.3 N\n314254.3 N\n314260.3 N\n315456.3 N\n317655.9 N\n318586.4 N\n335992.3 N\n336407.4 N\n342108.5 N\n349163.4 N\n360095.3 N\n366602.3 N\n391165.8 N\n392499.4 N\n394221.5 N\n402881.6 N\n419610.8 N\n426117.3 N\n431944.4 N\n483179.3 N\n1112213.3    N\n398580.3 N\n224324.1 N\n648996.5 N\n868864.3 N\n123214.3 N\n66692.3  P\n93061.3  P\n176279.3 P\n220668.1 P\n224308.1 P\n235909.3 P\n257314.1 P\n272558.1 P\n272621.3 P\n279010.5 P\n279808.3 P\n281309.3 P\n299033.6 P\n315730.5 P\n321956.5 P\n321967.8 P\n342451.4 P\n387344.13    P\n405566.3 P\n420246.5 P\n169963.1 P\n272626.1 P\n386043.6 P\n262543.4 P\n1134785.3    P\n216432.3 N\n269798.12    P\n309807.19    P\n411154.5 N\n485917.5 N\n485918.5 N\n457391.3 N\n470145.6 N\n665954.3 N\n679190.3 N\n702438.4 N\n752555.5 N\n997879.3 N\n997891.3 N\n1042376.3    N\n376686.6 N\n402612.4 N\n486.1    N\n487.2    N\n36873.1  N\n76114.4  N\n204773.3 N\n216591.1 N\n228410.1 N\n232721.5 N\n243160.4 N\n243365.1 N\n264198.3 N\n265072.7 N\n266264.4 N\n267608.1 N\n272560.3 N\n292415.3 N\n296591.1 N\n335283.5 N\n339670.3 N\n350701.3 N\n391735.5 N\n395019.3 N\n395495.3 N\n398578.3 N\n999394.3 N\n115711.7 N\n218497.4 N\n227941.1 N\n243161.4 N\n264202.3 N\n759364.3 N\n194439.7 N\n517417.4 N\n316274.3 N\n324602.8 N\n383372.4 N\n292459.1 P\n1496.1   P\n138119.3 P\n195102.1 P\n203119.1 P\n212717.1 P\n246194.3 P\n264732.9 P\n290402.34    P\n293826.4 P\n335541.4 N\n349161.4 P\n357809.4 P\n411474.6 P\n413999.4 P\n431943.4 P\n485916.4 P\n522772.4 N\n68909.1  P\n243230.17    P?\n262724.1    N\n504728.4 N\n526227.4 N\n326298.3 N\n367737.4 N\n502025.5 N\n246197.19    N\n882.1    N\n891.1    N\n273121.1 N\n335543.6 N\n525897.4 N\n387093.4 N\n290397.13    N\n217.1    N\n85962.1  N\n192222.1 N\n235279.1 N\n306254.1 N\n306263.1 N\n306264.1 N\n360104.4 N\n360105.6 N\n360106.5 N\n360107.5 N\n382638.8 N\n525898.4 N\n706433.3 P\n469599.3 N\n519441.4 N\n354.1    N\n40324.1  N\n62977.3  N\n76869.3  N\n87626.3  N\n167879.3 N\n171440.1 N\n190485.1 N\n205918.4 N\n205922.3 N\n208963.3 N\n221988.1 N\n233412.1 N\n243159.3 N\n243233.4 N\n283942.3 N\n290398.4 N\n291331.3 N\n312309.3 N\n314275.3 N\n314276.3 N\n314282.3 N\n314283.3 N\n314288.3 N\n316275.9 N\n317025.3 N\n326442.4 N\n342610.3 N\n349521.5 N\n351348.5 N\n357804.5 N\n380703.5 N\n382245.6 N\n384676.6 N\n399739.6 N\n400667.4 N\n400668.6 N\n484022.4 N\n498211.3 N\n523791.4 N\n584.1    N\n615.1    N\n60480.16 N\n94122.5  N\n211586.1 N\n272620.3 N\n298386.1 N\n318161.14    N\n319224.13    N\n326297.7 N\n392500.3 N\n398579.3 N\n399599.3 N\n425104.3 N\n458817.3 N\n546273.3 N\n866778.4 N\n1048260.3    N\n63737.4  P\n103690.1 P\n993516.3 unknown\n189518.1   N\n12149.1  N\n273075.1 unknown\n178306.1   unknown\n272557.1   unknown\n399549.6   unknown\n243274.1   N\n240016.6 N",
-            "list_name": "Genome_ID Classification\n204669.6    N\n234267.13    N\n240015.3 N\n1806.1   P\n83331.1  P\n106370.11    P\n164756.6 P\n216594.1 P\n227882.1 P\n233413.1 P\n246196.1 P\n262316.1 P\n266117.6 P\n272631.1 P\n313589.3 P\n321955.4 P\n350058.5 P\n351607.5 P\n369723.3 P\n391037.3 P\n443906.13    P\n446470.4 P\n471857.4 P\n479431.5 P\n526225.5 P\n698972.3 P\n994479.3 P\n1146883.3    P\n1206734.4    P\n1206739.4    P\n469378.5 P\n518634.7 P\n722911.3 P\n435830.3 P\n783.1    N\n955.1    N\n35793.1  N\n48935.1  N\n52598.3  N\n190650.1 N\n204722.1 N\n205920.8 N\n212042.5 N\n216596.1 N\n224911.1 N\n224914.1 N\n228405.5 N\n234826.3 N\n237727.3 N\n246200.3 N\n252305.3 N\n254945.3 N\n257363.1 N\n262698.3 N\n264203.3 N\n266779.1 N\n266834.1 N\n266835.1 N\n269484.4 N\n272944.1 N\n272947.1 N\n288000.5 N\n290633.1 N\n292414.1 N\n292805.3 N\n293614.3 N\n314225.3 N\n314232.3 N\n314254.3 N\n314260.3 N\n315456.3 N\n317655.9 N\n318586.4 N\n335992.3 N\n336407.4 N\n342108.5 N\n349163.4 N\n360095.3 N\n366602.3 N\n391165.8 N\n392499.4 N\n394221.5 N\n402881.6 N\n419610.8 N\n426117.3 N\n431944.4 N\n483179.3 N\n1112213.3    N\n398580.3 N\n224324.1 N\n648996.5 N\n868864.3 N\n123214.3 N\n66692.3  P\n93061.3  P\n176279.3 P\n220668.1 P\n224308.1 P\n235909.3 P\n257314.1 P\n272558.1 P\n272621.3 P\n279010.5 P\n279808.3 P\n281309.3 P\n299033.6 P\n315730.5 P\n321956.5 P\n321967.8 P\n342451.4 P\n387344.13    P\n405566.3 P\n420246.5 P\n169963.1 P\n272626.1 P\n386043.6 P\n262543.4 P\n1134785.3    P\n216432.3 N\n269798.12    P\n309807.19    P\n411154.5 N\n485917.5 N\n485918.5 N\n457391.3 N\n470145.6 N\n665954.3 N\n679190.3 N\n702438.4 N\n752555.5 N\n997879.3 N\n997891.3 N\n1042376.3    N\n376686.6 N\n402612.4 N\n486.1    N\n487.2    N\n36873.1  N\n76114.4  N\n204773.3 N\n216591.1 N\n228410.1 N\n232721.5 N\n243160.4 N\n243365.1 N\n264198.3 N\n265072.7 N\n266264.4 N\n267608.1 N\n272560.3 N\n292415.3 N\n296591.1 N\n335283.5 N\n339670.3 N\n350701.3 N\n391735.5 N\n395019.3 N\n395495.3 N\n398578.3 N\n999394.3 N\n115711.7 N\n218497.4 N\n227941.1 N\n243161.4 N\n264202.3 N\n759364.3 N\n194439.7 N\n517417.4 N\n316274.3 N\n324602.8 N\n383372.4 N\n292459.1 P\n1496.1   P\n138119.3 P\n195102.1 P\n203119.1 P\n212717.1 P\n246194.3 P\n264732.9 P\n290402.34    P\n293826.4 P\n335541.4 N\n349161.4 P\n357809.4 P\n411474.6 P\n413999.4 P\n431943.4 P\n485916.4 P\n522772.4 N\n68909.1  P\n243230.17    P\n262724.1 N\n504728.4 N\n526227.4 N\n326298.3 N\n367737.4 N\n502025.5 N\n246197.19    N\n882.1    N\n891.1    N\n273121.1 N\n335543.6 N\n525897.4 N\n387093.4 N\n290397.13    N\n217.1    N\n85962.1  N\n192222.1 N\n235279.1 N\n306254.1 N\n306263.1 N\n306264.1 N\n360104.4 N\n360105.6 N\n360106.5 N\n360107.5 N\n382638.8 N\n525898.4 N\n706433.3 P\n469599.3 N\n519441.4 N\n354.1    N\n40324.1  N\n62977.3  N\n76869.3  N\n87626.3  N\n167879.3 N\n171440.1 N\n190485.1 N\n205918.4 N\n205922.3 N\n208963.3 N\n221988.1 N\n233412.1 N\n243159.3 N\n243233.4 N\n283942.3 N\n290398.4 N\n291331.3 N\n312309.3 N\n314275.3 N\n314276.3 N\n314282.3 N\n314283.3 N\n314288.3 N\n316275.9 N\n317025.3 N\n326442.4 N\n342610.3 N\n349521.5 N\n351348.5 N\n357804.5 N\n380703.5 N\n382245.6 N\n384676.6 N\n399739.6 N\n400667.4 N\n400668.6 N\n484022.4 N\n498211.3 N\n523791.4 N\n584.1    N\n615.1    N\n60480.16 N\n94122.5  N\n211586.1 N\n272620.3 N\n298386.1 N\n318161.14    N\n319224.13    N\n326297.7 N\n392500.3 N\n398579.3 N\n399599.3 N\n425104.3 N\n458817.3 N\n546273.3 N\n866778.4 N\n1048260.3    N\n63737.4  P\n103690.1 P\n189518.1 N\n12149.1  N\n243274.1 N\n240016.6 N",
+            #"list_name": "Genome_ID Classification\n204669.6    N\n234267.13    N\n240015.3 N\n1806.1   P\n83331.1  P\n106370.11    P\n164756.6 P\n216594.1 P\n227882.1 P\n233413.1 P\n246196.1 P\n262316.1 P\n266117.6 P\n272631.1 P\n313589.3 P\n321955.4 P\n350058.5 P\n351607.5 P\n369723.3 P\n391037.3 P\n443906.13    P\n446470.4 P\n471857.4 P\n479431.5 P\n526225.5 P\n698972.3 P\n994479.3 P\n1146883.3    P\n1206734.4    P\n1206739.4    P\n469378.5 P\n518634.7 P\n722911.3 P\n435830.3 P\n783.1    N\n955.1    N\n35793.1  N\n48935.1  N\n52598.3  N\n190650.1 N\n204722.1 N\n205920.8 N\n212042.5 N\n216596.1 N\n224911.1 N\n224914.1 N\n228405.5 N\n234826.3 N\n237727.3 N\n246200.3 N\n252305.3 N\n254945.3 N\n257363.1 N\n262698.3 N\n264203.3 N\n266779.1 N\n266834.1 N\n266835.1 N\n269484.4 N\n272944.1 N\n272947.1 N\n288000.5 N\n290633.1 N\n292414.1 N\n292805.3 N\n293614.3 N\n314225.3 N\n314232.3 N\n314254.3 N\n314260.3 N\n315456.3 N\n317655.9 N\n318586.4 N\n335992.3 N\n336407.4 N\n342108.5 N\n349163.4 N\n360095.3 N\n366602.3 N\n391165.8 N\n392499.4 N\n394221.5 N\n402881.6 N\n419610.8 N\n426117.3 N\n431944.4 N\n483179.3 N\n1112213.3    N\n398580.3 N\n224324.1 N\n648996.5 N\n868864.3 N\n123214.3 N\n66692.3  P\n93061.3  P\n176279.3 P\n220668.1 P\n224308.1 P\n235909.3 P\n257314.1 P\n272558.1 P\n272621.3 P\n279010.5 P\n279808.3 P\n281309.3 P\n299033.6 P\n315730.5 P\n321956.5 P\n321967.8 P\n342451.4 P\n387344.13    P\n405566.3 P\n420246.5 P\n169963.1 P\n272626.1 P\n386043.6 P\n262543.4 P\n1134785.3    P\n216432.3 N\n269798.12    P\n309807.19    P\n411154.5 N\n485917.5 N\n485918.5 N\n457391.3 N\n470145.6 N\n665954.3 N\n679190.3 N\n702438.4 N\n752555.5 N\n997879.3 N\n997891.3 N\n1042376.3    N\n376686.6 N\n402612.4 N\n486.1    N\n487.2    N\n36873.1  N\n76114.4  N\n204773.3 N\n216591.1 N\n228410.1 N\n232721.5 N\n243160.4 N\n243365.1 N\n264198.3 N\n265072.7 N\n266264.4 N\n267608.1 N\n272560.3 N\n292415.3 N\n296591.1 N\n335283.5 N\n339670.3 N\n350701.3 N\n391735.5 N\n395019.3 N\n395495.3 N\n398578.3 N\n999394.3 N\n115711.7 N\n218497.4 N\n227941.1 N\n243161.4 N\n264202.3 N\n759364.3 N\n194439.7 N\n517417.4 N\n316274.3 N\n324602.8 N\n383372.4 N\n292459.1 P\n1496.1   P\n138119.3 P\n195102.1 P\n203119.1 P\n212717.1 P\n246194.3 P\n264732.9 P\n290402.34    P\n293826.4 P\n335541.4 N\n349161.4 P\n357809.4 P\n411474.6 P\n413999.4 P\n431943.4 P\n485916.4 P\n522772.4 N\n68909.1  P\n243230.17    P\n262724.1 N\n504728.4 N\n526227.4 N\n326298.3 N\n367737.4 N\n502025.5 N\n246197.19    N\n882.1    N\n891.1    N\n273121.1 N\n335543.6 N\n525897.4 N\n387093.4 N\n290397.13    N\n217.1    N\n85962.1  N\n192222.1 N\n235279.1 N\n306254.1 N\n306263.1 N\n306264.1 N\n360104.4 N\n360105.6 N\n360106.5 N\n360107.5 N\n382638.8 N\n525898.4 N\n706433.3 P\n469599.3 N\n519441.4 N\n354.1    N\n40324.1  N\n62977.3  N\n76869.3  N\n87626.3  N\n167879.3 N\n171440.1 N\n190485.1 N\n205918.4 N\n205922.3 N\n208963.3 N\n221988.1 N\n233412.1 N\n243159.3 N\n243233.4 N\n283942.3 N\n290398.4 N\n291331.3 N\n312309.3 N\n314275.3 N\n314276.3 N\n314282.3 N\n314283.3 N\n314288.3 N\n316275.9 N\n317025.3 N\n326442.4 N\n342610.3 N\n349521.5 N\n351348.5 N\n357804.5 N\n380703.5 N\n382245.6 N\n384676.6 N\n399739.6 N\n400667.4 N\n400668.6 N\n484022.4 N\n498211.3 N\n523791.4 N\n584.1    N\n615.1    N\n60480.16 N\n94122.5  N\n211586.1 N\n272620.3 N\n298386.1 N\n318161.14    N\n319224.13    N\n326297.7 N\n392500.3 N\n398579.3 N\n399599.3 N\n425104.3 N\n458817.3 N\n546273.3 N\n866778.4 N\n1048260.3    N\n63737.4  P\n103690.1 P\n189518.1 N\n12149.1  N\n243274.1 N\n240016.6 N",
+            "list_name": "Genome_ID Classification\nAcetivibrio_ethanolgignens  N\nAggregatibacter_actinomycetemcomitans_serotype_b_str._SCC4092    P\nAfipia_felis_ATCC_53690  N",
             "phenotypeclass": "DoesnotMatter",
             "training_set_out": "Tset3",
-            "workspace" : "janakakbase:narrative_1534966345663"#"sagoyal:narrative_1533659119242" #sagoyal:narrative_1534292322496"
+            "workspace" : "avi2:narrative_1534266317055"#"janakakbase:narrative_1534966345663"#"sagoyal:narrative_1533659119242" #sagoyal:narrative_1534292322496"
         }
 
         self.getImpl().upload_trainingset(self.getContext(), params)
-    
+        """
+
     def test_2build_classifier(self):
         """
         params = {
@@ -192,19 +195,143 @@ class kb_genomeclassificationTest(unittest.TestCase):
         """
 
         """
+        params = {
+        "trainingset_name": "Tset3",
+        "save_ts": 1,
+        "classifier_out": "DTCFL",
+        "attribute": "functional_roles",
+        "phenotypeclass": "Gram",
+        "classifier": "SVM",
+        "workspace" : "avi2:narrative_1534266317055"
+        }
+
         self.getImpl().build_classifier(self.getContext(), params)
         """
-    
+
     """
     def test_2predict_phenotype(self):
         params = {
         "shock_id": "bbf98000-860b-403a-bcd3-2fe1a10bd572",
-        "list_name": "Genome_ID\ngenBankGO\nNC_003197\nShewanella_ondeisensis_MR-1_GenBank",
-        "classifier_name": "newClf3T",
-        "phenotypeclass": "myPhenotypeforTrain",
-        "workspace" : "sagoyal:narrative_1533659119242"
+        "list_name": "Genome_ID Classification\nShewanella_ondeisensis_MR-1_GenBank Aerobic\ngenBankGO  Anaerobic\nNC_003197    Facultative\nGCF_000010525.1    Facultative\nGCF_000007365.1    Aerobic\nGCF_000007725.1    Anaerobic\nGCF_000009605.1  Aerobic\nGCF_000021065.1    Anaerobic\nGCF_000021085.1  Facultative\nGCF_000090965.1    Facultative\nGCF_000174075.1    Aerobic\nGCF_000183225.1    Aerobic\nGCF_000183245.1    Facultative\nGCF_000183285.1    Facultative\nGCF_000183305.1    Anaerobic\nGCF_000217635.1  Aerobic\nGCF_000225445.1    Aerobic\nGCF_000225465.1    Anaerobic\nGCF_000521525.1  Anaerobic\nGCF_000521545.1  Aerobic\nGCF_000521565.1    Aerobic\nGCF_000521585.1    Facultative\nGCF_001280225.1    Anaerobic\nGCF_001648115.1  Facultative",
+        "classifier_name": "Big25",
+        "phenotypeclass": "myPhenotype",
+        "workspace" : "sagoyal:narrative_1534292322496"
         }
 
         self.getImpl().predict_phenotype(self.getContext(), params)
     """
 
+    def test_3build_classifier(self):
+        """
+        params =     {
+            "description": "I can make this whatever I want it to be",
+            "save_ts": 1,
+            "trainingset_name": "BIG25",
+            "phenotypeclass": "Respiration",
+            "classifier": "run_all",
+            "k_nearest_neighbors": {
+                "n_neighbors": 5,
+                "weights": "uniform",
+                "algorithm": "auto",
+                "leaf_size": 30,
+                "p": 2,
+                "metric": "minkowski",
+                "metric_params": "",
+                "knn_n_jobs": 1
+            },
+            "gaussian_nb": {
+                "priors": ""
+            },
+            "logistic_regression": {
+                "penalty": "l2",
+                "dual": "False",
+                "lr_tolerance": 0.0001,
+                "lr_C": 1,
+                "fit_intercept": "True",
+                "intercept_scaling": 1,
+                "lr_class_weight": "",
+                "lr_random_state": 0,
+                "lr_solver": "newton-cg",
+                "lr_max_iter": 100,
+                "multi_class": "ovr",
+                "lr_verbose": 0,
+                "lr_warm_start": "False",
+                "lr_n_jobs": 1
+            },
+            "decision_tree_classifier": {
+                "criterion": "gini",
+                "splitter": "best",
+                "max_depth": None,
+                "min_samples_split": 2,
+                "min_samples_leaf": 1,
+                "min_weight_fraction_leaf": 0,
+                "max_features": "",
+                "dt_random_state": 0,
+                "max_leaf_nodes": None,
+                "min_impurity_decrease": 0,
+                "dt_class_weight": "",
+                "presort": "False"
+            },
+            "support_vector_machine": {
+                "svm_C": 1,
+                "kernel": "linear",
+                "degree": 3,
+                "gamma": "auto",
+                "coef0": 0,
+                "probability": "False",
+                "shrinking": "True",
+                "svm_tolerance": 0.001,
+                "cache_size": 200,
+                "svm_class_weight": "",
+                "svm_verbose": "False",
+                "svm_max_iter": -1,
+                "decision_function_shape": "ovr",
+                "svm_random_state": 0
+            },
+            "neural_network": {
+                "hidden_layer_sizes": "(100,)",
+                "activation": "relu",
+                "mlp_solver": "adam",
+                "alpha": 0.0001,
+                "batch_size": "auto",
+                "learning_rate": "constant",
+                "learning_rate_init": 0.001,
+                "power_t": 0.05,
+                "mlp_max_iter": 200,
+                "shuffle": "True",
+                "mlp_random_state": 0,
+                "mlp_tolerance": 0.0001,
+                "mlp_verbose": "False",
+                "mlp_warm_start": "False",
+                "momentum": 0.9,
+                "nesterovs_momentum": "True",
+                "early_stopping": "False",
+                "validation_fraction": 0.1,
+                "beta_1": 0.9,
+                "beta_2": 0.999,
+                "epsilon": 1e-8
+            },
+            "attribute": "functional_roles",
+            "classifier_out": "myCLF",
+            "workspace" : "sagoyal:narrative_1534292322496"
+        }
+        """
+
+        params = {
+        "description": "I can make this whatever I want it to be",
+        "save_ts": 1,
+        "trainingset_name": "BIG25",
+        "phenotypeclass": "Respiration",
+        "classifier": "run_all",
+        "k_nearest_neighbors": None,
+        "gaussian_nb": None,
+        "logistic_regression": None,
+        "decision_tree_classifier": None,
+        "support_vector_machine": None,
+        "neural_network": None,
+        "attribute": "functional_roles",
+        "classifier_out": "myCLF",
+        "workspace" : "sagoyal:narrative_1534292322496"
+        }
+
+        self.getImpl().build_classifier(self.getContext(), params)
