@@ -127,8 +127,8 @@ class kb_genomeclfUtils(object):
 		correctClassifications_list = []
 
 		for index in range(len(all_classifications['Classification'])):
-		    correctClassifications_list.append(all_classifications['Classification'][index])
-		    
+			correctClassifications_list.append(all_classifications['Classification'][index])
+			
 		class_list = list(set(correctClassifications_list))
 
 		my_mapping = {} #my_mapping = {'aerobic': '0', 'anaerobic': '1', 'facultative': '2'}
@@ -138,8 +138,8 @@ class kb_genomeclfUtils(object):
 		my_class_mapping = []
 
 		for index in range(len(correctClassifications_list)):
-		    my_class_mapping.append(my_mapping[correctClassifications_list[index]])
-		    
+			my_class_mapping.append(my_mapping[correctClassifications_list[index]])
+			
 		print(len(my_class_mapping))
 
 		all_attributes = all_attributes.values.astype(int)
@@ -482,13 +482,13 @@ class kb_genomeclfUtils(object):
 	def editBuildArguments(self, params):
 
 		return_params = {
-        "trainingset_name": params["trainingset_name"],
-        "phenotypeclass": params["phenotypeclass"],
-        "classifier": params.get("classifier"),
-        "attribute": params["attribute"],
-        "save_ts": params["save_ts"],
-        "classifier_out": params["classifier_out"],
-        "description" : params["description"] #edit this so classifier object can add this
+		"trainingset_name": params["trainingset_name"],
+		"phenotypeclass": params["phenotypeclass"],
+		"classifier": params.get("classifier"),
+		"attribute": params["attribute"],
+		"save_ts": params["save_ts"],
+		"classifier_out": params["classifier_out"],
+		"description" : params["description"] #edit this so classifier object can add this
 		}
 
 		print(return_params)
@@ -514,101 +514,101 @@ class kb_genomeclfUtils(object):
 		else :
 			if params["k_nearest_neighbors"] == None:
 				params["k_nearest_neighbors"] = {
-                "n_neighbors": 5,
-                "weights": "uniform",
-                "algorithm": "auto",
-                "leaf_size": 30,
-                "p": 2,
-                "metric": "minkowski",
-                "metric_params": "",
-                "knn_n_jobs": 1
-           		}
+				"n_neighbors": 5,
+				"weights": "uniform",
+				"algorithm": "auto",
+				"leaf_size": 30,
+				"p": 2,
+				"metric": "minkowski",
+				"metric_params": "",
+				"knn_n_jobs": 1
+				}
 			return_params['k_nearest_neighbors'] = params["k_nearest_neighbors"]
 
 			if params["gaussian_nb"] == None:
 				params["gaussian_nb"] = {
-                "priors": ""
-            	}
+				"priors": ""
+				}
 			return_params['gaussian_nb'] = params["gaussian_nb"]
 
 			if params["logistic_regression"] == None:
 				params["logistic_regression"] = {
 				"penalty": "l2",
-                "dual": "False",
-                "lr_tolerance": 0.0001,
-                "lr_C": 1,
-                "fit_intercept": "True",
-                "intercept_scaling": 1,
-                "lr_class_weight": "",
-                "lr_random_state": 0,
-                "lr_solver": "newton-cg",
-                "lr_max_iter": 100,
-                "multi_class": "ovr",
-                "lr_verbose": 0,
-                "lr_warm_start": "False",
-                "lr_n_jobs": 1
+				"dual": "False",
+				"lr_tolerance": 0.0001,
+				"lr_C": 1,
+				"fit_intercept": "True",
+				"intercept_scaling": 1,
+				"lr_class_weight": "",
+				"lr_random_state": 0,
+				"lr_solver": "newton-cg",
+				"lr_max_iter": 100,
+				"multi_class": "ovr",
+				"lr_verbose": 0,
+				"lr_warm_start": "False",
+				"lr_n_jobs": 1
 				}
 			return_params['logistic_regression'] = params["logistic_regression"]
 
 			if params["decision_tree_classifier"] == None:
 				params["decision_tree_classifier"] = {
 				"criterion": "gini",
-                "splitter": "best",
-                "max_depth": None,
-                "min_samples_split": 2,
-                "min_samples_leaf": 1,
-                "min_weight_fraction_leaf": 0,
-                "max_features": "",
-                "dt_random_state": 0,
-                "max_leaf_nodes": None,
-                "min_impurity_decrease": 0,
-                "dt_class_weight": "",
-                "presort": "False"
+				"splitter": "best",
+				"max_depth": None,
+				"min_samples_split": 2,
+				"min_samples_leaf": 1,
+				"min_weight_fraction_leaf": 0,
+				"max_features": "",
+				"dt_random_state": 0,
+				"max_leaf_nodes": None,
+				"min_impurity_decrease": 0,
+				"dt_class_weight": "",
+				"presort": "False"
 				}
 			return_params['decision_tree_classifier'] = params["decision_tree_classifier"]
 
 			if params["support_vector_machine"] == None:
 				params["support_vector_machine"] = {
-                "svm_C": 1,
-                "kernel": "linear",
-                "degree": 3,
-                "gamma": "auto",
-                "coef0": 0,
-                "probability": "False",
-                "shrinking": "True",
-                "svm_tolerance": 0.001,
-                "cache_size": 200,
-                "svm_class_weight": "",
-                "svm_verbose": "False",
-                "svm_max_iter": -1,
-                "decision_function_shape": "ovr",
-                "svm_random_state": 0
+				"svm_C": 1,
+				"kernel": "linear",
+				"degree": 3,
+				"gamma": "auto",
+				"coef0": 0,
+				"probability": "False",
+				"shrinking": "True",
+				"svm_tolerance": 0.001,
+				"cache_size": 200,
+				"svm_class_weight": "",
+				"svm_verbose": "False",
+				"svm_max_iter": -1,
+				"decision_function_shape": "ovr",
+				"svm_random_state": 0
 				}
 			return_params['support_vector_machine'] = params["support_vector_machine"]
 
 			if params["neural_network"] == None:
 				params["neural_network"] = {
 				"hidden_layer_sizes": "(100,)",
-                "activation": "relu",
-                "mlp_solver": "adam",
-                "alpha": 0.0001,
-                "batch_size": "auto",
-                "learning_rate": "constant",
-                "learning_rate_init": 0.001,
-                "power_t": 0.05,
-                "mlp_max_iter": 200,
-                "shuffle": "True",
-                "mlp_random_state": 0,
-                "mlp_tolerance": 0.0001,
-                "mlp_verbose": "False",
-                "mlp_warm_start": "False",
-                "momentum": 0.9,
-                "nesterovs_momentum": "True",
-                "early_stopping": "False",
-                "validation_fraction": 0.1,
-                "beta_1": 0.9,
-                "beta_2": 0.999,
-                "epsilon": 1e-8
+				"activation": "relu",
+				"mlp_solver": "adam",
+				"alpha": 0.0001,
+				"batch_size": "auto",
+				"learning_rate": "constant",
+				"learning_rate_init": 0.001,
+				"power_t": 0.05,
+				"mlp_max_iter": 200,
+				"shuffle": "True",
+				"mlp_random_state": 0,
+				"mlp_tolerance": 0.0001,
+				"mlp_verbose": "False",
+				"mlp_warm_start": "False",
+				"momentum": 0.9,
+				"nesterovs_momentum": "True",
+				"early_stopping": "False",
+				"validation_fraction": 0.1,
+				"beta_1": 0.9,
+				"beta_2": 0.999,
+				"epsilon": 1e-8
 				}
 			return_params['neural_network'] = params["neural_network"]
 
@@ -1111,10 +1111,10 @@ class kb_genomeclfUtils(object):
 
 	def str_to_bool(self, s):
 		#Convert string to Boolean
-	    if s == 'True':
-	         return True
-	    elif s == 'False':
-	         return False
+		if s == 'True':
+			 return True
+		elif s == 'False':
+			 return False
 
 	def classifierTest(self, classifierTest_params):
 		"""
@@ -1284,6 +1284,14 @@ class kb_genomeclfUtils(object):
 			print "done"        
 			
 
+		if print_cfm:
+
+			cnf_av = cnf_matrix/splits
+			self.NClasses(class_list, cnf_av)
+
+			self.plot_confusion_matrix(cnf_matrix_f/splits*100.0,class_list,u'Confusion Matrix', htmlfolder, classifier_name, classifier_type)
+
+		"""
 		list_forDict = []
 
 		if class_list.__len__() == 3:
@@ -1337,6 +1345,7 @@ class kb_genomeclfUtils(object):
 				self.list_statistics.append(list_forDict)
 
 				self.plot_confusion_matrix(cnf_matrix_f/splits*100.0,class_list,u'Confusion Matrix', htmlfolder, classifier_name, classifier_type)
+		"""
 
 		if print_cfm:
 			print classifier
@@ -1361,6 +1370,61 @@ class kb_genomeclfUtils(object):
 
 		return (np.average(train_score), np.std(train_score), np.average(validate_score), np.std(validate_score))
 
+	def NClasses(self, class_list, cnf_av):
+		
+		list_forDict = []
+
+		for class_current in range(len(class_list)):
+			print(class_list[class_current])
+			
+			TP = cnf_av[class_current][class_current]
+			FP = self.forFP(class_current, cnf_av)
+			FN = self.forFN(class_current, cnf_av)
+			TN = self.forTN(FP, FN, class_current, cnf_av)
+			
+			list_forDict.extend([None])
+			list_forDict.extend(self.cf_stats(TN,TP,FP,FN))
+			list_forDict.extend([None])
+
+		fScore_indexes = [(4 + 5*a) for a in range(len(class_list))]
+
+		fScore_sum = 0
+
+		print("This is you list_forDict")
+		print(list_forDict)
+
+		for f_index in fScore_indexes:
+			fScore_sum += list_forDict[f_index]
+
+		list_forDict.extend([(fScore_sum)/len(class_list)])
+
+		self.list_statistics.append(list_forDict)
+			
+	def forTN(self, FP, FN, class_current, cnf_av):
+		sum_TN = 0
+		for i in range(len(cnf_av)):
+			for j in range(len(cnf_av)):
+				sum_TN += cnf_av[i][j]
+		
+		sum_TN -= cnf_av[class_current][class_current]
+		return sum_TN
+		
+	def forFP(self, class_current, cnf_av):
+		sum_FP = 0
+		for j in range(len(cnf_av)):
+			sum_FP += cnf_av[class_current][j]
+			
+		sum_FP -= cnf_av[class_current][class_current]
+		return sum_FP
+
+	def forFN(self, class_current, cnf_av):
+		sum_FN = 0
+		for i in range(len(cnf_av)):
+			sum_FN += cnf_av[i][class_current]
+			
+		sum_FN -= cnf_av[class_current][class_current]
+		return sum_FN
+
 	def cf_stats(self, TN, TP, FP, FN):
 		"""
 		args:
@@ -1380,10 +1444,12 @@ class kb_genomeclfUtils(object):
 		---
 		"""
 
+		"""
 		AN = TN + FP
 		AP = TN + FN
 		PN = TN + FN
 		PP = TP + FP
+		"""
 		Total = TN + TP + FP + FN
 		Recall = (TP / (TP + FN))
 		Precision = (TP / (TP + FP))
@@ -1450,6 +1516,14 @@ class kb_genomeclfUtils(object):
 
 			data = statistics_dict
 
+			my_index = []
+
+			for class_current in range(len(class_list)):
+				my_index.extend([class_list[class_current], u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None])
+			
+			my_index.append(u'Average F1')
+
+			"""
 			if class_list.__len__() == 3:
 				my_index = [class_list[0], u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None, class_list[1], u'Accuracy:',
 						u'Precision:', u'Recall:', u'F1 score::', None, class_list[2], u'Accuracy:', u'Precision:', u'Recall:',
@@ -1457,6 +1531,7 @@ class kb_genomeclfUtils(object):
 
 			if class_list.__len__() == 2:
 				my_index = [u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::']
+			"""
 
 			df = pd.DataFrame(data, index=my_index)
 
@@ -1508,6 +1583,15 @@ class kb_genomeclfUtils(object):
 
 			data = statistics_dict
 
+
+			my_index = []
+
+			for class_current in range(len(class_list)):
+				my_index.extend([class_list[class_current], u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None])
+			
+			my_index.append(u'Average F1')
+
+			"""
 			if class_list.__len__() == 3:
 				my_index = [class_list[0], u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None, class_list[1], u'Accuracy:',
 						u'Precision:', u'Recall:', u'F1 score::', None, class_list[2], u'Accuracy:', u'Precision:', u'Recall:',
@@ -1515,6 +1599,7 @@ class kb_genomeclfUtils(object):
 
 			if class_list.__len__() == 2:
 				my_index = [u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::']
+			"""
 
 			df = pd.DataFrame(data, index=my_index)
 			df.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'))
