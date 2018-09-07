@@ -1,111 +1,144 @@
 {
-    "ver": "0.0.1",
-    "authors": [
-        "janakakbase", "sagoyal"
-    ],
-    "contact": "https://kbase.us/contact-us/",
-    "categories": ["active","upload"],
-    "widgets": {
-        "input": null,
-        "output": "no-display"
-    },
-    "parameters": [
-     {
-          "id": "shock_id",
-          "optional" : false,
-          "advanced" : false,
-          "allow_multiple" : false,
-          "default_values" : [ "" ],
-          "field_type" : "file",
-          "text_options" : {
-            "valid_ws_types" : [ ]
-          }
+  "authors": [
+    "janakakbase",
+    "sagoyal"
+  ],
+  "behavior": {
+    "service-mapping": {
+      "input_mapping": [
+        {
+          "input_parameter": "shock_id",
+          "target_property": "shock_id"
         },
         {
-        "id": "list_name",
-        "optional": true,
-        "advanced": false,
-        "allow_multiple": false,
-        "default_values": [ "" ],
-        "field_type": "textarea",
-        "textarea_options" : {
-            "n_rows" : 15
-            }
+          "input_parameter": "list_name",
+          "target_property": "list_name"
         },
         {
-           "id": "phenotypeclass",
-           "optional": false,
-           "advanced": false,
-           "allow_multiple": false,
-           "default_values": [ "" ],
-           "field_type": "text",
-            "text_options" : {
-            "valid_ws_types" : [ ]
-          }
+          "narrative_system_variable": "workspace",
+          "target_property": "workspace"
         },
         {
-            "id" : "training_set_out",
-            "optional" : false,
-            "advanced" : false,
-            "allow_multiple" : false,
-            "default_values" : [ "" ],
-            "field_type" : "text",
-            "text_options" : {
-            "valid_ws_types" : [ "KBaseClassifier.GenomeClassifierTrainingSet" ],
-            "is_output_name":true
-            }
-    }
-    ],
-    "behavior": {
-        "service-mapping": {
-            "url": "",
-            "name":"kb_genomeclassification",
-            "method": "upload_trainingset",
-            "input_mapping": [
-                {
-                    "input_parameter": "shock_id",
-                    "target_property": "shock_id"
-
-                },
-                {
-                    "input_parameter": "list_name",
-                    "target_property": "list_name"
-
-                },
-
-                {
-                    "narrative_system_variable": "workspace",
-                    "target_property": "workspace"
-                },
-                {
-                    "input_parameter": "training_set_out",
-                    "target_property": "training_set_out"
-
-                },
-                {
-                    "input_parameter": "phenotypeclass",
-                    "target_property": "phenotypeclass"
-                }
-            ],
-            "output_mapping": [
-                {
-                  "constant_value": "KBaseClassifier.GenomeClassifierTrainingSet",
-                  "target_property": "type"
-                },
-                {
-                    "service_method_output_path": [0,"report_name"],
-                    "target_property": "report_name"
-                },
-                {
-                    "service_method_output_path": [0,"report_ref"],
-                    "target_property": "report_ref"
-                },
-                {
-                    "narrative_system_variable": "workspace",
-                    "target_property": "ws"
-                }
-            ]
+          "input_parameter": "description",
+          "target_property": "description"
+        },
+        {
+          "input_parameter": "training_set_out",
+          "target_property": "training_set_out"
+        },
+        {
+          "input_parameter": "phenotypeclass",
+          "target_property": "phenotypeclass"
         }
+      ],
+      "method": "upload_trainingset",
+      "name": "kb_genomeclassification",
+      "output_mapping": [
+        {
+          "constant_value": "KBaseClassifier.GenomeClassifierTrainingSet",
+          "target_property": "type"
+        },
+        {
+          "service_method_output_path": [
+            0,
+            "report_name"
+          ],
+          "target_property": "report_name"
+        },
+        {
+          "service_method_output_path": [
+            0,
+            "report_ref"
+          ],
+          "target_property": "report_ref"
+        },
+        {
+          "narrative_system_variable": "workspace",
+          "target_property": "ws"
+        }
+      ],
+      "url": ""
+    }
+  },
+  "categories": [
+    "active",
+    "upload"
+  ],
+  "contact": "https://kbase.us/contact-us/",
+  "job_id_output_field": "docker",
+  "parameters": [
+    {
+      "advanced": false,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "file",
+      "id": "shock_id",
+      "optional": false,
+      "text_options": {
+        "valid_ws_types": []
+      }
     },
-    "job_id_output_field": "docker"
+    {
+      "advanced": false,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "textarea",
+      "id": "list_name",
+      "optional": true,
+      "textarea_options": {
+        "n_rows": 15
+      }
+    },
+    {
+      "advanced": false,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "id": "description",
+      "optional": false,
+      "text_options": {
+        "is_output_name": false
+      }
+    },
+    {
+      "advanced": false,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "id": "phenotypeclass",
+      "optional": false,
+      "text_options": {
+        "valid_ws_types": []
+      }
+    },
+    {
+      "advanced": false,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "id": "training_set_out",
+      "optional": false,
+      "text_options": {
+        "is_output_name": true,
+        "valid_ws_types": [
+          "KBaseClassifier.GenomeClassifierTrainingSet"
+        ]
+      }
+    }
+  ],
+  "ver": "0.0.1",
+  "widgets": {
+    "input": null,
+    "output": "no-display"
+  }
 }

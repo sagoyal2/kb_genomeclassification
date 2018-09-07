@@ -8,7 +8,7 @@
       "input_mapping": [
         {
           "narrative_system_variable": "workspace",
-          "target_property": "workspace_name"
+          "target_property": "workspace"
         },
         {
           "input_parameter": "save_ts",
@@ -47,8 +47,16 @@
           "target_property": "k_nearest_neighbors"
         },
         {
-          "input_parameter": "svm_verbose",
-          "target_property": "svm_verbose"
+          "input_parameter": "decision_tree_classifier",
+          "target_property": "decision_tree_classifier"
+        },
+        {
+          "input_parameter": "gaussian_nb",
+          "target_property": "gaussian_nb"
+        },
+        {
+          "input_parameter": "support_vector_machine",
+          "target_property": "support_vector_machine"
         },
         {
           "input_parameter": "neural_network",
@@ -60,7 +68,7 @@
       "output_mapping": [
         {
           "narrative_system_variable": "workspace",
-          "target_property": "workspace_name"
+          "target_property": "workspace"
         },
         {
           "service_method_output_path": [
