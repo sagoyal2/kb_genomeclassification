@@ -11,6 +11,7 @@ import ast
 import uuid
 import xlrd
 import json
+import random
 import codecs
 import graphviz
 import StringIO
@@ -1839,6 +1840,21 @@ class kb_genomeclfUtils(object):
 		# nominal fixes like color and shape
 		third_fix = re.sub(ur'shape=box] ;', ur'shape=Mrecord] ; node [style=filled];', second_fix)
 
+		color_set = []
+		for class_current in range(len(class_list)):
+			color_set.extend(['%.4f'%random.uniform(0, 1) + " " + '%.4f'%random.uniform(0, 1) + " " + '%.4f'%random.uniform(0, 1)])
+
+		for class_current, my_color in izip(range(len(class_list)),color_set):
+			third_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[class_current], ur'\1, color = "%s"' % my_color, third_fix)
+
+		f = open(os.path.join(self.scratch, 'dotFolder', 'niceTree.dot'), u"w")
+		f.write(third_fix)
+		f.close()
+
+		os.system(u'dot -Tpng ' + os.path.join(self.scratch, 'dotFolder', 'niceTree.dot') + ' >  '+ os.path.join(self.scratch, 'forHTML', 'html2folder', name + u'.png '))
+		self.top20Important(tree, master_Role)
+
+		"""
 		if class_list.__len__() == 3:
 			fourth_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[0], ur'\1, color = "0.5176 0.2314 0.9020"', third_fix)
 			fifth_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[1], ur'\1, color = "0.5725 0.6118 1.0000"', fourth_fix)
@@ -1859,6 +1875,9 @@ class kb_genomeclfUtils(object):
 
 			os.system(u'dot -Tpng ' + os.path.join(self.scratch, 'dotFolder', 'niceTree.dot') + ' >  '+ os.path.join(self.scratch, 'forHTML', 'html2folder', name + u'.png '))
 			self.top20Important(tree, master_Role)
+		"""
+
+
 
 	def top20Important(self,tree, master_Role):
 		"""
@@ -1870,7 +1889,6 @@ class kb_genomeclfUtils(object):
 		return:
 		---creates a dataframe that is displayed in the html report
 		"""
-
 
 		data = {'attribute_list': master_Role, 'importance': tree.feature_importances_}
 

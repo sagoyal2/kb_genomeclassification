@@ -316,7 +316,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
             "workspace" : "sagoyal:narrative_1534292322496"
         }
         """
-
+        """
         params = {
         "description": "I can make this whatever I want it to be",
         "save_ts": 1,
@@ -331,6 +331,24 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "neural_network": None,
         "attribute": "functional_roles",
         "classifier_out": "myCLF",
+        "workspace" : "sagoyal:narrative_1534292322496"
+        }
+        """
+
+        params = {
+        "neural_network": None,
+        "save_ts": 1,
+        "description": "This my new Description",
+        "attribute": "functional_roles",
+        "phenotypeclass": "Respiration",
+        "trainingset_name": "myNewTset",
+        "logistic_regression": None,
+        "gaussian_nb": None,
+        "decision_tree_classifier": None,
+        "classifier_out": "allCLF",
+        "support_vector_machine": None,
+        "classifier": "run_all",
+        "k_nearest_neighbors": None,
         "workspace" : "sagoyal:narrative_1534292322496"
         }
 
