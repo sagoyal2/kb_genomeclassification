@@ -8,11 +8,101 @@ module kb_genomeclassification {
     /* typedef string genome_id;
        typedef string phenotype; */
 
+    /* "True" or "False" */
+    typedef string boolean;
+
     typedef structure {
         string phenotype;
         string genome_name;
     } ClassifierTrainingSet;
 
+    typedef structure {
+        string penalty;
+        boolean dual;
+        float lr_tolerance;
+        float lr_C;
+        boolean fit_intercept;
+        float intercept_scaling;
+        string lr_class_weight;
+        int lr_random_state;
+        string lr_solver;
+        int lr_max_iter;
+        string multi_class;
+        boolean lr_verbose;
+        int lr_warm_start;
+        int lr_n_jobs;
+    } LogisticRegressionOptions;
+
+    typedef structure {
+        string criterion;
+        string splitter;
+        int max_depth;
+        int min_samples_split;
+        int min_samples_leaf;
+        float min_weight_fraction_leaf;
+        string max_features;
+        int dt_random_state;
+        int max_leaf_nodes;
+        float min_impurity_decrease;
+        string dt_class_weight;
+        string presort;
+    } DecisionTreeClassifierOptions;
+
+    typedef structure {
+       string priors;
+    } GaussianNBOptions;
+
+    typedef structure {
+        int n_neighbors;
+        string weights;
+        string algorithm;
+        int leaf_size;
+        int p;
+        string metric;
+        string metric_params;
+        int knn_n_jobs;
+    } KNearestNeighborsOptions;
+
+    typedef structure {
+        float svm_C;
+        string kernel;
+        int degree;
+        string gamma;
+        float coef0;
+        boolean probability;
+        boolean shrinking;
+        float svm_tolerance;
+        float cache_size;
+        string svm_class_weight;
+        boolean svm_verbose;
+        int svm_max_iter;
+        string decision_function_shape;
+        int svm_random_state;
+    } SupportVectorMachineOptions;
+
+    typedef structure {
+        string hidden_layer_sizes;
+        string activation;
+        string mlp_solver;
+        float alpha;
+        string batch_size;
+        string learning_rate;
+        float learning_rate_init;
+        float power_t;
+        int mlp_max_iter;
+        boolean shuffle;
+        int mlp_random_state;
+        float mlp_tolerance;
+        boolean mlp_verbose;
+        boolean mlp_warm_start;
+        float momentum;
+        boolean nesterovs_momentum;
+        boolean early_stopping;
+        float validation_fraction;
+        float beta_1;
+        float beta_2;
+        float epsilon;
+    } NeuralNetworkOptions;
 
     typedef structure {
         string phenotypeclass;
@@ -22,10 +112,17 @@ module kb_genomeclassification {
         mapping <string genome_id,ClassifierTrainingSet> classifier_training_set;
         string classifier_out;
         string target;
+        string description;
         string classifier;
         string shock_id;
         string list_name;
         int save_ts;
+        LogisticRegressionOptions logistic_regression;
+        DecisionTreeClassifierOptions decision_tree_classifier;
+        GaussianNBOptions gaussian_nb;
+        KNearestNeighborsOptions k_nearest_neighbors;
+        SupportVectorMachineOptions support_vector_machine;
+        NeuralNetworkOptions neural_network;
     }BuildClassifierInput;
 
     typedef structure {
@@ -48,6 +145,7 @@ module kb_genomeclassification {
    typedef structure {
         string workspace;
         string classifier_name;
+        string description;
         string phenotypeclass;
         string shock_id;
         string list_name;
@@ -67,6 +165,7 @@ module kb_genomeclassification {
 	typedef structure {
         string phenotypeclass;
         string workspace;
+        string description;
         mapping <string genome_id,ClassifierTrainingSet> classifier_training_set;
         string training_set_out;
         string target;

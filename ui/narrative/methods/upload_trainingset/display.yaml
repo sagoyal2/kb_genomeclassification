@@ -32,6 +32,13 @@ parameters :
             File Name
         short-hint : |
             File Name
+    description:
+        ui-name : |
+            Description
+        short-hint : |
+            Describe Purpose or Contents of Training Set
+        placeholder: |
+            Enter Description
     list_name :
         ui-name : |
             Classifier Training Set

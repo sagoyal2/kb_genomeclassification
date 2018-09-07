@@ -7,6 +7,7 @@ from __future__ import division
 import os
 import re
 import sys
+import ast
 import uuid
 import xlrd
 import json
@@ -86,6 +87,15 @@ class kb_genomeclfUtils(object):
 		
 		#SETUP of X & Y trainging and testing sets
 
+		#params = self.editBuildArguments(params)
+
+		print ('Frist Print')
+		print(self.editBuildArguments(params))
+
+		params = self.editBuildArguments(params)
+		#print "Below is the classifierAdvanced_params"
+		#print(self.editBuildArguments(params)["classifierAdvanced_params"])
+
 		toEdit_all_classifications, training_set_ref = self.unloadGenomeClassifierTrainingSet(current_ws, params['trainingset_name'])
 		listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
 		all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
@@ -117,8 +127,8 @@ class kb_genomeclfUtils(object):
 		correctClassifications_list = []
 
 		for index in range(len(all_classifications['Classification'])):
-		    correctClassifications_list.append(all_classifications['Classification'][index])
-		    
+			correctClassifications_list.append(all_classifications['Classification'][index])
+			
 		class_list = list(set(correctClassifications_list))
 
 		my_mapping = {} #my_mapping = {'aerobic': '0', 'anaerobic': '1', 'facultative': '2'}
@@ -128,8 +138,8 @@ class kb_genomeclfUtils(object):
 		my_class_mapping = []
 
 		for index in range(len(correctClassifications_list)):
-		    my_class_mapping.append(my_mapping[correctClassifications_list[index]])
-		    
+			my_class_mapping.append(my_mapping[correctClassifications_list[index]])
+			
 		print(len(my_class_mapping))
 
 		all_attributes = all_attributes.values.astype(int)
@@ -184,7 +194,7 @@ class kb_genomeclfUtils(object):
 		train_index = []
 		test_index = []
 
-		splits = 10 #10 #2
+		splits = 2 #10 #10 #2
 
 		#This cross-validation object is a variation of KFold that returns stratified folds. The folds are made by preserving the percentage of samples for each class.
 		skf = StratifiedKFold(n_splits=splits, random_state=0, shuffle=True)
@@ -208,7 +218,8 @@ class kb_genomeclfUtils(object):
 				'class_list' : class_list,
 				'htmlfolder' : folderhtml1,
 				'print_cfm' : True,
-				'training_set_ref' : training_set_ref
+				'training_set_ref' : training_set_ref,
+				'description' : params["description"]
 				}
 
 		#RUNNING the classifiers depending on classifier_type
@@ -216,9 +227,11 @@ class kb_genomeclfUtils(object):
 		if classifier_type == u"run_all":
 
 			listRunAll = ['KNeighborsClassifier', 'GaussianNB', 'LogisticRegression', 'DecisionTreeClassifier', 'SVM', 'NeuralNetwork']
+			all_advanced = ["k_nearest_neighbors", "gaussian_nb", "logistic_regression", "decision_tree_classifier", "support_vector_machine", "neural_network"]
 
-			for run in listRunAll:
-				classifierTest_params['classifier'] = self.whichClassifier(run)
+			for run, advanced in izip(listRunAll, all_advanced):
+				#classifierTest_params['classifier'] = self.whichClassifier(run)
+				classifierTest_params['classifier'] = self.whichClassifierAdvanced(run, params[advanced])
 				classifierTest_params['classifier_type'] = run
 				classifierTest_params['classifier_name'] = classifier_name + u'_' + run
 				classifierTest_params['htmlfolder'] = folderhtml1
@@ -228,10 +241,11 @@ class kb_genomeclfUtils(object):
 			best_classifier_str = self.to_HTML_Statistics(class_list, classifier_name)
 			#best_classifier_str = classifier_name+u"_LogisticRegression"
 			best_classifier_type = best_classifier_str[classifier_name.__len__() + 1:] #extract just the classifier_type aka. "LogisticRegression" from "myName_LogisticRegression"
-			
+			best_classifier_type_index = listRunAll.index(best_classifier_type)
 			#to create another "best in html2"
 			
-			classifierTest_params['classifier'] = self.whichClassifier(best_classifier_type)
+			#classifierTest_params['classifier'] = self.whichClassifier(best_classifier_type)
+			classifierTest_params['classifier'] = self.whichClassifierAdvanced(best_classifier_type, params[all_advanced[best_classifier_type_index]], True)
 			classifierTest_params['classifier_type'] = best_classifier_type
 			classifierTest_params['classifier_name'] = classifier_name+u"_" + best_classifier_type
 			classifierTest_params['htmlfolder'] = folderhtml2
@@ -248,7 +262,8 @@ class kb_genomeclfUtils(object):
 
 		elif classifier_type == u"DecisionTreeClassifier":
 
-			classifierTest_params['classifier'] = self.whichClassifier(classifier_type)
+			#classifierTest_params['classifier'] = self.whichClassifier(classifier_type)
+			classifierTest_params['classifier'] = self.whichClassifierAdvanced(classifier_type, params["classifierAdvanced_params"])
 			self.classifierTest(classifierTest_params)
 
 			self.to_HTML_Statistics(class_list, classifier_name)
@@ -264,7 +279,8 @@ class kb_genomeclfUtils(object):
 
 		else:
 
-			classifierTest_params['classifier'] = self.whichClassifier(classifier_type)
+			#classifierTest_params['classifier'] = self.whichClassifier(classifier_type)
+			classifierTest_params['classifier'] = self.whichClassifierAdvanced(classifier_type, params["classifierAdvanced_params"])
 			self.classifierTest(classifierTest_params)
 
 			self.to_HTML_Statistics(class_list, classifier_name)
@@ -358,12 +374,12 @@ class kb_genomeclfUtils(object):
 			#checks if empty string bool("") --> False
 			print ("taking this path rn")
 			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
-			missingGenomes = self.createGenomeClassifierTrainingSet(current_ws, params['training_set_out'], just_DF = toEdit_all_classifications)
+			missingGenomes = self.createGenomeClassifierTrainingSet(current_ws, params['description'], params['training_set_out'], just_DF = toEdit_all_classifications)
 			#listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
 			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 		else:
 			file_path = self._download_shock(params.get('shock_id'))
-			missingGenomes = self.createGenomeClassifierTrainingSet(current_ws, params['training_set_out'], just_DF = pd.read_excel(file_path))
+			missingGenomes = self.createGenomeClassifierTrainingSet(current_ws, params['description'], params['training_set_out'], just_DF = pd.read_excel(file_path))
 			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
 			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 
@@ -462,6 +478,142 @@ class kb_genomeclfUtils(object):
 		return report_output
 
 	##### Methods below are called only from inside this class ####
+
+	def editBuildArguments(self, params):
+
+		return_params = {
+		"trainingset_name": params["trainingset_name"],
+		"phenotypeclass": params["phenotypeclass"],
+		"classifier": params.get("classifier"),
+		"attribute": params["attribute"],
+		"save_ts": params["save_ts"],
+		"classifier_out": params["classifier_out"],
+		"description" : params["description"] #edit this so classifier object can add this
+		}
+
+		print(return_params)
+
+		if params.get("classifier") == "KNeighborsClassifier":
+			return_params['classifierAdvanced_params'] = params["k_nearest_neighbors"]
+
+		elif params.get("classifier") == "GaussianNB":
+			return_params['classifierAdvanced_params'] = params["gaussian_nb"]
+
+		elif params.get("classifier") == "LogisticRegression":
+			return_params['classifierAdvanced_params'] = params["logistic_regression"]
+
+		elif params.get("classifier") == "DecisionTreeClassifier":
+			return_params['classifierAdvanced_params'] = params["decision_tree_classifier"]
+
+		elif params.get("classifier") == "SVM":
+			return_params['classifierAdvanced_params'] = params["support_vector_machine"]
+
+		elif params.get("classifier") == "NeuralNetwork":
+			return_params['classifierAdvanced_params'] = params["neural_network"]
+
+		else :
+			if params["k_nearest_neighbors"] == None:
+				params["k_nearest_neighbors"] = {
+				"n_neighbors": 5,
+				"weights": "uniform",
+				"algorithm": "auto",
+				"leaf_size": 30,
+				"p": 2,
+				"metric": "minkowski",
+				"metric_params": "",
+				"knn_n_jobs": 1
+				}
+			return_params['k_nearest_neighbors'] = params["k_nearest_neighbors"]
+
+			if params["gaussian_nb"] == None:
+				params["gaussian_nb"] = {
+				"priors": ""
+				}
+			return_params['gaussian_nb'] = params["gaussian_nb"]
+
+			if params["logistic_regression"] == None:
+				params["logistic_regression"] = {
+				"penalty": "l2",
+				"dual": "False",
+				"lr_tolerance": 0.0001,
+				"lr_C": 1,
+				"fit_intercept": "True",
+				"intercept_scaling": 1,
+				"lr_class_weight": "",
+				"lr_random_state": 0,
+				"lr_solver": "newton-cg",
+				"lr_max_iter": 100,
+				"multi_class": "ovr",
+				"lr_verbose": 0,
+				"lr_warm_start": "False",
+				"lr_n_jobs": 1
+				}
+			return_params['logistic_regression'] = params["logistic_regression"]
+
+			if params["decision_tree_classifier"] == None:
+				params["decision_tree_classifier"] = {
+				"criterion": "gini",
+				"splitter": "best",
+				"max_depth": None,
+				"min_samples_split": 2,
+				"min_samples_leaf": 1,
+				"min_weight_fraction_leaf": 0,
+				"max_features": "",
+				"dt_random_state": 0,
+				"max_leaf_nodes": None,
+				"min_impurity_decrease": 0,
+				"dt_class_weight": "",
+				"presort": "False"
+				}
+			return_params['decision_tree_classifier'] = params["decision_tree_classifier"]
+
+			if params["support_vector_machine"] == None:
+				params["support_vector_machine"] = {
+				"svm_C": 1,
+				"kernel": "linear",
+				"degree": 3,
+				"gamma": "auto",
+				"coef0": 0,
+				"probability": "False",
+				"shrinking": "True",
+				"svm_tolerance": 0.001,
+				"cache_size": 200,
+				"svm_class_weight": "",
+				"svm_verbose": "False",
+				"svm_max_iter": -1,
+				"decision_function_shape": "ovr",
+				"svm_random_state": 0
+				}
+			return_params['support_vector_machine'] = params["support_vector_machine"]
+
+			if params["neural_network"] == None:
+				params["neural_network"] = {
+				"hidden_layer_sizes": "(100,)",
+				"activation": "relu",
+				"mlp_solver": "adam",
+				"alpha": 0.0001,
+				"batch_size": "auto",
+				"learning_rate": "constant",
+				"learning_rate_init": 0.001,
+				"power_t": 0.05,
+				"mlp_max_iter": 200,
+				"shuffle": "True",
+				"mlp_random_state": 0,
+				"mlp_tolerance": 0.0001,
+				"mlp_verbose": "False",
+				"mlp_warm_start": "False",
+				"momentum": 0.9,
+				"nesterovs_momentum": "True",
+				"early_stopping": "False",
+				"validation_fraction": 0.1,
+				"beta_1": 0.9,
+				"beta_2": 0.999,
+				"epsilon": 1e-8
+				}
+			return_params['neural_network'] = params["neural_network"]
+
+		return return_params
+
 	def incaseList_Names(self, list_name, for_predict = False):
 		"""		
 		args:
@@ -502,7 +654,7 @@ class kb_genomeclfUtils(object):
 
 		return my_workPD
 
-	def createGenomeClassifierTrainingSet(self, current_ws, trainingset_object_Name, just_DF):
+	def createGenomeClassifierTrainingSet(self, current_ws, description, trainingset_object_Name, just_DF):
 		"""
 		args:
 		---current_ws is same as before
@@ -560,7 +712,7 @@ class kb_genomeclfUtils(object):
 		
 		trainingset_object = {
 		'name': 'my_name',
-		'description': 'my_description',
+		'description': description,
 		'classification_type': 'my_classification_type',
 		'number_of_genomes': len(listGNames),
 		'number_of_classes': len(list(set(listClassification))),
@@ -792,11 +944,177 @@ class kb_genomeclfUtils(object):
 		elif name == u"DecisionTreeClassifier":
 			return DecisionTreeClassifier(random_state=0)
 		elif name == u"SVM":
-			return svm.LinearSVC(random_state=0)
+			return svm.SVC(kernel = "linear",random_state=0)
 		elif name == u"NeuralNetwork":
 			return MLPClassifier(random_state=0)
 		else:
 			return u"ERROR THIS SHOULD NOT HAVE REACHED HERE"
+
+	def whichClassifierAdvanced(self, name, clfA_params, round_best = False):
+		"""
+		args:
+		---name which is a string that the user will pass in as to which classifier (sklearn) classifier they want
+		does:
+		---matches string with sklearn classifier
+		return:
+		---sklearn classifier
+		"""
+
+		if name == u"KNeighborsClassifier":
+			clfA_params = self.fixKNN(clfA_params, round_best)
+			return KNeighborsClassifier(n_neighbors=clfA_params["n_neighbors"], weights=clfA_params["weights"], algorithm=clfA_params["algorithm"], leaf_size=clfA_params["leaf_size"], p=2, metric=clfA_params["metric"], metric_params=clfA_params["metric_params"], n_jobs=clfA_params["knn_n_jobs"])
+		
+		elif name == u"GaussianNB":
+			clfA_params = self.fixGNB(clfA_params, round_best)
+			return GaussianNB(priors=clfA_params["priors"])
+		
+		elif name == u"LogisticRegression":
+			clfA_params = self.fixLR(clfA_params, round_best)
+			return LogisticRegression(penalty=clfA_params["penalty"], dual=clfA_params["dual"], tol=clfA_params["lr_tolerance"], C=clfA_params["lr_C"], fit_intercept=clfA_params["fit_intercept"], intercept_scaling=clfA_params["intercept_scaling"], class_weight=clfA_params["lr_class_weight"], random_state=clfA_params["lr_random_state"], solver=clfA_params["lr_solver"], max_iter=clfA_params["lr_max_iter"], multi_class=clfA_params["multi_class"], verbose=clfA_params["lr_verbose"], warm_start=clfA_params["lr_warm_start"], n_jobs=clfA_params["lr_n_jobs"])
+		
+		elif name == u"DecisionTreeClassifier":
+			clfA_params = self.fixDTC(clfA_params, round_best)
+			return DecisionTreeClassifier(criterion=clfA_params["criterion"], splitter=clfA_params["splitter"], max_depth=clfA_params["max_depth"], min_samples_split=clfA_params["min_samples_split"], min_samples_leaf=clfA_params["min_samples_leaf"], min_weight_fraction_leaf=clfA_params["min_weight_fraction_leaf"], max_features=clfA_params["max_features"], random_state=clfA_params["dt_random_state"], max_leaf_nodes=clfA_params["max_leaf_nodes"], min_impurity_decrease=clfA_params["min_impurity_decrease"], class_weight= clfA_params["dt_class_weight"], presort=clfA_params["presort"])
+		
+		elif name == u"SVM":
+			clfA_params = self.fixSVM(clfA_params, round_best)
+			return svm.SVC(C=clfA_params["svm_C"], kernel=clfA_params["kernel"], degree=clfA_params["degree"], gamma=clfA_params["gamma"], coef0=clfA_params["coef0"], shrinking=clfA_params["shrinking"], probability=clfA_params["probability"], tol=clfA_params["svm_tolerance"], cache_size=clfA_params["cache_size"], class_weight=clfA_params["svm_class_weight"], verbose=clfA_params["svm_verbose"], max_iter=clfA_params["svm_max_iter"], decision_function_shape=clfA_params["decision_function_shape"], random_state=clfA_params["svm_random_state"])
+		
+		elif name == u"NeuralNetwork":
+			clfA_params = self.fixNN(clfA_params, round_best)
+			return MLPClassifier(hidden_layer_sizes=clfA_params["hidden_layer_sizes"], activation=clfA_params["activation"], solver=clfA_params["mlp_solver"], alpha=clfA_params["alpha"], batch_size=clfA_params["batch_size"], learning_rate=clfA_params["learning_rate"], learning_rate_init=clfA_params["learning_rate_init"], power_t=clfA_params["power_t"], max_iter=clfA_params["mlp_max_iter"], shuffle=clfA_params["shuffle"], random_state=clfA_params["mlp_random_state"], tol=clfA_params["mlp_tolerance"], verbose=clfA_params["mlp_verbose"], warm_start=clfA_params["mlp_warm_start"], momentum=clfA_params["momentum"], nesterovs_momentum=clfA_params["nesterovs_momentum"], early_stopping=clfA_params["early_stopping"], validation_fraction=clfA_params["validation_fraction"], beta_1=clfA_params["beta_1"], beta_2=clfA_params["beta_2"], epsilon=clfA_params["epsilon"])
+		
+		else:
+			return u"ERROR THIS SHOULD NOT HAVE REACHED HERE"
+
+	def fixKNN(self, clfA_params, round_best):
+
+		if not round_best:
+			#convert string to dictionary
+			if clfA_params["metric_params"] == "":
+				clfA_params["metric_params"] = None
+			else:
+				clfA_params["metric_params"] = ast.literal_eval(clfA_params["metric_params"])
+
+			return clfA_params
+
+		else:
+			return clfA_params
+
+	def fixGNB(self, clfA_params, round_best):
+
+		if not round_best:
+			#convert string to list
+			if clfA_params["priors"] == "":
+				clfA_params["priors"] = None
+			else:
+				clfA_params["priors"] = ast.literal_eval(clfA_params["priors"])
+
+			return clfA_params
+
+		else:
+			return clfA_params
+
+	def fixLR(self, clfA_params, round_best):
+
+		if not round_best:
+			clfA_params["dual"] = self.str_to_bool(clfA_params["dual"])
+			clfA_params["fit_intercept"] = self.str_to_bool(clfA_params["fit_intercept"])
+
+			if clfA_params["lr_class_weight"] == "":
+				clfA_params["lr_class_weight"] = None
+			elif clfA_params["lr_class_weight"] == "balanced":
+				pass
+			else:
+				clfA_params["lr_class_weight"] = ast.literal_eval(clfA_params["lr_class_weight"])
+
+			clfA_params["lr_warm_start"] = self.str_to_bool(clfA_params["lr_warm_start"])
+
+			return clfA_params
+
+		else:
+			return clfA_params
+
+	def fixDTC(self, clfA_params, round_best):
+
+		if not round_best:
+			# check if int, float, or None
+			if clfA_params["dt_class_weight"] == "":
+				clfA_params["dt_class_weight"] = None
+			elif clfA_params["dt_class_weight"] == "balanced":
+				pass
+			else:
+				clfA_params["dt_class_weight"] = ast.literal_eval(clfA_params["dt_class_weight"])
+
+
+			if clfA_params["max_features"] == "":
+				clfA_params["max_features"] = None
+			else:
+				pass
+
+			try:
+				int(clfA_params["max_features"])
+				clfA_params["max_features"] == int(clfA_params["max_features"])
+			except:
+				pass
+
+			try:
+				float(clfA_params["max_features"])
+				clfA_params["max_features"] == float(clfA_params["max_features"])
+			except:
+				pass
+
+			print ("My current clfA is:")
+			print(clfA_params)
+
+			return clfA_params
+
+		else:
+			return clfA_params
+
+	def fixSVM(self, clfA_params, round_best):
+
+		if not round_best:
+			clfA_params["probability"] = self.str_to_bool(clfA_params["probability"])
+			clfA_params["shrinking"] = self.str_to_bool(clfA_params["shrinking"])
+
+			if clfA_params["svm_class_weight"] == "":
+				clfA_params["svm_class_weight"] = None
+			elif clfA_params["svm_class_weight"] == "balanced":
+				pass
+			else:
+				clfA_params["svm_class_weight"] = ast.literal_eval(clfA_params["svm_class_weight"])
+
+			clfA_params["svm_verbose"] = self.str_to_bool(clfA_params["svm_verbose"])
+
+			return clfA_params
+
+		else:
+			return clfA_params
+
+	def fixNN(self, clfA_params, round_best):
+
+		if not round_best:
+			#convert string to tuple
+			clfA_params["hidden_layer_sizes"] = ast.literal_eval(clfA_params["hidden_layer_sizes"])
+
+			clfA_params["shuffle"] = self.str_to_bool(clfA_params["shuffle"])
+			clfA_params["mlp_verbose"] = self.str_to_bool(clfA_params["mlp_verbose"])
+			clfA_params["mlp_warm_start"] = self.str_to_bool(clfA_params["mlp_warm_start"])
+			clfA_params["nesterovs_momentum"] = self.str_to_bool(clfA_params["nesterovs_momentum"])
+			clfA_params["early_stopping"] = self.str_to_bool(clfA_params["early_stopping"])
+
+			return clfA_params
+
+		else:
+			return clfA_params
+
+	def str_to_bool(self, s):
+		#Convert string to Boolean
+		if s == 'True':
+			 return True
+		elif s == 'False':
+			 return False
 
 	def classifierTest(self, classifierTest_params):
 		"""
@@ -850,6 +1168,7 @@ class kb_genomeclfUtils(object):
 		htmlfolder = classifierTest_params['htmlfolder']
 		print_cfm = classifierTest_params['print_cfm']
 		training_set_ref = classifierTest_params['training_set_ref']
+		description = classifierTest_params['description']
 
 		if print_cfm:
 			print classifier_name
@@ -931,7 +1250,7 @@ class kb_genomeclfUtils(object):
 			'classifier_name' : classifier_name,
 			#'classifier_data' : pickled,
 			'classifier_handle_ref' : shock_id,
-			'classifier_description' : 'this is my description',
+			'classifier_description' : description,
 			'lib_name' : 'sklearn',
 			'attribute_type' : 'functional_roles',
 			'number_of_attributes' : all_attributes.shape[1],#class_list.__len__(),
@@ -965,6 +1284,14 @@ class kb_genomeclfUtils(object):
 			print "done"        
 			
 
+		if print_cfm:
+
+			cnf_av = cnf_matrix/splits
+			self.NClasses(class_list, cnf_av)
+
+			self.plot_confusion_matrix(cnf_matrix_f/splits*100.0,class_list,u'Confusion Matrix', htmlfolder, classifier_name, classifier_type)
+
+		"""
 		list_forDict = []
 
 		if class_list.__len__() == 3:
@@ -1018,6 +1345,7 @@ class kb_genomeclfUtils(object):
 				self.list_statistics.append(list_forDict)
 
 				self.plot_confusion_matrix(cnf_matrix_f/splits*100.0,class_list,u'Confusion Matrix', htmlfolder, classifier_name, classifier_type)
+		"""
 
 		if print_cfm:
 			print classifier
@@ -1042,6 +1370,61 @@ class kb_genomeclfUtils(object):
 
 		return (np.average(train_score), np.std(train_score), np.average(validate_score), np.std(validate_score))
 
+	def NClasses(self, class_list, cnf_av):
+		
+		list_forDict = []
+
+		for class_current in range(len(class_list)):
+			print(class_list[class_current])
+			
+			TP = cnf_av[class_current][class_current]
+			FP = self.forFP(class_current, cnf_av)
+			FN = self.forFN(class_current, cnf_av)
+			TN = self.forTN(FP, FN, class_current, cnf_av)
+			
+			list_forDict.extend([None])
+			list_forDict.extend(self.cf_stats(TN,TP,FP,FN))
+			list_forDict.extend([None])
+
+		fScore_indexes = [(4 + 5*a) for a in range(len(class_list))]
+
+		fScore_sum = 0
+
+		print("This is you list_forDict")
+		print(list_forDict)
+
+		for f_index in fScore_indexes:
+			fScore_sum += list_forDict[f_index]
+
+		list_forDict.extend([(fScore_sum)/len(class_list)])
+
+		self.list_statistics.append(list_forDict)
+			
+	def forTN(self, FP, FN, class_current, cnf_av):
+		sum_TN = 0
+		for i in range(len(cnf_av)):
+			for j in range(len(cnf_av)):
+				sum_TN += cnf_av[i][j]
+		
+		sum_TN -= cnf_av[class_current][class_current]
+		return sum_TN
+		
+	def forFP(self, class_current, cnf_av):
+		sum_FP = 0
+		for j in range(len(cnf_av)):
+			sum_FP += cnf_av[class_current][j]
+			
+		sum_FP -= cnf_av[class_current][class_current]
+		return sum_FP
+
+	def forFN(self, class_current, cnf_av):
+		sum_FN = 0
+		for i in range(len(cnf_av)):
+			sum_FN += cnf_av[i][class_current]
+			
+		sum_FN -= cnf_av[class_current][class_current]
+		return sum_FN
+
 	def cf_stats(self, TN, TP, FP, FN):
 		"""
 		args:
@@ -1061,10 +1444,12 @@ class kb_genomeclfUtils(object):
 		---
 		"""
 
+		"""
 		AN = TN + FP
 		AP = TN + FN
 		PN = TN + FN
 		PP = TP + FP
+		"""
 		Total = TN + TP + FP + FN
 		Recall = (TP / (TP + FN))
 		Precision = (TP / (TP + FP))
@@ -1131,6 +1516,14 @@ class kb_genomeclfUtils(object):
 
 			data = statistics_dict
 
+			my_index = []
+
+			for class_current in range(len(class_list)):
+				my_index.extend([class_list[class_current], u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None])
+			
+			my_index.append(u'Average F1')
+
+			"""
 			if class_list.__len__() == 3:
 				my_index = [class_list[0], u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None, class_list[1], u'Accuracy:',
 						u'Precision:', u'Recall:', u'F1 score::', None, class_list[2], u'Accuracy:', u'Precision:', u'Recall:',
@@ -1138,6 +1531,7 @@ class kb_genomeclfUtils(object):
 
 			if class_list.__len__() == 2:
 				my_index = [u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::']
+			"""
 
 			df = pd.DataFrame(data, index=my_index)
 
@@ -1189,6 +1583,15 @@ class kb_genomeclfUtils(object):
 
 			data = statistics_dict
 
+
+			my_index = []
+
+			for class_current in range(len(class_list)):
+				my_index.extend([class_list[class_current], u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None])
+			
+			my_index.append(u'Average F1')
+
+			"""
 			if class_list.__len__() == 3:
 				my_index = [class_list[0], u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None, class_list[1], u'Accuracy:',
 						u'Precision:', u'Recall:', u'F1 score::', None, class_list[2], u'Accuracy:', u'Precision:', u'Recall:',
@@ -1196,6 +1599,7 @@ class kb_genomeclfUtils(object):
 
 			if class_list.__len__() == 2:
 				my_index = [u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::']
+			"""
 
 			df = pd.DataFrame(data, index=my_index)
 			df.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'))
@@ -1245,7 +1649,8 @@ class kb_genomeclfUtils(object):
 				'class_list' : classifierTest_paramsInput['class_list'],
 				'htmlfolder' : classifierTest_paramsInput['htmlfolder'],
 				'print_cfm' : True,
-				'training_set_ref' : classifierTest_paramsInput['training_set_ref']
+				'training_set_ref' : classifierTest_paramsInput['training_set_ref'],
+				'description' : classifierTest_paramsInput['description']
 				}
 
 		#below code is for gini-criterion
@@ -1605,7 +2010,7 @@ class kb_genomeclfUtils(object):
 			A.) K-Nearest-Neighbors Classifier,  
 			B.) Logistic Regression Classifier,
 			C.) Naive Gaussian Bayes Classifier,
-			D.) Linear Support Vector Machine (SVM) Classifier,
+			D.) Support Vector Machine (SVM) Classifier,
 			E.) Decision Tree Classifier,  
 			F.) Neural Network Classifier</p>
 			<h2> Disclaimer:No feature selection and parameter optimization was not done</h2>
@@ -1660,7 +2065,7 @@ class kb_genomeclfUtils(object):
 			<img src=" """+ classifier_name +"""_GaussianNB.png" alt="Snow" style="width:100%">
 		  </div>
 		  <div class="column">
-			  <p style="text-align:left; font-size:160%;">D.) Linear Support Vector Machine (SVM) Classifier <a href="../forDATA/""" + classifier_name + """_SVM.pickle" download> (Download) </a> </p>
+			  <p style="text-align:left; font-size:160%;">D.) Support Vector Machine (SVM) Classifier <a href="../forDATA/""" + classifier_name + """_SVM.pickle" download> (Download) </a> </p>
 			<img src=" """+ classifier_name +"""_SVM.png" alt="Snow" style="width:100%">
 		  </div>
 		</div>
