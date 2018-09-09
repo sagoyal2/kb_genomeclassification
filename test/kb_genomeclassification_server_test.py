@@ -335,6 +335,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         }
         """
 
+        """
         params = {
         "neural_network": None,
         "save_ts": 1,
@@ -350,6 +351,24 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "classifier": "run_all",
         "k_nearest_neighbors": None,
         "workspace" : "sagoyal:narrative_1534292322496"
+        }
+        """
+
+        params = {
+        "save_ts": 1,
+        "description": "my Phylum Classifier",
+        "trainingset_name": "myPhylumTset",
+        "phenotypeclass": "Phylum",
+        "classifier": "run_all",
+        "attribute": "functional_roles",
+        "k_nearest_neighbors": None,
+        "gaussian_nb": None,
+        "logistic_regression": None,
+        "decision_tree_classifier": None,
+        "support_vector_machine": None,
+        "neural_network": None,
+        "classifier_out": "myPhylumCLF",
+        "workspace" : "sagoyal:narrative_1534259992668"
         }
 
         self.getImpl().build_classifier(self.getContext(), params)
