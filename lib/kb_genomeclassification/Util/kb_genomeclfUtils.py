@@ -1387,7 +1387,7 @@ class kb_genomeclfUtils(object):
 			list_forDict.extend(self.cf_stats(TN,TP,FP,FN))
 			list_forDict.extend([None])
 
-		fScore_indexes = [(4 + 5*a) for a in range(len(class_list))]
+		fScore_indexes = [(4 + 6*a) for a in range(len(class_list))]
 
 		fScore_sum = 0
 
