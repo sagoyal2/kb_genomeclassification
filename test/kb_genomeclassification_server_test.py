@@ -353,7 +353,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "workspace" : "sagoyal:narrative_1534292322496"
         }
         """
-
+        """
         params = {
         "save_ts": 1,
         "description": "my Phylum Classifier",
@@ -367,7 +367,25 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "decision_tree_classifier": None,
         "support_vector_machine": None,
         "neural_network": None,
-        "classifier_out": "myPhylumCLF",
+        "classifier_out": "myPaperCLF",
+        "workspace" : "sagoyal:narrative_1534259992668"
+        }
+        """
+        params = {
+        "save_ts": 1,
+        "description": "my Respiration Classifier",
+        "trainingset_name": "myPhylumTset",
+        "phenotypeclass": "Respiration",
+        "classifier": "run_all",
+        "attribute": "functional_roles",
+        "k_nearest_neighbors": None,
+        "gaussian_nb": None,
+        "logistic_regression": None,
+        "decision_tree_classifier": None,
+        "support_vector_machine": None,
+        "neural_network": None,
+        "ensemble_model": None,
+        "classifier_out": "myPaperCLF",
         "workspace" : "sagoyal:narrative_1534259992668"
         }
 

@@ -28,12 +28,13 @@ import itertools
 from itertools import izip
 
 #classifier models
+from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
-from sklearn import svm
 from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import VotingClassifier
 
 #additional classifier methods
 from sklearn.tree import export_graphviz
@@ -109,7 +110,7 @@ class kb_genomeclfUtils(object):
 		#Load in 'cached' data from the data folder
 		
 		"""
-		training_set_ref = '35609/403/1'
+		training_set_ref = '35424/320/1'
 		pickle_in = open("/kb/module/data/Classifications_DF.pickle", "rb")
 		all_classifications = pickle.load(pickle_in)
 		listOfNames = all_classifications.index
@@ -119,10 +120,10 @@ class kb_genomeclfUtils(object):
 
 		pickle_in = open("/kb/module/data/fromKBASE_attributes.pickle", "rb")
 		all_attributes = pickle.load(pickle_in)
-		"""		
+		
 
 		all_attributes = all_attributes.T[listOfNames].T
-
+		"""
 
 		#mapping of string classes to integers
 		correctClassifications_list = []
@@ -145,6 +146,17 @@ class kb_genomeclfUtils(object):
 
 		all_attributes = all_attributes.values.astype(int)
 		all_classifications = np.array(my_class_mapping)
+		
+		"""
+		training_set_ref = '35424/320/1'
+		all_attributes = np.load("/kb/module/data/random_attribute_array.npy")
+		all_classifications = np.load("/kb/module/data/random_classification_array.npy")
+		class_list = ["A", "B", "C", "D", "E", "F", "G"]
+		my_mapping = {}
+
+		pickle_in = open("/kb/module/data/fromKBASE_MR.pickle", "rb")
+		master_Role = pickle.load(pickle_in)
+		"""
 
 		"""
 		full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
@@ -191,6 +203,8 @@ class kb_genomeclfUtils(object):
 
 		folderhtml1 = "html1folder/"
 		folderhtml2 = "html2folder/"
+		folderhtml4 = "html4folder/"
+
 
 		train_index = []
 		test_index = []
@@ -240,6 +254,10 @@ class kb_genomeclfUtils(object):
 				self.classifierTest(classifierTest_params)
 
 			best_classifier_str = self.to_HTML_Statistics(class_list, classifier_name)
+
+			print("This is the best_classifier_str")
+			print(best_classifier_str)
+
 			#best_classifier_str = classifier_name+u"_LogisticRegression"
 			best_classifier_type = best_classifier_str[classifier_name.__len__() + 1:] #extract just the classifier_type aka. "LogisticRegression" from "myName_LogisticRegression"
 			best_classifier_type_index = listRunAll.index(best_classifier_type)
@@ -257,9 +275,22 @@ class kb_genomeclfUtils(object):
 			classifierTest_params['classifier_name'] = classifier_name
 			classifierTest_params['htmlfolder'] = folderhtml2
 			self.tune_Decision_Tree(classifierTest_params, best_classifier_str)
-			
 			self.html_report_2(global_target, classifier_name, best_classifier_str)
-			htmloutput_name = self.html_dual_12()
+
+			classifierTest_params['classifier'], estimators_inHTML = self.ensembleCreation(params["ensemble_model"], params)
+			
+			if classifierTest_params['classifier'] == "No_Third":
+				htmloutput_name = self.html_dual_12()
+
+			else:
+				classifierTest_params['classifier_type'] = "Ensemble_Model"
+				classifierTest_params['classifier_name'] = classifier_name+u"_" + "Ensemble_Model"
+				classifierTest_params['htmlfolder'] = folderhtml4
+				self.classifierTest(classifierTest_params)
+
+				self.html_report_4(global_target, classifier_name, estimators_inHTML)
+
+				htmloutput_name = self.html_dual_123()
 
 		elif classifier_type == u"DecisionTreeClassifier":
 
@@ -613,6 +644,21 @@ class kb_genomeclfUtils(object):
 				}
 			return_params['neural_network'] = params["neural_network"]
 
+		if params["ensemble_model"] == None:
+			params["ensemble_model"] = {
+			"k_nearest_neighbors_box": 1,
+			"gaussian_nb_box": 1,
+			"logistic_regression_box": 1,
+			"decision_tree_classifier_box": 1,
+			"support_vector_machine_box": 1,
+			"neural_network_box": 1,
+			"voting": "hard",
+			"en_weights": "",
+			"en_n_jobs": 1,
+			"flatten_transform": ""
+			}
+		return_params['ensemble_model'] = params["ensemble_model"]
+
 		return return_params
 
 	def incaseList_Names(self, list_name, for_predict = False):
@@ -918,7 +964,7 @@ class kb_genomeclfUtils(object):
 		"""
 
 		if clf:
-			dirs_names = ['pics', 'dotFolder', 'forHTML', 'forHTML/html1folder', 'forHTML/html2folder', 'forHTML/forDATA']
+			dirs_names = ['pics', 'dotFolder', 'forHTML', 'forHTML/html1folder', 'forHTML/html2folder', 'forHTML/html4folder',  'forHTML/forDATA']
 		else:	#pred
 			dirs_names = ['forSecHTML', 'forSecHTML/html3folder']
 
@@ -951,7 +997,7 @@ class kb_genomeclfUtils(object):
 		else:
 			return u"ERROR THIS SHOULD NOT HAVE REACHED HERE"
 
-	def whichClassifierAdvanced(self, name, clfA_params, round_best = False):
+	def whichClassifierAdvanced(self, name, clfA_params, multi_call = False):
 		"""
 		args:
 		---name which is a string that the user will pass in as to which classifier (sklearn) classifier they want
@@ -962,31 +1008,69 @@ class kb_genomeclfUtils(object):
 		"""
 
 		if name == u"KNeighborsClassifier":
-			clfA_params = self.fixKNN(clfA_params, round_best)
+			clfA_params = self.fixKNN(clfA_params, multi_call)
 			return KNeighborsClassifier(n_neighbors=clfA_params["n_neighbors"], weights=clfA_params["weights"], algorithm=clfA_params["algorithm"], leaf_size=clfA_params["leaf_size"], p=2, metric=clfA_params["metric"], metric_params=clfA_params["metric_params"], n_jobs=clfA_params["knn_n_jobs"])
 		
 		elif name == u"GaussianNB":
-			clfA_params = self.fixGNB(clfA_params, round_best)
+			clfA_params = self.fixGNB(clfA_params, multi_call)
 			return GaussianNB(priors=clfA_params["priors"])
 		
 		elif name == u"LogisticRegression":
-			clfA_params = self.fixLR(clfA_params, round_best)
+			clfA_params = self.fixLR(clfA_params, multi_call)
 			return LogisticRegression(penalty=clfA_params["penalty"], dual=clfA_params["dual"], tol=clfA_params["lr_tolerance"], C=clfA_params["lr_C"], fit_intercept=clfA_params["fit_intercept"], intercept_scaling=clfA_params["intercept_scaling"], class_weight=clfA_params["lr_class_weight"], random_state=clfA_params["lr_random_state"], solver=clfA_params["lr_solver"], max_iter=clfA_params["lr_max_iter"], multi_class=clfA_params["multi_class"], verbose=clfA_params["lr_verbose"], warm_start=clfA_params["lr_warm_start"], n_jobs=clfA_params["lr_n_jobs"])
 		
 		elif name == u"DecisionTreeClassifier":
-			clfA_params = self.fixDTC(clfA_params, round_best)
+			clfA_params = self.fixDTC(clfA_params, multi_call)
 			return DecisionTreeClassifier(criterion=clfA_params["criterion"], splitter=clfA_params["splitter"], max_depth=clfA_params["max_depth"], min_samples_split=clfA_params["min_samples_split"], min_samples_leaf=clfA_params["min_samples_leaf"], min_weight_fraction_leaf=clfA_params["min_weight_fraction_leaf"], max_features=clfA_params["max_features"], random_state=clfA_params["dt_random_state"], max_leaf_nodes=clfA_params["max_leaf_nodes"], min_impurity_decrease=clfA_params["min_impurity_decrease"], class_weight= clfA_params["dt_class_weight"], presort=clfA_params["presort"])
 		
 		elif name == u"SVM":
-			clfA_params = self.fixSVM(clfA_params, round_best)
+			clfA_params = self.fixSVM(clfA_params, multi_call)
 			return svm.SVC(C=clfA_params["svm_C"], kernel=clfA_params["kernel"], degree=clfA_params["degree"], gamma=clfA_params["gamma"], coef0=clfA_params["coef0"], shrinking=clfA_params["shrinking"], probability=clfA_params["probability"], tol=clfA_params["svm_tolerance"], cache_size=clfA_params["cache_size"], class_weight=clfA_params["svm_class_weight"], verbose=clfA_params["svm_verbose"], max_iter=clfA_params["svm_max_iter"], decision_function_shape=clfA_params["decision_function_shape"], random_state=clfA_params["svm_random_state"])
 		
 		elif name == u"NeuralNetwork":
-			clfA_params = self.fixNN(clfA_params, round_best)
+			clfA_params = self.fixNN(clfA_params, multi_call)
 			return MLPClassifier(hidden_layer_sizes=clfA_params["hidden_layer_sizes"], activation=clfA_params["activation"], solver=clfA_params["mlp_solver"], alpha=clfA_params["alpha"], batch_size=clfA_params["batch_size"], learning_rate=clfA_params["learning_rate"], learning_rate_init=clfA_params["learning_rate_init"], power_t=clfA_params["power_t"], max_iter=clfA_params["mlp_max_iter"], shuffle=clfA_params["shuffle"], random_state=clfA_params["mlp_random_state"], tol=clfA_params["mlp_tolerance"], verbose=clfA_params["mlp_verbose"], warm_start=clfA_params["mlp_warm_start"], momentum=clfA_params["momentum"], nesterovs_momentum=clfA_params["nesterovs_momentum"], early_stopping=clfA_params["early_stopping"], validation_fraction=clfA_params["validation_fraction"], beta_1=clfA_params["beta_1"], beta_2=clfA_params["beta_2"], epsilon=clfA_params["epsilon"])
 		
 		else:
 			return u"ERROR THIS SHOULD NOT HAVE REACHED HERE"
+
+	def ensembleCreation(self, ensemble_params, params):
+
+		my_estimators = []
+
+		estimators_inHTML = ""
+
+		if ensemble_params["k_nearest_neighbors_box"] == 1:
+			my_estimators.extend([("knn",self.whichClassifierAdvanced("KNeighborsClassifier", params["k_nearest_neighbors"], multi_call = True))])
+			estimators_inHTML += "K Nearest Neighbors Classifier, "
+		if ensemble_params["gaussian_nb_box"] == 1:
+			my_estimators.extend([("gnb",self.whichClassifierAdvanced("GaussianNB", params["gaussian_nb"], multi_call = True))])
+			estimators_inHTML += "Gaussian Naive Bayes Classifier, "
+		if ensemble_params["logistic_regression_box"] == 1:
+			my_estimators.extend([("lr",self.whichClassifierAdvanced("LogisticRegression", params["logistic_regression"],multi_call = True))])
+			estimators_inHTML += "Logistic Regression Classifier, "
+		if ensemble_params["decision_tree_classifier_box"] == 1:
+			my_estimators.extend([("dtc",self.whichClassifierAdvanced("DecisionTreeClassifier", params["decision_tree_classifier"], multi_call = True))])
+			estimators_inHTML += "Decision Tree Classifier, "
+		if ensemble_params["support_vector_machine_box"] == 1:
+			my_estimators.extend([("svm",self.whichClassifierAdvanced("SVM", params["support_vector_machine"], multi_call = True))])
+			estimators_inHTML += "Support Vector Machine, "
+		if ensemble_params["neural_network_box"] == 1:
+			my_estimators.extend([("nn",self.whichClassifierAdvanced("NeuralNetwork", params["neural_network"], multi_call = True))])
+			estimators_inHTML += "Neural Network"
+
+		ensemble_params = self.fixEnsemble(ensemble_params)
+
+		print("Here are my estimators")
+		print(my_estimators)
+
+		print("Here are my ensemble_params")
+		print(ensemble_params)
+
+		if estimators_inHTML == "":
+			return "No_Third", ""
+		else:
+			return VotingClassifier(estimators=my_estimators, voting=ensemble_params["voting"], n_jobs=ensemble_params["en_n_jobs"], flatten_transform=ensemble_params["flatten_transform"]), estimators_inHTML
 
 	def fixKNN(self, clfA_params, round_best):
 
@@ -1110,6 +1194,20 @@ class kb_genomeclfUtils(object):
 		else:
 			return clfA_params
 
+	def fixEnsemble(self, ensemble_params):
+		
+		if ensemble_params["en_weights"] == "":
+				ensemble_params["en_weights"] = None
+		else:
+			ensemble_params["en_weights"] = ast.literal_eval(ensemble_params["en_weights"])
+
+		if ensemble_params["flatten_transform"] == "":
+				ensemble_params["flatten_transform"] = None
+		else:
+			ensemble_params["flatten_transform"] = self.str_to_bool(ensemble_params["flatten_transform"])
+
+		return ensemble_params
+
 	def str_to_bool(self, s):
 		#Convert string to Boolean
 		if s == 'True':
@@ -1199,6 +1297,7 @@ class kb_genomeclfUtils(object):
 					cnf_matrix_f[i][j] += cnf_f[i][j]
 
 		if print_cfm:
+			print("I'm inside this print_cfm")
 			pickle_out = open(os.path.join(self.scratch, 'forHTML', 'forDATA', unicode(classifier_name) + u".pickle"), u"wb")
 
 			#pickle_out = open("/kb/module/work/tmp/" + str(self.classifier_name) + ".pickle", "wb")
@@ -1206,6 +1305,7 @@ class kb_genomeclfUtils(object):
 
 			pickle.dump(classifier.fit(all_attributes, all_classifications), pickle_out, protocol = 2)
 			pickle_out.close()
+			print("I've dumped and saved the pickle file")
 
 			#just temporary trial thing
 			"""
@@ -1217,7 +1317,7 @@ class kb_genomeclfUtils(object):
 			pickle_out.close()
 
 			"""
-
+			print("trying to save shock stuff")
 			shock_id, handle_id = self._upload_to_shock(os.path.join(self.scratch, 'forHTML', 'forDATA', unicode(classifier_name) + u".pickle"))
 			
 
@@ -1257,12 +1357,12 @@ class kb_genomeclfUtils(object):
 			'number_of_attributes' : all_attributes.shape[1],#class_list.__len__(),
 			'attribute_data' : master_Role,#["this is where master_role would go", "just a list"],#master_Role, #master_Role,
 			'class_list_mapping' : my_mapping, #{} my_mapping, #my_mapping,
-			'number_of_genomes' : class_list.__len__(), #all_attributes.shape[1],
-			'training_set_ref' : training_set_ref #self.dfu.get_objects({'object_refs': [training_set_ref]}) #training_set_ref
+			'number_of_genomes' : class_list.__len__()#, #all_attributes.shape[1],
+			#'training_set_ref' : training_set_ref #self.dfu.get_objects({'object_refs': [training_set_ref]}) #training_set_ref
 			}
 
-			if training_set_ref == 'User Denied':
-				del classifier_object['training_set_ref']
+			if training_set_ref != 'User Denied':
+				classifier_object['training_set_ref'] = training_set_ref
 			#print classifier_object
 
 			#Saving the Classifier object
@@ -2330,6 +2430,199 @@ class kb_genomeclfUtils(object):
 		file.write(next_str)
 
 		file.close()
+
+	def html_report_4(self, global_target, classifier_name, estimators_inHTML):
+		file = open(os.path.join(self.scratch, 'forHTML', 'html4folder', 'html4.html'), u"w")
+		
+		html_string = u"""
+		<!DOCTYPE html>
+		<html>
+		<head>
+		<style>
+		table, th, td {
+			border: 1px solid black;
+			border-collapse: collapse;
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		.column {
+			float: left;
+			width: 50%;
+			padding: 10px;
+		}
+
+		/* Clearfix (clear floats) */
+		.row::after {
+			content: "";
+			clear: both;
+			display: table;
+		}
+		</style>
+		</head>
+		<body>
+
+		<h1 style="text-align:center;">""" + global_target + """ - Ensemble Model</h1>
+
+		<!-- <h2>Maybe we can add some more text here later?</h2> -->
+		<!--<p>How to create side-by-side images with the CSS float property:</p> -->
+
+		<p style="text-align:center; font-size:160%;"> Ensemble Classifier based on selected models ("""+ estimators_inHTML + """)</p>
+		"""
+
+		file.write(html_string)
+
+		next_str = u"""
+		<div class="column">
+			<p style="text-align:left; font-size:160%;"> Ensemble Classifier <a href="../forDATA/""" + classifier_name + """_Ensemble_Model.pickle" download> (Download) </a> </p>
+			<img src=" """+ classifier_name +"""_Ensemble_Model.png" alt="Snow" style="width:100%">
+		</div>
+		"""
+
+		file.write(next_str)
+
+		next_str = u"""
+		</body>
+		</html>
+		"""
+		file.write(next_str)
+
+		file.close()
+
+	def html_dual_123(self):
+		file = open(os.path.join(self.scratch, 'forHTML', 'dual_123.html'), u"w")
+
+		html_string = u"""
+		<!DOCTYPE html>
+		<html>
+		<head>
+		<style>
+		body {font-family: "Lato", sans-serif;}
+		/* Style the tab */
+		div.tab {
+			overflow: hidden;
+			border: 1px solid #ccc;
+			background-color: #f1f1f1;
+		}
+		/* Style the buttons inside the tab */
+		div.tab button {
+			background-color: inherit;
+			float: left;
+			border: none;
+			outline: none;
+			cursor: pointer;
+			padding: 14px 16px;
+			transition: 0.3s;
+			font-size: 17px;
+		}
+		/* Change background color of buttons on hover */
+		div.tab button:hover {
+			background-color: #ddd;
+		}
+		/* Create an active/current tablink class */
+		div.tab button.active {
+			background-color: #ccc;
+		}
+		/* Style the tab content */
+		.tabcontent {
+			display: none;
+			padding: 6px 12px;
+			border: 1px solid #ccc;
+			-webkit-animation: fadeEffect 1s;
+			animation: fadeEffect 1s;
+			border-top: none;
+		}
+		/* Fade in tabs */
+		@-webkit-keyframes fadeEffect {
+			from {opacity: 0;}
+			to {opacity: 1;}
+		}
+		@keyframes fadeEffect {
+			from {opacity: 0;}
+			to {opacity: 1;}
+		}
+		table {
+			font-family: arial, sans-serif;
+			border-collapse: collapse;
+			width: 100%;
+		}
+		td, th {
+			border: 1px solid #dddddd;
+			text-align: left;
+			padding: 8px;
+		}
+		tr:nth-child(odd) {
+			background-color: #dddddd;
+		}
+		div.gallery {
+			margin: 5px;
+			border: 1px solid #ccc;
+			float: left;
+			width: 180px;
+		}
+		div.gallery:hover {
+			border: 1px solid #777;
+		}
+		div.gallery img {
+			width: 100%;
+			height: auto;
+		}
+		div.desc {
+			padding: 15px;
+			text-align: center;
+		}
+		</style>
+		</head>
+		<body>
+
+		<p></p>
+
+		<div class="tab">
+		  <button class="tablinks" onclick="openTab(event, 'Overview')" id="defaultOpen">Main Page</button>
+		  <button class="tablinks" onclick="openTab(event, 'Visualization')">Decision Tree Analysis</button>
+		  <button class="tablinks" onclick="openTab(event, 'ThirdPage')">Ensemble Model</button>
+		</div>
+
+		<div id="Overview" class="tabcontent">
+		  <iframe src="html1folder/html1.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
+		</div>
+
+		<div id="Visualization" class="tabcontent">
+		  <iframe src="html2folder/html2.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
+		</div>
+
+		<div id="ThirdPage" class="tabcontent">
+		  <iframe src="html4folder/html4.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
+		</div>
+
+		<script>
+		function openTab(evt, tabName) {
+			var i, tabcontent, tablinks;
+			tabcontent = document.getElementsByClassName("tabcontent");
+			for (i = 0; i < tabcontent.length; i++) {
+				tabcontent[i].style.display = "none";
+			}
+			tablinks = document.getElementsByClassName("tablinks");
+			for (i = 0; i < tablinks.length; i++) {
+				tablinks[i].className = tablinks[i].className.replace(" active", "");
+			}
+			document.getElementById(tabName).style.display = "block";
+			evt.currentTarget.className += " active";
+		}
+		// Get the element with id="defaultOpen" and click on it
+		document.getElementById("defaultOpen").click();
+		</script>
+
+		</body>
+		</html>
+		"""
+
+		file.write(html_string)
+		file.close()
+
+		return "dual_123.html"
 
 	def html_dual_12(self):
 		file = open(os.path.join(self.scratch, 'forHTML', 'dual_12.html'), u"w")
