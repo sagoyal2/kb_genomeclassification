@@ -105,6 +105,19 @@ module kb_genomeclassification {
     } NeuralNetworkOptions;
 
     typedef structure {
+        int k_nearest_neighbors_box;
+        int gaussian_nb_box;
+        int logistic_regression_box;
+        int decision_tree_classifier_box;
+        int support_vector_machine_box;
+        int neural_network_box;
+        string voting;
+        string en_weights;
+        int en_n_jobs;
+        boolean flatten_transform;
+    } EnsembleModelOptions;
+
+    typedef structure {
         string phenotypeclass;
         string attribute;
         string workspace;
@@ -123,6 +136,7 @@ module kb_genomeclassification {
         KNearestNeighborsOptions k_nearest_neighbors;
         SupportVectorMachineOptions support_vector_machine;
         NeuralNetworkOptions neural_network;
+        EnsembleModelOptions ensemble_model;
     }BuildClassifierInput;
 
     typedef structure {
