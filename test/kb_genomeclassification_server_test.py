@@ -367,7 +367,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "decision_tree_classifier": None,
         "support_vector_machine": None,
         "neural_network": None,
-        "classifier_out": "myPhylumCLF",
+        "classifier_out": "myPaperCLF",
         "workspace" : "sagoyal:narrative_1534259992668"
         }
 

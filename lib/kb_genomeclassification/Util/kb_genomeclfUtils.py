@@ -28,12 +28,13 @@ import itertools
 from itertools import izip
 
 #classifier models
+from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
-from sklearn import svm
 from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import VotingClassifier
 
 #additional classifier methods
 from sklearn.tree import export_graphviz
@@ -97,9 +98,9 @@ class kb_genomeclfUtils(object):
 		#print "Below is the classifierAdvanced_params"
 		#print(self.editBuildArguments(params)["classifierAdvanced_params"])
 
-		toEdit_all_classifications, training_set_ref = self.unloadGenomeClassifierTrainingSet(current_ws, params['trainingset_name'])
-		listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
-		all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
+		#toEdit_all_classifications, training_set_ref = self.unloadGenomeClassifierTrainingSet(current_ws, params['trainingset_name'])
+		#listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
+		#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 	
 
 		if params.get('save_ts') != 1:
@@ -108,8 +109,8 @@ class kb_genomeclfUtils(object):
 
 		#Load in 'cached' data from the data folder
 		
-		"""
-		training_set_ref = '35609/403/1'
+		
+		training_set_ref = '35424/320/1'
 		pickle_in = open("/kb/module/data/Classifications_DF.pickle", "rb")
 		all_classifications = pickle.load(pickle_in)
 		listOfNames = all_classifications.index
@@ -119,7 +120,7 @@ class kb_genomeclfUtils(object):
 
 		pickle_in = open("/kb/module/data/fromKBASE_attributes.pickle", "rb")
 		all_attributes = pickle.load(pickle_in)
-		"""		
+		
 
 		all_attributes = all_attributes.T[listOfNames].T
 
@@ -987,6 +988,19 @@ class kb_genomeclfUtils(object):
 		
 		else:
 			return u"ERROR THIS SHOULD NOT HAVE REACHED HERE"
+
+	def ensembleCreation(self):
+		clf1 = KNeighborsClassifier()
+		clf2 = GaussianNB()
+		clf3 = LogisticRegression(random_state=0)
+		clf4 = DecisionTreeClassifier(random_state=0)
+		clf5 = svm.SVC(kernel = "linear",random_state=0)
+		clf6 = MLPClassifier(random_state=0)
+
+
+		eclf1 = VotingClassifier(estimators=[('knn', clf1), ('gnb', clf2), ('lr', clf3), ('dtc', clf4), ('svm', clf5), ('mlp', clf6)], voting='hard', n_jobs=-1)
+		eclf1 = eclf1.fit(X, Y)
+		print(eclf1.predict(X))
 
 	def fixKNN(self, clfA_params, round_best):
 
