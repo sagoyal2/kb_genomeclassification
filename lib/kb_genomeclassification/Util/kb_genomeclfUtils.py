@@ -110,7 +110,7 @@ class kb_genomeclfUtils(object):
 		#Load in 'cached' data from the data folder
 		
 		"""
-		training_set_ref = '35424/320/1'
+		training_set_ref = '35424/358/1'
 		pickle_in = open("/kb/module/data/Classifications_DF.pickle", "rb")
 		all_classifications = pickle.load(pickle_in)
 		listOfNames = all_classifications.index
@@ -120,10 +120,10 @@ class kb_genomeclfUtils(object):
 
 		pickle_in = open("/kb/module/data/fromKBASE_attributes.pickle", "rb")
 		all_attributes = pickle.load(pickle_in)
-		
+		"""
 
 		all_attributes = all_attributes.T[listOfNames].T
-		"""
+		
 
 		#mapping of string classes to integers
 		correctClassifications_list = []
@@ -287,6 +287,8 @@ class kb_genomeclfUtils(object):
 				classifierTest_params['classifier_name'] = classifier_name+u"_" + "Ensemble_Model"
 				classifierTest_params['htmlfolder'] = folderhtml4
 				self.classifierTest(classifierTest_params)
+
+				self.to_HTML_Statistics(class_list, classifier_name, known = classifierTest_params['classifier_name'], for_ensemble = True)
 
 				self.html_report_4(global_target, classifier_name, estimators_inHTML)
 
@@ -1317,6 +1319,7 @@ class kb_genomeclfUtils(object):
 			pickle_out.close()
 
 			"""
+			
 			print("trying to save shock stuff")
 			shock_id, handle_id = self._upload_to_shock(os.path.join(self.scratch, 'forHTML', 'forDATA', unicode(classifier_name) + u".pickle"))
 			
@@ -1326,14 +1329,6 @@ class kb_genomeclfUtils(object):
 			#base64
 			#current_pickle = pickle.dumps(classifier.fit(all_attributes, all_classifications), protocol=0)
 			#pickled = codecs.encode(current_pickle, "base64").decode()
-
-
-			"""
-
-			with open(u"/kb/module/work/tmp/" + unicode(classifier_name) + u".txt", u"w") as f:
-				for line in pickled:
-					f.write(line)
-			"""
 
 			pickled = "this is what the pickled string would be"
 
@@ -1383,14 +1378,13 @@ class kb_genomeclfUtils(object):
 
 			print obj_save_ref
 			print "done"        
-			
 
 		if print_cfm:
 
 			cnf_av = cnf_matrix/splits
 			self.NClasses(class_list, cnf_av)
 
-			self.plot_confusion_matrix(cnf_matrix_f/splits*100.0,class_list,u'Confusion Matrix', htmlfolder, classifier_name, classifier_type)
+			self.plot_confusion_matrix(np.round(cnf_matrix_f/splits*100.0,1),class_list,u'Confusion Matrix', htmlfolder, classifier_name, classifier_type)
 
 		"""
 		list_forDict = []
@@ -1576,7 +1570,7 @@ class kb_genomeclfUtils(object):
 		ax = fig.add_subplot(figsize=(4.5,4.5))
 		#fig, ax = plt.subplots(figsize=(4.5,4.5))
 		sns.set(font_scale=1.2)
-		sns_plot = sns.heatmap(cm, annot=True, ax = ax, cmap=u"Blues"); #annot=True to annotate cells
+		sns_plot = sns.heatmap(cm, annot=True, ax = ax, cmap=u"Blues", fmt='g'); #annot=True to annotate cells
 		ax = sns_plot
 		ax.set_xlabel(u'Predicted labels'); ax.set_ylabel(u'True labels');
 		ax.set_title(title);
@@ -1591,7 +1585,7 @@ class kb_genomeclfUtils(object):
 		if classifier_type == "DecisionTreeClassifier":
 			fig.savefig(os.path.join(self.scratch, 'forHTML','html2folder', classifier_name +u".png"), format=u'png')
 
-	def to_HTML_Statistics(self, class_list, classifier_name, known = "", additional = False):
+	def to_HTML_Statistics(self, class_list, classifier_name, known = "", additional = False, for_ensemble = False):
 		"""
 		args:
 		---additional is a boolean and is used to indicate if this method is being called to make html2
@@ -1603,6 +1597,45 @@ class kb_genomeclfUtils(object):
 
 
 		#self.counter = self.counter + 1
+
+		if for_ensemble:
+			statistics_dict = {}
+
+			print("Here is the list_name")
+			print(self.list_name)
+
+			en_index = self.list_name.index(known)
+
+			ensemble_index = [self.list_name[en_index]]
+			ensembleStatistic_index = [self.list_statistics[en_index]]
+			
+			for i, j in izip(ensemble_index, ensembleStatistic_index):
+				statistics_dict[i] = j
+
+			data = statistics_dict
+
+
+			my_index = []
+
+			for class_current in range(len(class_list)):
+				my_index.extend([class_list[class_current], u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None])
+			
+			my_index.append(u'Average F1')
+
+			df = pd.DataFrame(data, index=my_index)
+			df.to_html(os.path.join(self.scratch, 'forHTML', 'html4folder', 'ensembleStatistics.html'))
+
+			file = open(os.path.join(self.scratch, 'forHTML', 'html4folder', 'ensembleStatistics.html'), u'r')
+			allHTML = file.read()
+			file.close()
+
+			new_allHTML = re.sub(r'NaN', r'', allHTML)
+
+			file = open(os.path.join(self.scratch, 'forHTML', 'html4folder', 'ensembleStatistics.html'), u'w')
+			file.write(new_allHTML)
+			file.close
+
+			return 0
 
 		if not additional:
 
@@ -2475,12 +2508,32 @@ class kb_genomeclfUtils(object):
 		file.write(html_string)
 
 		next_str = u"""
+		<div class="row">
 		<div class="column">
 			<p style="text-align:left; font-size:160%;"> Ensemble Classifier <a href="../forDATA/""" + classifier_name + """_Ensemble_Model.pickle" download> (Download) </a> </p>
 			<img src=" """+ classifier_name +"""_Ensemble_Model.png" alt="Snow" style="width:100%">
 		</div>
+	  <div class="column">
 		"""
+		file.write(next_str)
 
+		next_str = u"""
+		<p style="font-size:160%;">Comparison of statistics in the form of Accuracy, Precision, Recall and F1 Score calculated against the confusion matrices of respiration type for the classifiers</p>
+		<p style="font-size:100%;">Defintion of key statistics: Accuracy - how often is the classifier correct, Precision - when predition is positive how often is it correct, 
+		Recall - when the condition is correct how often is it correct, F1 Score - This is a weighted average of recall and precision </p>            
+		"""
+		file.write(next_str)
+
+		another_file = open(os.path.join(self.scratch, 'forHTML', 'html4folder', 'ensembleStatistics.html'), u"r")
+		all_str = another_file.read()
+		another_file.close()
+
+		file.write(all_str)
+
+		next_str = u"""
+		</div>
+		</div>
+		"""
 		file.write(next_str)
 
 		next_str = u"""
