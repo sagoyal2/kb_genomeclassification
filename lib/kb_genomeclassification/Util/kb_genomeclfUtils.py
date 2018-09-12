@@ -120,10 +120,10 @@ class kb_genomeclfUtils(object):
 
 		pickle_in = open("/kb/module/data/fromKBASE_attributes.pickle", "rb")
 		all_attributes = pickle.load(pickle_in)
-		
+		"""
 
 		all_attributes = all_attributes.T[listOfNames].T
-		"""
+		
 
 		#mapping of string classes to integers
 		correctClassifications_list = []
