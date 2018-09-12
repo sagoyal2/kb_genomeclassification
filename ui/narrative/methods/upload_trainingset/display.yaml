@@ -46,7 +46,7 @@ parameters :
             Paste the list of traning set data
     training_set_out:
         ui-name : |
-            Name for the traning set
+            Name for the training set
         short-hint : |
             Provide a name for the training set data
     phenotypeclass:
