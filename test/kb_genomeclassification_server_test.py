@@ -101,7 +101,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "classifier_out": "myRCLF",
         "workspace" : "sagoyal:narrative_1534259992668"
         }
-        
+
         """
         params = {
         "save_ts": 1,
