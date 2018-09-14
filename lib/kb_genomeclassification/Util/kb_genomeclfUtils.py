@@ -952,11 +952,11 @@ class kb_genomeclfUtils(object):
 
 		my_all_attributes = pd.DataFrame.from_dict(data_dict, orient='index', columns = master_Role)
 
-		pickle_out = open(os.path.join(self.scratch,"fromKBASE_Phylum_attributes.pickle"), "wb")
-		pickle.dump(my_all_attributes, pickle_out)
+		#pickle_out = open(os.path.join(self.scratch,"fromKBASE_Phylum_attributes.pickle"), "wb")
+		#pickle.dump(my_all_attributes, pickle_out)
 
-		pickle_out = open(os.path.join(self.scratch,"fromKBASE_Phylum_MR.pickle"), "wb")
-		pickle.dump(master_Role, pickle_out)
+		#pickle_out = open(os.path.join(self.scratch,"fromKBASE_Phylum_MR.pickle"), "wb")
+		#pickle.dump(master_Role, pickle_out)
 
 		print("I'm done creating the all_attributes data frame")
 
@@ -1690,8 +1690,8 @@ class kb_genomeclfUtils(object):
 
 			df['Max'] = df.idxmax(1)
 
-			print("Here is df[Max]")
-			print(df['Max'])
+			#print("Here is df[Max]")
+			#print(df['Max'])
 
 			best_classifier_str = df['Max'].iloc[-1]
 
