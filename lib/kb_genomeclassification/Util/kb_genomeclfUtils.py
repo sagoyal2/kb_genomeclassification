@@ -110,15 +110,16 @@ class kb_genomeclfUtils(object):
 		#Load in 'cached' data from the data folder
 		
 		"""
-		training_set_ref = '35424/358/1'
-		pickle_in = open("/kb/module/data/Classifications_DF.pickle", "rb")
+		training_set_ref = '35424/384/1'
+		#pickle_in = open("/kb/module/data/Classifications_DF.pickle", "rb")
+		pickle_in = open("/kb/module/data/myPhylumDF.pickle", "rb")
 		all_classifications = pickle.load(pickle_in)
 		listOfNames = all_classifications.index
 
-		pickle_in = open("/kb/module/data/fromKBASE_MR.pickle", "rb")
+		pickle_in = open("/kb/module/data/fromKBASE_Phylum_MR.pickle", "rb")
 		master_Role = pickle.load(pickle_in)
 
-		pickle_in = open("/kb/module/data/fromKBASE_attributes.pickle", "rb")
+		pickle_in = open("/kb/module/data/fromKBASE_Phylum_attributes.pickle", "rb")
 		all_attributes = pickle.load(pickle_in)
 		"""
 
@@ -951,6 +952,12 @@ class kb_genomeclfUtils(object):
 
 		my_all_attributes = pd.DataFrame.from_dict(data_dict, orient='index', columns = master_Role)
 
+		#pickle_out = open(os.path.join(self.scratch,"fromKBASE_Phylum_attributes.pickle"), "wb")
+		#pickle.dump(my_all_attributes, pickle_out)
+
+		#pickle_out = open(os.path.join(self.scratch,"fromKBASE_Phylum_MR.pickle"), "wb")
+		#pickle.dump(master_Role, pickle_out)
+
 		print("I'm done creating the all_attributes data frame")
 
 		if not for_predict:
@@ -1489,10 +1496,19 @@ class kb_genomeclfUtils(object):
 		print("This is you list_forDict")
 		print(list_forDict)
 
+		"""
 		for f_index in fScore_indexes:
 			fScore_sum += list_forDict[f_index]
 
 		list_forDict.extend([(fScore_sum)/len(class_list)])
+		"""
+
+		list_fScore = []
+
+		for f_index in fScore_indexes:
+			list_fScore.extend([list_forDict[f_index]])
+
+		list_forDict.extend([np.nanmean(list_fScore)])
 
 		self.list_statistics.append(list_forDict)
 			
@@ -1673,6 +1689,10 @@ class kb_genomeclfUtils(object):
 			df.to_html(os.path.join(self.scratch, 'forHTML', 'html1folder','newStatistics.html'))
 
 			df['Max'] = df.idxmax(1)
+
+			#print("Here is df[Max]")
+			#print(df['Max'])
+
 			best_classifier_str = df['Max'].iloc[-1]
 
 

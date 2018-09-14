@@ -84,6 +84,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
 
     def test_build_classifier(self):
     
+        """
         params = {
         "save_ts": 1,
         "description": "Respiration Classifier",
@@ -101,6 +102,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "classifier_out": "myRCLF",
         "workspace" : "sagoyal:narrative_1534259992668"
         }
+        """
 
         """
         params = {
@@ -121,6 +123,24 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "workspace" : "sagoyal:narrative_1534259992668"
         }
         """
+
+        params = {
+        "save_ts": 1,
+        "description": "my Phylum Classifier",
+        "trainingset_name": "WorkingPSET",
+        "phenotypeclass": "Phylum",
+        "classifier": "run_all",
+        "attribute": "functional_roles",
+        "k_nearest_neighbors": None,
+        "gaussian_nb": None,
+        "logistic_regression": None,
+        "decision_tree_classifier": None,
+        "support_vector_machine": None,
+        "neural_network": None,
+        "ensemble_model": None,
+        "classifier_out": "trialPhy",
+        "workspace" : "sagoyal:narrative_1534259992668"
+        }
 
         self.getImpl().build_classifier(self.getContext(), params)
 
