@@ -405,6 +405,9 @@ class kb_genomeclfUtils(object):
 
 	def fullUpload(self, params, current_ws):
 
+		out_path = os.path.join(self.scratch, 'forZeroHTML')
+		os.makedirs(out_path)
+
 		if params.get('list_name'):
 			#checks if empty string bool("") --> False
 			print ("taking this path rn")
@@ -417,10 +420,6 @@ class kb_genomeclfUtils(object):
 			missingGenomes = self.createGenomeClassifierTrainingSet(current_ws, params['description'], params['training_set_out'], just_DF = pd.read_excel(file_path))
 			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
 			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
-
-
-		out_path = os.path.join(self.scratch, 'forZeroHTML')
-		os.makedirs(out_path)
 
 		self.html_report_0(missingGenomes)
 		htmloutput_name = self.html_nodual("forZeroHTML")
@@ -740,6 +739,11 @@ class kb_genomeclfUtils(object):
 
 		print(list_allGenomesinWS)
 
+		all_genome_ID = []
+		loaded_Narrative = []
+		all_Genome_Classification = []
+		add_trainingSet = []
+
 		for index in range(len(listGNames)):
 
 			try:
@@ -755,13 +759,31 @@ class kb_genomeclfUtils(object):
 											'references': ['some','list'],
 											'evidence_types': ['another','some','list'],
 											})
+
+				all_genome_ID.append(listGNames[index])
+				loaded_Narrative.append(["Yes"])
+				all_Genome_Classification.append(listClassification[index])
+				add_trainingSet.append(["Yes"])
 			except:
 				print (listGNames[index])
 				print ('The above Genome does not exist in workspace')
 				missingGenomes.append(listGNames[index])
+
+				all_genome_ID.append(listGNames[index])
+				loaded_Narrative.append(["No"])
+				all_Genome_Classification.append(["None"])
+				add_trainingSet.append(["No"])
 		
+		four_columns = pd.DataFrame.from_dict({'Genome Id': all_genome_ID, 'Loaded in the Narrative': loaded_Narrative, 'Classification' : all_Genome_Classification, 'Added to Training Set' : add_trainingSet})
+		four_columns = four_columns[['Genome Id', 'Loaded in the Narrative', 'Classification', 'Added to Training Set']]
+
+		old_width = pd.get_option('display.max_colwidth')
+		pd.set_option('display.max_colwidth', -1)
+		four_columns.to_html(os.path.join(self.scratch, 'forZeroHTML', 'four_columns.html'), index=False, justify='center')
+		pd.set_option('display.max_colwidth', old_width)
+
 		trainingset_object = {
-		'name': 'my_name',
+		'name': trainingset_object_Name,#'my_name',
 		'description': description,
 		'classification_type': 'my_classification_type',
 		'number_of_genomes': len(listGNames),
@@ -2127,10 +2149,23 @@ class kb_genomeclfUtils(object):
 		<p>The missing genomes are: """ + str(missingGenomes) + """ </p>
 		<p>If there were missing genomes, we went ahead and still created a training set object excluding the missing genomes</p>
 
+		<br>
+
+		<p>Below is a more detailed table which shows which Genome ID, whether it was loaded into the Narrative, its Classification, and if it was Added to the Training Set</p>
+
+		"""
+		file.write(html_string)
+
+		another_file = open(os.path.join(self.scratch, 'forZeroHTML','four_columns.html'), u"r")
+		all_str = another_file.read()
+		another_file.close()
+		file.write(all_str)
+
+		next_str =u"""
 		</body>
 		</html>
 		"""
-		file.write(html_string)
+		file.write(next_str)
 		file.close()
 
 		#return "html0.html"

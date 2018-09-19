@@ -124,6 +124,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         }
         """
 
+        """
         params = {
         "save_ts": 1,
         "description": "my Phylum Classifier",
@@ -143,6 +144,17 @@ class kb_genomeclassificationTest(unittest.TestCase):
         }
 
         self.getImpl().build_classifier(self.getContext(), params)
+        """
 
     def test_upload_trainingset(self):
-        pass
+        
+        params = {
+        "shock_id": "b8a649d2-0a6d-4813-8dbc-9b9e34cc94c3",
+        "list_name": "",
+        "description": "Gram Training Set",
+        "phenotypeclass": "Gram",
+        "training_set_out": "GTSet",
+        "workspace" : "sagoyal:narrative_1536939130038"
+        }
+
+        self.getImpl().upload_trainingset(self.getContext(), params)
