@@ -773,7 +773,7 @@ class kb_genomeclfUtils(object):
 				loaded_Narrative.append(["No"])
 				all_Genome_Classification.append(["None"])
 				add_trainingSet.append(["No"])
-		
+
 		four_columns = pd.DataFrame.from_dict({'Genome Id': all_genome_ID, 'Loaded in the Narrative': loaded_Narrative, 'Classification' : all_Genome_Classification, 'Added to Training Set' : add_trainingSet})
 		four_columns = four_columns[['Genome Id', 'Loaded in the Narrative', 'Classification', 'Added to Training Set']]
 
