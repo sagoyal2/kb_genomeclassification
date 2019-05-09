@@ -844,13 +844,33 @@ class kb_genomeclfUtils(object):
 
 				output = self.rast.annotate_genome(params_RAST)
 
-				list_GenomeClass.append({'genome_ref': str(output[6]) + '/' + str(output[0]) + '/' + str(output[4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
-							'genome_classification': listClassification[index],
-							'genome_name': listGNames[index]+".RAST",
-							'genome_id': 'my_genome_id',
-							'references': ['some','list'],
-							'evidence_types': ['another','some','list'],
-							})
+				list_allGenomesinWSupdated = []
+
+				newBack = self.ws_client.list_objects({'workspaces':[current_ws],'type':'KBaseGenomes.Genome'})
+
+				for item in newBack:
+					list_allGenomesinWSupdated.append(item[1])
+
+				position = list_allGenomesinWSupdated.index(listGNames[index]+".RAST")
+
+				list_GenomeClass.append({'genome_ref': str(newBack[position][6]) + '/' + str(newBack[position][0]) + '/' + str(newBack[position][4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
+											'genome_classification': listClassification[index],
+											'genome_name': listGNames[index]+".RAST",
+											'genome_id': 'my_genome_id',
+											'references': ['some','list'],
+											'evidence_types': ['another','some','list'],
+											})
+
+
+				# output = self.rast.annotate_genome(params_RAST)
+
+				# list_GenomeClass.append({'genome_ref': str(output[6]) + '/' + str(output[0]) + '/' + str(output[4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
+				# 			'genome_classification': listClassification[index],
+				# 			'genome_name': listGNames[index]+".RAST",
+				# 			'genome_id': 'my_genome_id',
+				# 			'references': ['some','list'],
+				# 			'evidence_types': ['another','some','list'],
+				# 			})
 
 				# list_GenomeClass.append({'genome_ref': str(back[position][6]) + '/' + str(back[position][0]) + '/' + str(back[position][4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
 				# 							'genome_classification': listClassification[index],
