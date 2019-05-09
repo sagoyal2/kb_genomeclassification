@@ -415,13 +415,13 @@ class kb_genomeclfUtils(object):
 			print ("taking this path rn")
 			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
 			missingGenomes = self.createGenomeClassifierTrainingSet(current_ws, params['description'], params['training_set_out'], just_DF = toEdit_all_classifications)
-			self.workRAST(current_ws, just_DF = toEdit_all_classifications)
+			#self.workRAST(current_ws, just_DF = toEdit_all_classifications)
 			#listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
 			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 		else:
 			file_path = self._download_shock(params.get('shock_id'))
 			missingGenomes = self.createGenomeClassifierTrainingSet(current_ws, params['description'], params['training_set_out'], just_DF = pd.read_excel(file_path))
-			self.workRAST(current_ws, just_DF = pd.read_excel(file_path))
+			#self.workRAST(current_ws, just_DF = pd.read_excel(file_path))
 			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
 			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 
@@ -441,6 +441,34 @@ class kb_genomeclfUtils(object):
 
 		print("we are printing just_DF")
 		print(listGNames)
+
+		for index in range(len(listGNames)):
+
+			params_RAST =	{
+			"workspace": current_ws,#"sagoyal:narrative_1536939130038",
+			"input_genome": listGNames[index],
+			"output_genome": listGNames[index]+".RAST",
+			"call_features_rRNA_SEED": 0,
+			"call_features_tRNA_trnascan": 0,
+			"call_selenoproteins": 0,
+			"call_pyrrolysoproteins": 0,
+			"call_features_repeat_region_SEED": 0,
+			"call_features_strep_suis_repeat": 0,
+			"call_features_strep_pneumo_repeat": 0,
+			"call_features_crispr": 0,
+			"call_features_CDS_glimmer3": 0,
+			"call_features_CDS_prodigal": 0,
+			"annotate_proteins_kmer_v2": 1,
+			"kmer_v1_parameters": 1,
+			"annotate_proteins_similarity": 1,
+			"retain_old_anno_for_hypotheticals": 0,
+			"resolve_overlapping_features": 0,
+			"call_features_prophage_phispy": 0
+			}
+
+			output = self.rast.annotate_genomes(params_RAST)
+
+		print(output)
 
 		# params_RAST =  {
 		# "workspace": "sagoyal:narrative_1536939130038",#"sagoyal:narrative_1534292322496",
@@ -464,33 +492,6 @@ class kb_genomeclfUtils(object):
 		# "resolve_overlapping_features": 0,
 		# "call_features_prophage_phispy": 0
 		# }
-
-
-		params_RAST =	{
-		"workspace": current_ws,#"sagoyal:narrative_1536939130038",
-		"input_genome": listGNames[0],
-		"output_genome": "icanNameThis",
-		"call_features_rRNA_SEED": 0,
-		"call_features_tRNA_trnascan": 0,
-		"call_selenoproteins": 0,
-		"call_pyrrolysoproteins": 0,
-		"call_features_repeat_region_SEED": 0,
-		"call_features_strep_suis_repeat": 0,
-		"call_features_strep_pneumo_repeat": 0,
-		"call_features_crispr": 0,
-		"call_features_CDS_glimmer3": 0,
-		"call_features_CDS_prodigal": 0,
-		"annotate_proteins_kmer_v2": 1,
-		"kmer_v1_parameters": 1,
-		"annotate_proteins_similarity": 1,
-		"retain_old_anno_for_hypotheticals": 0,
-		"resolve_overlapping_features": 0,
-		"call_features_prophage_phispy": 0
-		}
-
-		output = self.rast.annotate_genome(params_RAST)
-
-		print(output)
 
 
 	def makeHtmlReport(self, htmloutput_name, current_ws, which_report, for_predict = False):
@@ -819,13 +820,45 @@ class kb_genomeclfUtils(object):
 				print('printing positions')
 				print(position)
 
-				list_GenomeClass.append({'genome_ref': str(back[position][6]) + '/' + str(back[position][0]) + '/' + str(back[position][4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
-											'genome_classification': listClassification[index],
-											'genome_name': listGNames[index],
-											'genome_id': 'my_genome_id',
-											'references': ['some','list'],
-											'evidence_types': ['another','some','list'],
-											})
+				params_RAST =	{
+				"workspace": current_ws,#"sagoyal:narrative_1536939130038",
+				"input_genome": listGNames[index],
+				"output_genome": listGNames[index]+".RAST",
+				"call_features_rRNA_SEED": 0,
+				"call_features_tRNA_trnascan": 0,
+				"call_selenoproteins": 0,
+				"call_pyrrolysoproteins": 0,
+				"call_features_repeat_region_SEED": 0,
+				"call_features_strep_suis_repeat": 0,
+				"call_features_strep_pneumo_repeat": 0,
+				"call_features_crispr": 0,
+				"call_features_CDS_glimmer3": 0,
+				"call_features_CDS_prodigal": 0,
+				"annotate_proteins_kmer_v2": 1,
+				"kmer_v1_parameters": 1,
+				"annotate_proteins_similarity": 1,
+				"retain_old_anno_for_hypotheticals": 0,
+				"resolve_overlapping_features": 0,
+				"call_features_prophage_phispy": 0
+				}
+
+				output = self.rast.annotate_genome(params_RAST)
+
+				list_GenomeClass.append({'genome_ref': str(output[6]) + '/' + str(output[0]) + '/' + str(output[4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
+							'genome_classification': listClassification[index],
+							'genome_name': listGNames[index]+".RAST",
+							'genome_id': 'my_genome_id',
+							'references': ['some','list'],
+							'evidence_types': ['another','some','list'],
+							})
+
+				# list_GenomeClass.append({'genome_ref': str(back[position][6]) + '/' + str(back[position][0]) + '/' + str(back[position][4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
+				# 							'genome_classification': listClassification[index],
+				# 							'genome_name': listGNames[index],
+				# 							'genome_id': 'my_genome_id',
+				# 							'references': ['some','list'],
+				# 							'evidence_types': ['another','some','list'],
+				# 							})
 
 				all_genome_ID.append(listGNames[index])
 				loaded_Narrative.append(["Yes"])
