@@ -49,6 +49,7 @@ plt.switch_backend('agg')
 
 from KBaseReport.KBaseReportClient import KBaseReport
 from DataFileUtil.DataFileUtilClient import DataFileUtil
+from RAST_SDK.RAST_SDKClient import RAST_SDK
 from biokbase.workspace.client import Workspace as workspaceService
 
 
@@ -64,6 +65,7 @@ class kb_genomeclfUtils(object):
 		self.ctx = config['ctx']
 
 		self.dfu = DataFileUtil(self.callback_url)
+		self.rast = RAST_SDK(self.callback_url)
 		self.ws_client = workspaceService(self.workspaceURL)
 
 		self.list_name = []
@@ -413,11 +415,13 @@ class kb_genomeclfUtils(object):
 			print ("taking this path rn")
 			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
 			missingGenomes = self.createGenomeClassifierTrainingSet(current_ws, params['description'], params['training_set_out'], just_DF = toEdit_all_classifications)
+			self.workRAST(current_ws, just_DF = toEdit_all_classifications)
 			#listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
 			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 		else:
 			file_path = self._download_shock(params.get('shock_id'))
 			missingGenomes = self.createGenomeClassifierTrainingSet(current_ws, params['description'], params['training_set_out'], just_DF = pd.read_excel(file_path))
+			self.workRAST(current_ws, just_DF = pd.read_excel(file_path))
 			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
 			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 
@@ -425,6 +429,69 @@ class kb_genomeclfUtils(object):
 		htmloutput_name = self.html_nodual("forZeroHTML")
 
 		return htmloutput_name
+
+	def workRAST(self, current_ws, just_DF):
+
+		listintGNames = just_DF['Genome_ID']
+		
+		#vigorous string matching izip(self.list_name, self.list_statistics)
+		listGNames = list(map(str, listintGNames))
+		for string, index in izip(listGNames, range(len(listGNames))):
+			listGNames[index] = string.replace(" ", "")
+
+		print("we are printing just_DF")
+		print(listGNames)
+
+		# params_RAST =  {
+		# "workspace": "sagoyal:narrative_1536939130038",#"sagoyal:narrative_1534292322496",
+		# "input_genomes": ["36230/305/3", "36230/304/3"], #[]
+		# "genome_text": "",#my_genome_text,
+		# "call_features_rRNA_SEED": 0,
+		# "call_features_tRNA_trnascan": 0,
+		# "call_selenoproteins": 0,
+		# "call_pyrrolysoproteins": 0,
+		# "call_features_repeat_region_SEED": 0,
+		# "call_features_insertion_sequences": 0,
+		# "call_features_strep_suis_repeat": 0,
+		# "call_features_strep_pneumo_repeat": 0,
+		# "call_features_crispr": 0,
+		# "call_features_CDS_glimmer3": 0,
+		# "call_features_CDS_prodigal": 0,
+		# "annotate_proteins_kmer_v2": 1,
+		# "kmer_v1_parameters": 1,
+		# "annotate_proteins_similarity": 1,
+		# "retain_old_anno_for_hypotheticals": 0,
+		# "resolve_overlapping_features": 0,
+		# "call_features_prophage_phispy": 0
+		# }
+
+
+		params_RAST =	{
+		"workspace": current_ws,#"sagoyal:narrative_1536939130038",
+		"input_genome": listGNames[0],
+		"output_genome": "icanNameThis",
+		"call_features_rRNA_SEED": 0,
+		"call_features_tRNA_trnascan": 0,
+		"call_selenoproteins": 0,
+		"call_pyrrolysoproteins": 0,
+		"call_features_repeat_region_SEED": 0,
+		"call_features_strep_suis_repeat": 0,
+		"call_features_strep_pneumo_repeat": 0,
+		"call_features_crispr": 0,
+		"call_features_CDS_glimmer3": 0,
+		"call_features_CDS_prodigal": 0,
+		"annotate_proteins_kmer_v2": 1,
+		"kmer_v1_parameters": 1,
+		"annotate_proteins_similarity": 1,
+		"retain_old_anno_for_hypotheticals": 0,
+		"resolve_overlapping_features": 0,
+		"call_features_prophage_phispy": 0
+		}
+
+		output = self.rast.annotate_genome(params_RAST)
+
+		print(output)
+
 
 	def makeHtmlReport(self, htmloutput_name, current_ws, which_report, for_predict = False):
 		"""
@@ -773,7 +840,7 @@ class kb_genomeclfUtils(object):
 				loaded_Narrative.append(["No"])
 				all_Genome_Classification.append(["None"])
 				add_trainingSet.append(["No"])
-
+		
 		four_columns = pd.DataFrame.from_dict({'Genome Id': all_genome_ID, 'Loaded in the Narrative': loaded_Narrative, 'Classification' : all_Genome_Classification, 'Added to Training Set' : add_trainingSet})
 		four_columns = four_columns[['Genome Id', 'Loaded in the Narrative', 'Classification', 'Added to Training Set']]
 
@@ -1093,10 +1160,10 @@ class kb_genomeclfUtils(object):
 		ensemble_params = self.fixEnsemble(ensemble_params)
 
 		print("Here are my estimators")
-		print(my_estimators)
+		#print(my_estimators)
 
 		print("Here are my ensemble_params")
-		print(ensemble_params)
+		#print(ensemble_params)
 
 		if estimators_inHTML == "":
 			return "No_Third", ""
