@@ -414,13 +414,15 @@ class kb_genomeclfUtils(object):
 			#checks if empty string bool("") --> False
 			print ("taking this path rn")
 			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
-			missingGenomes = self.createGenomeClassifierTrainingSet(current_ws, params['description'], params['training_set_out'], just_DF = toEdit_all_classifications)
+			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws, params['description'], params['training_set_out'], just_DF = toEdit_all_classifications)
+			self.newReferencetoGenome(inKBASE, inKBASE_Classification)
 			#self.workRAST(current_ws, just_DF = toEdit_all_classifications)
 			#listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
 			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 		else:
 			file_path = self._download_shock(params.get('shock_id'))
-			missingGenomes = self.createGenomeClassifierTrainingSet(current_ws, params['description'], params['training_set_out'], just_DF = pd.read_excel(file_path))
+			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws, params['description'], params['training_set_out'], just_DF = pd.read_excel(file_path))
+			self.newReferencetoGenome(inKBASE, inKBASE_Classification)
 			#self.workRAST(current_ws, just_DF = pd.read_excel(file_path))
 			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
 			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
@@ -771,6 +773,166 @@ class kb_genomeclfUtils(object):
 
 		return my_workPD
 
+	# def createGenomeClassifierTrainingSet(self, current_ws, description, trainingset_object_Name, just_DF):
+	# 	"""
+	# 	args:
+	# 	---current_ws is same as before
+	# 	---trainingset_object_Name is the training set defined/input by the user
+	# 	---just_DF is a dataframe that is given by the user in the form of an excel file or pasted in a text box, however converted in a data frame
+	# 	does:
+	# 	---takes the dataframe and pulls the Genome_ID and Classification and creates a trainingset_object (list of GenomeClass which holds Genome_ID and Classification
+	# 	return:
+	# 	---N/A just creates a trainingset_object in the workspace
+	# 	"""
+	# 	ctx = self.ctx
+
+	# 	listintGNames = just_DF['Genome_ID']
+		
+	# 	#vigorous string matching izip(self.list_name, self.list_statistics)
+	# 	listGNames = list(map(str, listintGNames))
+	# 	for string, index in izip(listGNames, range(len(listGNames))):
+	# 		listGNames[index] = string.replace(" ", "")
+
+	# 	listClassification = just_DF['Classification']
+
+	# 	list_GenomeClass = []
+	# 	list_allGenomesinWS = []
+
+	# 	missingGenomes = []
+
+	# 	back = self.ws_client.list_objects({'workspaces':[current_ws],'type':'KBaseGenomes.Genome'})
+
+	# 	print(back)
+
+	# 	for item in back:
+	# 		list_allGenomesinWS.append(item[1])
+
+	# 	print(list_allGenomesinWS)
+
+	# 	all_genome_ID = []
+	# 	loaded_Narrative = []
+	# 	all_Genome_Classification = []
+	# 	add_trainingSet = []
+
+	# 	for index in range(len(listGNames)):
+
+	# 		try:
+	# 			position = list_allGenomesinWS.index(listGNames[index])
+
+	# 			print('printing positions')
+	# 			print(position)
+
+	# 			params_RAST =	{
+	# 			"workspace": current_ws,#"sagoyal:narrative_1536939130038",
+	# 			"input_genome": listGNames[index],
+	# 			"output_genome": listGNames[index]+".RAST",
+	# 			"call_features_rRNA_SEED": 0,
+	# 			"call_features_tRNA_trnascan": 0,
+	# 			"call_selenoproteins": 0,
+	# 			"call_pyrrolysoproteins": 0,
+	# 			"call_features_repeat_region_SEED": 0,
+	# 			"call_features_strep_suis_repeat": 0,
+	# 			"call_features_strep_pneumo_repeat": 0,
+	# 			"call_features_crispr": 0,
+	# 			"call_features_CDS_glimmer3": 0,
+	# 			"call_features_CDS_prodigal": 0,
+	# 			"annotate_proteins_kmer_v2": 1,
+	# 			"kmer_v1_parameters": 1,
+	# 			"annotate_proteins_similarity": 1,
+	# 			"retain_old_anno_for_hypotheticals": 0,
+	# 			"resolve_overlapping_features": 0,
+	# 			"call_features_prophage_phispy": 0
+	# 			}
+
+	# 			output = self.rast.annotate_genome(params_RAST)
+
+	# 			list_allGenomesinWSupdated = []
+
+	# 			newBack = self.ws_client.list_objects({'workspaces':[current_ws],'type':'KBaseGenomes.Genome'})
+
+	# 			for item in newBack:
+	# 				list_allGenomesinWSupdated.append(item[1])
+
+	# 			position = list_allGenomesinWSupdated.index(listGNames[index]+".RAST")
+
+	# 			list_GenomeClass.append({'genome_ref': str(newBack[position][6]) + '/' + str(newBack[position][0]) + '/' + str(newBack[position][4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
+	# 										'genome_classification': listClassification[index],
+	# 										'genome_name': listGNames[index]+".RAST",
+	# 										'genome_id': 'my_genome_id',
+	# 										'references': ['some','list'],
+	# 										'evidence_types': ['another','some','list'],
+	# 										})
+
+
+	# 			# output = self.rast.annotate_genome(params_RAST)
+
+	# 			# list_GenomeClass.append({'genome_ref': str(output[6]) + '/' + str(output[0]) + '/' + str(output[4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
+	# 			# 			'genome_classification': listClassification[index],
+	# 			# 			'genome_name': listGNames[index]+".RAST",
+	# 			# 			'genome_id': 'my_genome_id',
+	# 			# 			'references': ['some','list'],
+	# 			# 			'evidence_types': ['another','some','list'],
+	# 			# 			})
+
+	# 			# list_GenomeClass.append({'genome_ref': str(back[position][6]) + '/' + str(back[position][0]) + '/' + str(back[position][4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
+	# 			# 							'genome_classification': listClassification[index],
+	# 			# 							'genome_name': listGNames[index],
+	# 			# 							'genome_id': 'my_genome_id',
+	# 			# 							'references': ['some','list'],
+	# 			# 							'evidence_types': ['another','some','list'],
+	# 			# 							})
+
+	# 			all_genome_ID.append(listGNames[index])
+	# 			loaded_Narrative.append(["Yes"])
+	# 			all_Genome_Classification.append(listClassification[index])
+	# 			add_trainingSet.append(["Yes"])
+	# 		except:
+	# 			print (listGNames[index])
+	# 			print ('The above Genome does not exist in workspace')
+	# 			missingGenomes.append(listGNames[index])
+
+	# 			all_genome_ID.append(listGNames[index])
+	# 			loaded_Narrative.append(["No"])
+	# 			all_Genome_Classification.append(["None"])
+	# 			add_trainingSet.append(["No"])
+		
+	# 	four_columns = pd.DataFrame.from_dict({'Genome Id': all_genome_ID, 'Loaded in the Narrative': loaded_Narrative, 'Classification' : all_Genome_Classification, 'Added to Training Set' : add_trainingSet})
+	# 	four_columns = four_columns[['Genome Id', 'Loaded in the Narrative', 'Classification', 'Added to Training Set']]
+
+	# 	old_width = pd.get_option('display.max_colwidth')
+	# 	pd.set_option('display.max_colwidth', -1)
+	# 	four_columns.to_html(os.path.join(self.scratch, 'forZeroHTML', 'four_columns.html'), index=False, justify='center')
+	# 	pd.set_option('display.max_colwidth', old_width)
+
+	# 	trainingset_object = {
+	# 	'name': trainingset_object_Name,#'my_name',
+	# 	'description': description,
+	# 	'classification_type': 'my_classification_type',
+	# 	'number_of_genomes': len(listGNames),
+	# 	'number_of_classes': len(list(set(listClassification))),
+	# 	'classes': list(set(listClassification)),
+	# 	'classification_data': list_GenomeClass
+	# 	}
+
+	# 	obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
+	# 												  'objects':[{
+	# 												  'type': 'KBaseClassifier.GenomeClassifierTrainingSet',
+	# 												  'data': trainingset_object,
+	# 												  'name': trainingset_object_Name,  
+	# 												  'provenance': ctx.get('provenance')  # ctx should be passed into this func.
+	# 												  }]
+	# 												})[0]
+
+	# 	print "I'm print out the obj_save_ref"
+	# 	print ""
+	# 	print ""
+	# 	print ""
+
+	# 	print obj_save_ref
+	# 	print "done"
+
+	# 	return missingGenomes
+
 	def createGenomeClassifierTrainingSet(self, current_ws, description, trainingset_object_Name, just_DF):
 		"""
 		args:
@@ -792,8 +954,8 @@ class kb_genomeclfUtils(object):
 			listGNames[index] = string.replace(" ", "")
 
 		listClassification = just_DF['Classification']
+		inKBASE_Classification =[]
 
-		list_GenomeClass = []
 		list_allGenomesinWS = []
 
 		missingGenomes = []
@@ -811,6 +973,8 @@ class kb_genomeclfUtils(object):
 		loaded_Narrative = []
 		all_Genome_Classification = []
 		add_trainingSet = []
+
+		inKBASE = []
 
 		for index in range(len(listGNames)):
 
@@ -844,43 +1008,10 @@ class kb_genomeclfUtils(object):
 
 				output = self.rast.annotate_genome(params_RAST)
 
-				list_allGenomesinWSupdated = []
+				inKBASE.append(listGNames[index]+".RAST")
+				inKBASE_Classification.append(listClassification[index])
 
-				newBack = self.ws_client.list_objects({'workspaces':[current_ws],'type':'KBaseGenomes.Genome'})
-
-				for item in newBack:
-					list_allGenomesinWSupdated.append(item[1])
-
-				position = list_allGenomesinWSupdated.index(listGNames[index]+".RAST")
-
-				list_GenomeClass.append({'genome_ref': str(newBack[position][6]) + '/' + str(newBack[position][0]) + '/' + str(newBack[position][4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
-											'genome_classification': listClassification[index],
-											'genome_name': listGNames[index]+".RAST",
-											'genome_id': 'my_genome_id',
-											'references': ['some','list'],
-											'evidence_types': ['another','some','list'],
-											})
-
-
-				# output = self.rast.annotate_genome(params_RAST)
-
-				# list_GenomeClass.append({'genome_ref': str(output[6]) + '/' + str(output[0]) + '/' + str(output[4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
-				# 			'genome_classification': listClassification[index],
-				# 			'genome_name': listGNames[index]+".RAST",
-				# 			'genome_id': 'my_genome_id',
-				# 			'references': ['some','list'],
-				# 			'evidence_types': ['another','some','list'],
-				# 			})
-
-				# list_GenomeClass.append({'genome_ref': str(back[position][6]) + '/' + str(back[position][0]) + '/' + str(back[position][4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
-				# 							'genome_classification': listClassification[index],
-				# 							'genome_name': listGNames[index],
-				# 							'genome_id': 'my_genome_id',
-				# 							'references': ['some','list'],
-				# 							'evidence_types': ['another','some','list'],
-				# 							})
-
-				all_genome_ID.append(listGNames[index])
+				all_genome_ID.append(listGNames[index]+".RAST")
 				loaded_Narrative.append(["Yes"])
 				all_Genome_Classification.append(listClassification[index])
 				add_trainingSet.append(["Yes"])
@@ -902,24 +1033,6 @@ class kb_genomeclfUtils(object):
 		four_columns.to_html(os.path.join(self.scratch, 'forZeroHTML', 'four_columns.html'), index=False, justify='center')
 		pd.set_option('display.max_colwidth', old_width)
 
-		trainingset_object = {
-		'name': trainingset_object_Name,#'my_name',
-		'description': description,
-		'classification_type': 'my_classification_type',
-		'number_of_genomes': len(listGNames),
-		'number_of_classes': len(list(set(listClassification))),
-		'classes': list(set(listClassification)),
-		'classification_data': list_GenomeClass
-		}
-
-		obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
-													  'objects':[{
-													  'type': 'KBaseClassifier.GenomeClassifierTrainingSet',
-													  'data': trainingset_object,
-													  'name': trainingset_object_Name,  
-													  'provenance': ctx.get('provenance')  # ctx should be passed into this func.
-													  }]
-													})[0]
 
 		print "I'm print out the obj_save_ref"
 		print ""
@@ -929,7 +1042,48 @@ class kb_genomeclfUtils(object):
 		print obj_save_ref
 		print "done"
 
-		return missingGenomes
+		return (missingGenomes, inKBASE, inKBASE_Classification)
+
+	def newReferencetoGenome(self, inKBASE, inKBASE_Classification):
+
+		list_GenomeClass = []
+		list_allGenomesinWSupdated = []
+
+		newBack = self.ws_client.list_objects({'workspaces':[current_ws],'type':'KBaseGenomes.Genome'})
+
+		for item in newBack:
+			list_allGenomesinWSupdated.append(item[1])
+
+		for index in range(len(inKBASE)):
+			position = list_allGenomesinWSupdated.index(inKBASE[index])
+
+			list_GenomeClass.append({'genome_ref': str(newBack[position][6]) + '/' + str(newBack[position][0]) + '/' + str(newBack[position][4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
+										'genome_classification': inKBASE_Classification[index],
+										'genome_name': inKBASE[index],
+										'genome_id': 'my_genome_id',
+										'references': ['some','list'],
+										'evidence_types': ['another','some','list'],
+										})
+
+
+		trainingset_object = {
+			'name': trainingset_object_Name,#'my_name',
+			'description': description,
+			'classification_type': 'my_classification_type',
+			'number_of_genomes': len(inKBASE),
+			'number_of_classes': len(list(set(inKBASE_Classification))),
+			'classes': list(set(inKBASE_Classification)),
+			'classification_data': list_GenomeClass
+			}
+
+		obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
+													  'objects':[{
+													  'type': 'KBaseClassifier.GenomeClassifierTrainingSet',
+													  'data': trainingset_object,
+													  'name': trainingset_object_Name,  
+													  'provenance': ctx.get('provenance')  # ctx should be passed into this func.
+													  }]
+													})[0]
 
 	def unloadGenomeClassifierTrainingSet(self, current_ws, trainingset_name):
 		"""
