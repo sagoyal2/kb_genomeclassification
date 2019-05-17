@@ -94,9 +94,13 @@ class kb_genomeclfUtils(object):
 		#params = self.editBuildArguments(params)
 
 		print ('Frist Print')
-		print(self.editBuildArguments(params))
+		#print(self.editBuildArguments(params))
 
 		params = self.editBuildArguments(params)
+
+		print("here are my curret params:")
+		print(params)
+
 		#print "Below is the classifierAdvanced_params"
 		#print(self.editBuildArguments(params)["classifierAdvanced_params"])
 
@@ -597,123 +601,101 @@ class kb_genomeclfUtils(object):
 
 		print(return_params)
 
-		if params.get("classifier") == "KNeighborsClassifier":
-			return_params['classifierAdvanced_params'] = params["k_nearest_neighbors"]
 
-		elif params.get("classifier") == "GaussianNB":
-			return_params['classifierAdvanced_params'] = params["gaussian_nb"]
-
-		elif params.get("classifier") == "LogisticRegression":
-			return_params['classifierAdvanced_params'] = params["logistic_regression"]
-
-		elif params.get("classifier") == "DecisionTreeClassifier":
-			return_params['classifierAdvanced_params'] = params["decision_tree_classifier"]
-
-		elif params.get("classifier") == "SVM":
-			return_params['classifierAdvanced_params'] = params["support_vector_machine"]
-
-		elif params.get("classifier") == "NeuralNetwork":
-			return_params['classifierAdvanced_params'] = params["neural_network"]
-
-		else :
-			if params["k_nearest_neighbors"] == None:
-				params["k_nearest_neighbors"] = {
-				"n_neighbors": 5,
-				"weights": "uniform",
-				"algorithm": "auto",
-				"leaf_size": 30,
-				"p": 2,
-				"metric": "minkowski",
-				"metric_params": "",
-				"knn_n_jobs": 1
-				}
+		if params["k_nearest_neighbors"] == None:
+			params["k_nearest_neighbors"] = {
+			"n_neighbors": 5,
+			"weights": "uniform",
+			"algorithm": "auto",
+			"leaf_size": 30,
+			"p": 2,
+			"metric": "minkowski",
+			"metric_params": "",
+			"knn_n_jobs": 1
+			}
 			return_params['k_nearest_neighbors'] = params["k_nearest_neighbors"]
 
-			if params["gaussian_nb"] == None:
-				params["gaussian_nb"] = {
-				"priors": ""
-				}
+		elif params["gaussian_nb"] == None:
+			params["gaussian_nb"] = {
+			"priors": ""
+			}
 			return_params['gaussian_nb'] = params["gaussian_nb"]
-
-			if params["logistic_regression"] == None:
-				params["logistic_regression"] = {
-				"penalty": "l2",
-				"dual": "False",
-				"lr_tolerance": 0.0001,
-				"lr_C": 1,
-				"fit_intercept": "True",
-				"intercept_scaling": 1,
-				"lr_class_weight": "",
-				"lr_random_state": 0,
-				"lr_solver": "newton-cg",
-				"lr_max_iter": 100,
-				"multi_class": "ovr",
-				"lr_verbose": 0,
-				"lr_warm_start": "False",
-				"lr_n_jobs": 1
-				}
+		elif params["logistic_regression"] == None:
+			params["logistic_regression"] = {
+			"penalty": "l2",
+			"dual": "False",
+			"lr_tolerance": 0.0001,
+			"lr_C": 1,
+			"fit_intercept": "True",
+			"intercept_scaling": 1,
+			"lr_class_weight": "",
+			"lr_random_state": 0,
+			"lr_solver": "newton-cg",
+			"lr_max_iter": 100,
+			"multi_class": "ovr",
+			"lr_verbose": 0,
+			"lr_warm_start": "False",
+			"lr_n_jobs": 1
+			}
 			return_params['logistic_regression'] = params["logistic_regression"]
-
-			if params["decision_tree_classifier"] == None:
-				params["decision_tree_classifier"] = {
-				"criterion": "gini",
-				"splitter": "best",
-				"max_depth": None,
-				"min_samples_split": 2,
-				"min_samples_leaf": 1,
-				"min_weight_fraction_leaf": 0,
-				"max_features": "",
-				"dt_random_state": 0,
-				"max_leaf_nodes": None,
-				"min_impurity_decrease": 0,
-				"dt_class_weight": "",
-				"presort": "False"
-				}
+		elif params["decision_tree_classifier"] == None:
+			params["decision_tree_classifier"] = {
+			"criterion": "gini",
+			"splitter": "best",
+			"max_depth": None,
+			"min_samples_split": 2,
+			"min_samples_leaf": 1,
+			"min_weight_fraction_leaf": 0,
+			"max_features": "",
+			"dt_random_state": 0,
+			"max_leaf_nodes": None,
+			"min_impurity_decrease": 0,
+			"dt_class_weight": "",
+			"presort": "False"
+			}
 			return_params['decision_tree_classifier'] = params["decision_tree_classifier"]
-
-			if params["support_vector_machine"] == None:
-				params["support_vector_machine"] = {
-				"svm_C": 1,
-				"kernel": "linear",
-				"degree": 3,
-				"gamma": "auto",
-				"coef0": 0,
-				"probability": "False",
-				"shrinking": "True",
-				"svm_tolerance": 0.001,
-				"cache_size": 200,
-				"svm_class_weight": "",
-				"svm_verbose": "False",
-				"svm_max_iter": -1,
-				"decision_function_shape": "ovr",
-				"svm_random_state": 0
-				}
+		elif params["support_vector_machine"] == None:
+			params["support_vector_machine"] = {
+			"svm_C": 1,
+			"kernel": "linear",
+			"degree": 3,
+			"gamma": "auto",
+			"coef0": 0,
+			"probability": "False",
+			"shrinking": "True",
+			"svm_tolerance": 0.001,
+			"cache_size": 200,
+			"svm_class_weight": "",
+			"svm_verbose": "False",
+			"svm_max_iter": -1,
+			"decision_function_shape": "ovr",
+			"svm_random_state": 0
+			}
 			return_params['support_vector_machine'] = params["support_vector_machine"]
-
-			if params["neural_network"] == None:
-				params["neural_network"] = {
-				"hidden_layer_sizes": "(100,)",
-				"activation": "relu",
-				"mlp_solver": "adam",
-				"alpha": 0.0001,
-				"batch_size": "auto",
-				"learning_rate": "constant",
-				"learning_rate_init": 0.001,
-				"power_t": 0.05,
-				"mlp_max_iter": 200,
-				"shuffle": "True",
-				"mlp_random_state": 0,
-				"mlp_tolerance": 0.0001,
-				"mlp_verbose": "False",
-				"mlp_warm_start": "False",
-				"momentum": 0.9,
-				"nesterovs_momentum": "True",
-				"early_stopping": "False",
-				"validation_fraction": 0.1,
-				"beta_1": 0.9,
-				"beta_2": 0.999,
-				"epsilon": 1e-8
-				}
+		elif params["neural_network"] == None:
+			params["neural_network"] = {
+			"hidden_layer_sizes": "(100,)",
+			"activation": "relu",
+			"mlp_solver": "adam",
+			"alpha": 0.0001,
+			"batch_size": "auto",
+			"learning_rate": "constant",
+			"learning_rate_init": 0.001,
+			"power_t": 0.05,
+			"mlp_max_iter": 200,
+			"shuffle": "True",
+			"mlp_random_state": 0,
+			"mlp_tolerance": 0.0001,
+			"mlp_verbose": "False",
+			"mlp_warm_start": "False",
+			"momentum": 0.9,
+			"nesterovs_momentum": "True",
+			"early_stopping": "False",
+			"validation_fraction": 0.1,
+			"beta_1": 0.9,
+			"beta_2": 0.999,
+			"epsilon": 1e-8
+			}
 			return_params['neural_network'] = params["neural_network"]
 
 		if params["ensemble_model"] == None:
@@ -730,6 +712,24 @@ class kb_genomeclfUtils(object):
 			"flatten_transform": ""
 			}
 		return_params['ensemble_model'] = params["ensemble_model"]
+
+		if params.get("classifier") == "KNeighborsClassifier":
+			return_params['classifierAdvanced_params'] = params["k_nearest_neighbors"]
+
+		if params.get("classifier") == "GaussianNB":
+			return_params['classifierAdvanced_params'] = params["gaussian_nb"]
+
+		if params.get("classifier") == "LogisticRegression":
+			return_params['classifierAdvanced_params'] = params["logistic_regression"]
+			
+		if params.get("classifier") == "DecisionTreeClassifier":
+			return_params['classifierAdvanced_params'] = params["decision_tree_classifier"]
+
+		if params.get("classifier") == "SVM":
+			return_params['classifierAdvanced_params'] = params["support_vector_machine"]
+
+		if params.get("classifier") == "NeuralNetwork":
+			return_params['classifierAdvanced_params'] = params["neural_network"]
 
 		return return_params
 
@@ -1176,29 +1176,57 @@ class kb_genomeclfUtils(object):
 			master_Role = [] #make this master_Role
 
 
+		# functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':"679190.3.RAST"}])[0]['data']['non_coding_features']
+
+		# print("here is functionList")
+		# print( listOfNames)
+
 		name_and_roles = {}
 
 		for current_gName in listOfNames:
 			listOfFunctionalRoles = []
 			try:
-				functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['cdss']
+				#functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['cdss']
+				functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['non_coding_features']
+
+
+				print("here is functionList")
+
 				for function in range(len (functionList)):
-					if str(functionList[function]['functions'][0]).lower() != 'hypothetical protein':
+					if str(functionList[function]['function'][0]).lower() != 'hypothetical protein':
 						#print(str(functionList[function]['functions'][0]).find(" @ " ))
 						#if (str(functionList[function]['functions'][0]).find(" @ " ) > 0):
-						if " @ " in str(functionList[function]['functions'][0]):
-							listOfFunctionalRoles.extend(str(functionList[function]['functions'][0]).split(" @ "))
+						if " @ " in str(functionList[function]['function'][0]):
+							listOfFunctionalRoles.extend(str(functionList[function]['function'][0]).split(" @ "))
 							print("I went inside the if statement")
-						elif " / " in str(functionList[function]['functions'][0]):
-							listOfFunctionalRoles.extend(str(functionList[function]['functions'][0]).split(" / "))
-						elif "; " in str(functionList[function]['functions'][0]):
-							listOfFunctionalRoles.extend(str(functionList[function]['functions'][0]).split("; "))
+						elif " / " in str(functionList[function]['function'][0]):
+							listOfFunctionalRoles.extend(str(functionList[function]['function'][0]).split(" / "))
+						elif "; " in str(functionList[function]['function'][0]):
+							listOfFunctionalRoles.extend(str(functionList[function]['function'][0]).split("; "))
 						else:
-							listOfFunctionalRoles.append(str(functionList[function]['functions'][0]))
+							listOfFunctionalRoles.append(str(functionList[function]['function'][0]))
+
+				# for function in range(len (functionList)):
+				# 	if str(functionList[function]['functions'][0]).lower() != 'hypothetical protein':
+				# 		#print(str(functionList[function]['functions'][0]).find(" @ " ))
+				# 		#if (str(functionList[function]['functions'][0]).find(" @ " ) > 0):
+				# 		if " @ " in str(functionList[function]['functions'][0]):
+				# 			listOfFunctionalRoles.extend(str(functionList[function]['functions'][0]).split(" @ "))
+				# 			print("I went inside the if statement")
+				# 		elif " / " in str(functionList[function]['functions'][0]):
+				# 			listOfFunctionalRoles.extend(str(functionList[function]['functions'][0]).split(" / "))
+				# 		elif "; " in str(functionList[function]['functions'][0]):
+				# 			listOfFunctionalRoles.extend(str(functionList[function]['functions'][0]).split("; "))
+				# 		else:
+				# 			listOfFunctionalRoles.append(str(functionList[function]['functions'][0]))
 
 			except:
-				#functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['features']
-				functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['non_coding_features']
+				functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['features']
+				# functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['non_coding_features']
+
+
+				# print("here is functionList")
+				# print(functionList)
 
 				for function in range(len (functionList)):
 					if str(functionList[function]['function']).lower() != 'hypothetical protein':
@@ -1217,6 +1245,7 @@ class kb_genomeclfUtils(object):
 			name_and_roles[current_gName] = listOfFunctionalRoles
 
 			print "I have arrived inside the desired for loop!!"
+			print(len(listOfFunctionalRoles))
 			print(current_gName)
 
 		if not for_predict:
@@ -1317,6 +1346,8 @@ class kb_genomeclfUtils(object):
 		"""
 
 		if name == u"KNeighborsClassifier":
+			print("here calling clfA_params")
+			print(type(clfA_params))
 			clfA_params = self.fixKNN(clfA_params, multi_call)
 			return KNeighborsClassifier(n_neighbors=clfA_params["n_neighbors"], weights=clfA_params["weights"], algorithm=clfA_params["algorithm"], leaf_size=clfA_params["leaf_size"], p=2, metric=clfA_params["metric"], metric_params=clfA_params["metric_params"], n_jobs=clfA_params["knn_n_jobs"])
 		
