@@ -1197,7 +1197,9 @@ class kb_genomeclfUtils(object):
 							listOfFunctionalRoles.append(str(functionList[function]['functions'][0]))
 
 			except:
-				functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['features']
+				#functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['features']
+				functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['non_coding_features']
+
 				for function in range(len (functionList)):
 					if str(functionList[function]['function']).lower() != 'hypothetical protein':
 						#print(str(functionList[function]['functions'][0]).find(" @ " ))
