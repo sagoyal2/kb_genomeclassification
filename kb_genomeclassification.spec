@@ -184,6 +184,7 @@ module kb_genomeclassification {
         string training_set_out;
         string target;
         string shock_id;
+        int RAST_Annotated;
         string list_name;
     }UploadTrainingSetInput;
 

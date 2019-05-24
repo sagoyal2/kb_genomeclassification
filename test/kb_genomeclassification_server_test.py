@@ -168,7 +168,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "description": "testingAgain",
         "trainingset_name": "biggerThursday",
         "phenotypeclass": "myPhenotype",
-        "classifier": "KNeighborsClassifier",
+        "classifier": "run_all",#"GaussianNB",#"KNeighborsClassifier",
         "attribute": "functional_roles",
         "k_nearest_neighbors": None,
         "gaussian_nb": None,
@@ -177,7 +177,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "support_vector_machine": None,
         "neural_network": None,
         "ensemble_model": None,
-        "classifier_out": "Mayseven",
+        "classifier_out": "MaysevenGaussianNB",
         "workspace" : "sagoyal:narrative_1536939130038"
         }
 

@@ -70,6 +70,23 @@
     {
       "advanced": false,
       "allow_multiple": false,
+      "checkbox_options": {
+        "checked_value": 1,
+        "unchecked_value": 0
+      },
+      "default_values": [
+        "0"
+      ],
+      "field_type": "checkbox",
+      "id": "RAST_Annotated",
+      "optional": true,
+      "text_options": {
+        "valid_ws_types": []
+      }
+    },
+    {
+      "advanced": false,
+      "allow_multiple": false,
       "default_values": [
         ""
       ],
