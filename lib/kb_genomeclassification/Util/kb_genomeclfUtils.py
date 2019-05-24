@@ -106,7 +106,7 @@ class kb_genomeclfUtils(object):
 
 		toEdit_all_classifications, training_set_ref = self.unloadGenomeClassifierTrainingSet(current_ws, params['trainingset_name'])
 		listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
-		all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
+		all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws, params['attribute'])
 	
 
 		if params.get('save_ts') != 1:
@@ -371,11 +371,11 @@ class kb_genomeclfUtils(object):
 			#checks if empty string bool("") --> False
 			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'), for_predict = True)
 			listOfNames = self.intake_method(toEdit_all_classifications, for_predict = True)
-			all_attributes = self.get_wholeClassification(listOfNames, current_ws, master_Role = master_Role ,for_predict = True)
+			all_attributes = self.get_wholeClassification(listOfNames, current_ws, params['attribute'], master_Role = master_Role ,for_predict = True)
 		else:
 			file_path = self._download_shock(params.get('shock_id'))
 			listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
-			all_attributes = self.get_wholeClassification(listOfNames, current_ws, master_Role = master_Role ,for_predict = True)
+			all_attributes = self.get_wholeClassification(listOfNames, current_ws, params['attribute'], master_Role = master_Role ,for_predict = True)
 
 		#PREDICTIONS on new data that needs to be classified
 		after_classifier_result = after_classifier.predict(all_attributes)
@@ -1262,7 +1262,7 @@ class kb_genomeclfUtils(object):
 			return my_all_classifications.index
 
 
-	def get_wholeClassification(self, listOfNames, current_ws, master_Role = None, for_predict = False):
+	def get_wholeClassification(self, listOfNames, current_ws, search_attribute, master_Role = None, for_predict = False):
 		"""
 		args:
 		---listOfNames is a list from the dataframe.index containing the 'rows' which is names/Genome_ID
@@ -1290,6 +1290,13 @@ class kb_genomeclfUtils(object):
 
 		name_and_roles = {}
 
+		search = ""
+		if (search_attribute == "functional_roles"):
+			search = 'function'
+		elif (search_attribute == "prot_seq"):
+			search = 'protein_translation'
+
+
 		for current_gName in listOfNames:
 			listOfFunctionalRoles = []
 			try:
@@ -1300,18 +1307,18 @@ class kb_genomeclfUtils(object):
 				print("here is functionList")
 
 				for function in range(len (functionList)):
-					if str(functionList[function]['function'][0]).lower() != 'hypothetical protein':
+					if str(functionList[function][search][0]).lower() != 'hypothetical protein':
 						#print(str(functionList[function]['functions'][0]).find(" @ " ))
 						#if (str(functionList[function]['functions'][0]).find(" @ " ) > 0):
-						if " @ " in str(functionList[function]['function'][0]):
-							listOfFunctionalRoles.extend(str(functionList[function]['function'][0]).split(" @ "))
+						if " @ " in str(functionList[function][search][0]):
+							listOfFunctionalRoles.extend(str(functionList[function][search][0]).split(" @ "))
 							print("I went inside the if statement")
-						elif " / " in str(functionList[function]['function'][0]):
-							listOfFunctionalRoles.extend(str(functionList[function]['function'][0]).split(" / "))
-						elif "; " in str(functionList[function]['function'][0]):
-							listOfFunctionalRoles.extend(str(functionList[function]['function'][0]).split("; "))
+						elif " / " in str(functionList[function][search][0]):
+							listOfFunctionalRoles.extend(str(functionList[function][search][0]).split(" / "))
+						elif "; " in str(functionList[function][search][0]):
+							listOfFunctionalRoles.extend(str(functionList[function][search][0]).split("; "))
 						else:
-							listOfFunctionalRoles.append(str(functionList[function]['function'][0]))
+							listOfFunctionalRoles.append(str(functionList[function][search][0]))
 
 				# for function in range(len (functionList)):
 				# 	if str(functionList[function]['functions'][0]).lower() != 'hypothetical protein':
@@ -1336,18 +1343,18 @@ class kb_genomeclfUtils(object):
 				# print(functionList)
 
 				for function in range(len (functionList)):
-					if str(functionList[function]['function']).lower() != 'hypothetical protein':
+					if str(functionList[function][search]).lower() != 'hypothetical protein':
 						#print(str(functionList[function]['functions'][0]).find(" @ " ))
 						#if (str(functionList[function]['functions'][0]).find(" @ " ) > 0):
-						if " @ " in str(functionList[function]['function']):
-							listOfFunctionalRoles.extend(str(functionList[function]['function']).split(" @ "))
+						if " @ " in str(functionList[function][search]):
+							listOfFunctionalRoles.extend(str(functionList[function][search]).split(" @ "))
 							print("I went inside the if statement #2")
-						elif " / " in str(functionList[function]['function']):
-							listOfFunctionalRoles.extend(str(functionList[function]['function']).split(" / "))
-						elif "; " in str(functionList[function]['function']):
-							listOfFunctionalRoles.extend(str(functionList[function]['function']).split("; "))
+						elif " / " in str(functionList[function][search]):
+							listOfFunctionalRoles.extend(str(functionList[function][search]).split(" / "))
+						elif "; " in str(functionList[function][search]):
+							listOfFunctionalRoles.extend(str(functionList[function][search]).split("; "))
 						else:
-							listOfFunctionalRoles.append(str(functionList[function]['function']))
+							listOfFunctionalRoles.append(str(functionList[function][search]))
 
 			name_and_roles[current_gName] = listOfFunctionalRoles
 
