@@ -175,7 +175,7 @@ module kb_genomeclassification {
    funcdef predict_phenotype(ClassifierPredictionInput params)
         returns (ClassifierPredictionOutput output) authentication required;
 
-        
+
 	typedef structure {
         string phenotypeclass;
         string workspace;
