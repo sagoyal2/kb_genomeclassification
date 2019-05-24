@@ -32,6 +32,11 @@ parameters :
             File Name
         short-hint : |
             File Name
+    RAST_Annotated :
+        ui-name : |
+            Genomes RAST Annotated
+        short-hint : |
+            Check box if Genomes are already RAST Annotated, if not module will first annotate and then create trainingset
     description:
         ui-name : |
             Description

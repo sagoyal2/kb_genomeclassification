@@ -418,14 +418,14 @@ class kb_genomeclfUtils(object):
 			#checks if empty string bool("") --> False
 			print ("taking this path rn")
 			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
-			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws, params['description'], params['training_set_out'], just_DF = toEdit_all_classifications)
+			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], params['description'], params['training_set_out'], just_DF = toEdit_all_classifications)
 			self.newReferencetoGenome(current_ws, params['description'], params['training_set_out'], inKBASE, inKBASE_Classification)
 			#self.workRAST(current_ws, just_DF = toEdit_all_classifications)
 			#listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
 			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 		else:
 			file_path = self._download_shock(params.get('shock_id'))
-			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws, params['description'], params['training_set_out'], just_DF = pd.read_excel(file_path))
+			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], params['description'], params['training_set_out'], just_DF = pd.read_excel(file_path))
 			self.newReferencetoGenome(current_ws, params['description'], params['training_set_out'], inKBASE, inKBASE_Classification)
 			#self.workRAST(current_ws, just_DF = pd.read_excel(file_path))
 			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
@@ -601,8 +601,7 @@ class kb_genomeclfUtils(object):
 
 		print(return_params)
 
-
-		if params["k_nearest_neighbors"] == None:
+		if params.get("classifier") == "run_all":
 			params["k_nearest_neighbors"] = {
 			"n_neighbors": 5,
 			"weights": "uniform",
@@ -615,12 +614,11 @@ class kb_genomeclfUtils(object):
 			}
 			return_params['k_nearest_neighbors'] = params["k_nearest_neighbors"]
 
-		elif params["gaussian_nb"] == None:
 			params["gaussian_nb"] = {
 			"priors": ""
 			}
 			return_params['gaussian_nb'] = params["gaussian_nb"]
-		elif params["logistic_regression"] == None:
+
 			params["logistic_regression"] = {
 			"penalty": "l2",
 			"dual": "False",
@@ -638,7 +636,7 @@ class kb_genomeclfUtils(object):
 			"lr_n_jobs": 1
 			}
 			return_params['logistic_regression'] = params["logistic_regression"]
-		elif params["decision_tree_classifier"] == None:
+
 			params["decision_tree_classifier"] = {
 			"criterion": "gini",
 			"splitter": "best",
@@ -654,7 +652,7 @@ class kb_genomeclfUtils(object):
 			"presort": "False"
 			}
 			return_params['decision_tree_classifier'] = params["decision_tree_classifier"]
-		elif params["support_vector_machine"] == None:
+
 			params["support_vector_machine"] = {
 			"svm_C": 1,
 			"kernel": "linear",
@@ -672,7 +670,103 @@ class kb_genomeclfUtils(object):
 			"svm_random_state": 0
 			}
 			return_params['support_vector_machine'] = params["support_vector_machine"]
-		elif params["neural_network"] == None:
+
+			params["neural_network"] = {
+			"hidden_layer_sizes": "(100,)",
+			"activation": "relu",
+			"mlp_solver": "adam",
+			"alpha": 0.0001,
+			"batch_size": "auto",
+			"learning_rate": "constant",
+			"learning_rate_init": 0.001,
+			"power_t": 0.05,
+			"mlp_max_iter": 200,
+			"shuffle": "True",
+			"mlp_random_state": 0,
+			"mlp_tolerance": 0.0001,
+			"mlp_verbose": "False",
+			"mlp_warm_start": "False",
+			"momentum": 0.9,
+			"nesterovs_momentum": "True",
+			"early_stopping": "False",
+			"validation_fraction": 0.1,
+			"beta_1": 0.9,
+			"beta_2": 0.999,
+			"epsilon": 1e-8
+			}
+			return_params['neural_network'] = params["neural_network"]
+
+		elif params.get("classifier") == "KNeighborsClassifier":
+			params["k_nearest_neighbors"] = {
+			"n_neighbors": 5,
+			"weights": "uniform",
+			"algorithm": "auto",
+			"leaf_size": 30,
+			"p": 2,
+			"metric": "minkowski",
+			"metric_params": "",
+			"knn_n_jobs": 1
+			}
+			return_params['k_nearest_neighbors'] = params["k_nearest_neighbors"]
+
+		elif params.get("classifier") == "GaussianNB":
+			params["gaussian_nb"] = {
+			"priors": ""
+			}
+			return_params['gaussian_nb'] = params["gaussian_nb"]
+		elif params.get("classifier") == "LogisticRegression":
+			params["logistic_regression"] = {
+			"penalty": "l2",
+			"dual": "False",
+			"lr_tolerance": 0.0001,
+			"lr_C": 1,
+			"fit_intercept": "True",
+			"intercept_scaling": 1,
+			"lr_class_weight": "",
+			"lr_random_state": 0,
+			"lr_solver": "newton-cg",
+			"lr_max_iter": 100,
+			"multi_class": "ovr",
+			"lr_verbose": 0,
+			"lr_warm_start": "False",
+			"lr_n_jobs": 1
+			}
+			return_params['logistic_regression'] = params["logistic_regression"]
+		elif params.get("classifier") == "DecisionTreeClassifier":
+			params["decision_tree_classifier"] = {
+			"criterion": "gini",
+			"splitter": "best",
+			"max_depth": None,
+			"min_samples_split": 2,
+			"min_samples_leaf": 1,
+			"min_weight_fraction_leaf": 0,
+			"max_features": "",
+			"dt_random_state": 0,
+			"max_leaf_nodes": None,
+			"min_impurity_decrease": 0,
+			"dt_class_weight": "",
+			"presort": "False"
+			}
+			return_params['decision_tree_classifier'] = params["decision_tree_classifier"]
+		elif params.get("classifier") == "SVM":
+			params["support_vector_machine"] = {
+			"svm_C": 1,
+			"kernel": "linear",
+			"degree": 3,
+			"gamma": "auto",
+			"coef0": 0,
+			"probability": "False",
+			"shrinking": "True",
+			"svm_tolerance": 0.001,
+			"cache_size": 200,
+			"svm_class_weight": "",
+			"svm_verbose": "False",
+			"svm_max_iter": -1,
+			"decision_function_shape": "ovr",
+			"svm_random_state": 0
+			}
+			return_params['support_vector_machine'] = params["support_vector_machine"]
+		elif params.get("classifier") == "NeuralNetwork":
 			params["neural_network"] = {
 			"hidden_layer_sizes": "(100,)",
 			"activation": "relu",
@@ -933,7 +1027,7 @@ class kb_genomeclfUtils(object):
 
 	# 	return missingGenomes
 
-	def createGenomeClassifierTrainingSet(self, current_ws, description, trainingset_object_Name, just_DF):
+	def createGenomeClassifierTrainingSet(self, current_ws, RAST_Annotated, description, trainingset_object_Name, just_DF):
 		"""
 		args:
 		---current_ws is same as before
@@ -984,37 +1078,50 @@ class kb_genomeclfUtils(object):
 				print('printing positions')
 				print(position)
 
-				params_RAST =	{
-				"workspace": current_ws,#"sagoyal:narrative_1536939130038",
-				"input_genome": listGNames[index],
-				"output_genome": listGNames[index]+".RAST",
-				"call_features_rRNA_SEED": 0,
-				"call_features_tRNA_trnascan": 0,
-				"call_selenoproteins": 0,
-				"call_pyrrolysoproteins": 0,
-				"call_features_repeat_region_SEED": 0,
-				"call_features_strep_suis_repeat": 0,
-				"call_features_strep_pneumo_repeat": 0,
-				"call_features_crispr": 0,
-				"call_features_CDS_glimmer3": 0,
-				"call_features_CDS_prodigal": 0,
-				"annotate_proteins_kmer_v2": 1,
-				"kmer_v1_parameters": 1,
-				"annotate_proteins_similarity": 1,
-				"retain_old_anno_for_hypotheticals": 0,
-				"resolve_overlapping_features": 0,
-				"call_features_prophage_phispy": 0
-				}
+				if(RAST_Annotated == 0):
 
-				output = self.rast.annotate_genome(params_RAST)
+					params_RAST =	{
+					"workspace": current_ws,#"sagoyal:narrative_1536939130038",
+					"input_genome": listGNames[index],
+					"output_genome": listGNames[index]+".RAST",
+					"call_features_rRNA_SEED": 0,
+					"call_features_tRNA_trnascan": 0,
+					"call_selenoproteins": 0,
+					"call_pyrrolysoproteins": 0,
+					"call_features_repeat_region_SEED": 0,
+					"call_features_strep_suis_repeat": 0,
+					"call_features_strep_pneumo_repeat": 0,
+					"call_features_crispr": 0,
+					"call_features_CDS_glimmer3": 0,
+					"call_features_CDS_prodigal": 0,
+					"annotate_proteins_kmer_v2": 1,
+					"kmer_v1_parameters": 1,
+					"annotate_proteins_similarity": 1,
+					"retain_old_anno_for_hypotheticals": 0,
+					"resolve_overlapping_features": 0,
+					"call_features_prophage_phispy": 0
+					}
 
-				inKBASE.append(listGNames[index]+".RAST")
-				inKBASE_Classification.append(listClassification[index])
+					output = self.rast.annotate_genome(params_RAST)
 
-				all_genome_ID.append(listGNames[index]+".RAST")
-				loaded_Narrative.append(["Yes"])
-				all_Genome_Classification.append(listClassification[index])
-				add_trainingSet.append(["Yes"])
+					inKBASE.append(listGNames[index]+".RAST")
+					inKBASE_Classification.append(listClassification[index])
+
+					all_genome_ID.append(listGNames[index]+".RAST")
+					loaded_Narrative.append(["Yes"])
+					all_Genome_Classification.append(listClassification[index])
+					add_trainingSet.append(["Yes"])
+
+				else:
+
+					inKBASE.append(listGNames[index])
+					inKBASE_Classification.append(listClassification[index])
+
+					all_genome_ID.append(listGNames[index])
+					loaded_Narrative.append(["Yes"])
+					all_Genome_Classification.append(listClassification[index])
+					add_trainingSet.append(["Yes"])
+
 			except:
 				print (listGNames[index])
 				print ('The above Genome does not exist in workspace')
