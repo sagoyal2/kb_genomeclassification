@@ -1292,7 +1292,7 @@ class kb_genomeclfUtils(object):
 
 		search = ""
 		if (search_attribute == "functional_roles"):
-			search = 'function'
+			search = 'functions'
 		elif (search_attribute == "prot_seq"):
 			search = 'protein_translation'
 
