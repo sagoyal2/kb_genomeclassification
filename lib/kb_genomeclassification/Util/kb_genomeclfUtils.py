@@ -417,6 +417,7 @@ class kb_genomeclfUtils(object):
 		if params.get('list_name'):
 			#checks if empty string bool("") --> False
 			print ("taking this path rn")
+			print(params)
 			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
 			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], params['description'], params['training_set_out'], just_DF = toEdit_all_classifications)
 			self.newReferencetoGenome(current_ws, params['description'], params['training_set_out'], inKBASE, inKBASE_Classification)
@@ -424,6 +425,7 @@ class kb_genomeclfUtils(object):
 			#listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
 			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 		else:
+			print(params)
 			file_path = self._download_shock(params.get('shock_id'))
 			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], params['description'], params['training_set_out'], just_DF = pd.read_excel(file_path))
 			self.newReferencetoGenome(current_ws, params['description'], params['training_set_out'], inKBASE, inKBASE_Classification)
@@ -1292,7 +1294,7 @@ class kb_genomeclfUtils(object):
 
 		search = ""
 		if (search_attribute == "functional_roles"):
-			search = 'functions'
+			search = 'function'
 		elif (search_attribute == "prot_seq"):
 			search = 'protein_translation'
 
