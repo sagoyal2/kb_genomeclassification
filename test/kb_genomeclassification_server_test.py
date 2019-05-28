@@ -163,48 +163,60 @@ class kb_genomeclassificationTest(unittest.TestCase):
         }
         """
             
-        params =   {
-        "save_ts": 1,
-        "description": "testingAgain",
-        "trainingset_name": "biggerThursday",
-        "phenotypeclass": "myPhenotype",
-        "classifier": "run_all",#"GaussianNB",#"KNeighborsClassifier",
-        "attribute": "functional_roles",
-        "k_nearest_neighbors": None,
-        "gaussian_nb": None,
-        "logistic_regression": None,
-        "decision_tree_classifier": None,
-        "support_vector_machine": None,
-        "neural_network": None,
-        "ensemble_model": None,
-        "classifier_out": "MaysevenGaussianNB",
+        pass
+        # params =   {
+        # "save_ts": 1,
+        # "description": "testingAgain",
+        # "trainingset_name": "biggerThursday",
+        # "phenotypeclass": "myPhenotype",
+        # "classifier": "run_all",#"GaussianNB",#"KNeighborsClassifier",
+        # "attribute": "functional_roles",
+        # "k_nearest_neighbors": None,
+        # "gaussian_nb": None,
+        # "logistic_regression": None,
+        # "decision_tree_classifier": None,
+        # "support_vector_machine": None,
+        # "neural_network": None,
+        # "ensemble_model": None,
+        # "classifier_out": "MaysevenGaussianNB",
+        # "workspace" : "sagoyal:narrative_1536939130038"
+        # }
+
+        # self.getImpl().build_classifier(self.getContext(), params)
+        
+
+    def test_upload_trainingset(self):
+        
+        """
+        params = {
+        "shock_id": "1b23efad-fe6d-4e41-b180-37fc6dcb558d",
+        "list_name": "Genome_ID Classification\nShewanella_ondeisensis_MR-1_GenBank Aerobic\ngenBankG5O Anaerobic\nNC_003197    Facultative\nGCF_000010525.1    Facultative\nGCF_000007365.1    Aerobic\nGCF_000007725.1    Anaerobic\nGCF_000009605.1  Aerobic\nGCF_000021065.1    Anaerobic\nGCF_000021085.1  Facultative\nGCF_000090965.1    Facultative\nGCF_000174075.1    Aerobic\nGCF_000183225.1    Aerobic\nGCF_000183245.1    Facultative\nGCF_000183285.1    Facultative\nGCF_000183305.1    Anaerobic\nGCF_000217635.1  Aerobic\nGCF_000225445.1    Aerobic\nGCF_000225465.1    Anaerobic\nGCF_000521525.1  Anaerobic\nGCF_000521545.1  Aerobic\nGCF_000521565.1    Aerobic\nGCF_000521585.1    Facultative\nGCF_001280225.1    Anaerobic\nGCF_001648115.1  Facultative\nGCF_001700895.1    Aerobic\nGCF_001939165.1    Anaerobic\nGCF_003099975.1  Facultative\nGCF_900016785.1    Facultative\nGCF_900128595.1    Aerobic\nGCF_900128725.1    Anaerobic\nGCF_900128735.1  Aerobic\nGCF_000218545.1    Anaerobic\nGCF_000020965.1  Facultative\nGCF_000378225.1    Facultative\nGCF_000012885.1    Aerobic\nGCF_001375595.1    Aerobic\nGCF_000518705.1    Facultative\nGCF_001735525.1    Facultative\nGCF_000016585.1    Anaerobic\nGCF_000169215.2  Aerobic\nGCF_000519065.1    Aerobic\nGCF_001591325.1    Anaerobic\nGCF_002157365.1  Facultative\nGCF_003315425.1    Aerobic\nGCF_000219105.1    Aerobic\nGCF_000988565.1    Aerobic\nGCF_900111765.1    Anaerobic\nGCF_000012685.1  Facultative\nGCF_000278585.1    Anaerobic",
+        "description": "trial description in terminal",
+        "phenotypeclass": "newTest",
+        "training_set_out": "fourColumn",
+        "workspace" : "sagoyal:narrative_1534292322496"
+        }
+        """
+        """
+        params = {
+        "shock_id": "502d096b-4236-462b-addf-9b7b56ff7b64",#"c2203dc8-01db-45a7-a246-09e9fade7d7a",
+        "list_name": "",
+        "description": "rast testing",
+        "phenotypeclass": "RASTPheno",
+        "training_set_out": "rastOut",
+        "workspace" : "sagoyal:narrative_1536939130038" #"sagoyal:narrative_1534292322496"
+        }
+        """
+
+        params = {
+        "RAST_Annotated": 1,
+        "shock_id": "",
+        "list_name": "Genome_ID Classification\n679190.3.RAST   facultative\n665954.3.RAST  facultative\n470145.6.RAST  aerobic\n457391.3.RAST  aerobic\n485918.5.RAST  anaerobic\n411154.5.RAST    anaerobic\n309807.19.RAST   facultative\n269798.12.RAST aerobic\n216432.3.RAST  anaerobic",
+        "description": "myRASTtest",
+        "phenotypeclass": "gram",
+        "training_set_out": "myRASTOPut",
         "workspace" : "sagoyal:narrative_1536939130038"
         }
 
-        self.getImpl().build_classifier(self.getContext(), params)
-        
-
-    # def test_upload_trainingset(self):
-        
-    #     """
-    #     params = {
-    #     "shock_id": "1b23efad-fe6d-4e41-b180-37fc6dcb558d",
-    #     "list_name": "Genome_ID Classification\nShewanella_ondeisensis_MR-1_GenBank Aerobic\ngenBankG5O Anaerobic\nNC_003197    Facultative\nGCF_000010525.1    Facultative\nGCF_000007365.1    Aerobic\nGCF_000007725.1    Anaerobic\nGCF_000009605.1  Aerobic\nGCF_000021065.1    Anaerobic\nGCF_000021085.1  Facultative\nGCF_000090965.1    Facultative\nGCF_000174075.1    Aerobic\nGCF_000183225.1    Aerobic\nGCF_000183245.1    Facultative\nGCF_000183285.1    Facultative\nGCF_000183305.1    Anaerobic\nGCF_000217635.1  Aerobic\nGCF_000225445.1    Aerobic\nGCF_000225465.1    Anaerobic\nGCF_000521525.1  Anaerobic\nGCF_000521545.1  Aerobic\nGCF_000521565.1    Aerobic\nGCF_000521585.1    Facultative\nGCF_001280225.1    Anaerobic\nGCF_001648115.1  Facultative\nGCF_001700895.1    Aerobic\nGCF_001939165.1    Anaerobic\nGCF_003099975.1  Facultative\nGCF_900016785.1    Facultative\nGCF_900128595.1    Aerobic\nGCF_900128725.1    Anaerobic\nGCF_900128735.1  Aerobic\nGCF_000218545.1    Anaerobic\nGCF_000020965.1  Facultative\nGCF_000378225.1    Facultative\nGCF_000012885.1    Aerobic\nGCF_001375595.1    Aerobic\nGCF_000518705.1    Facultative\nGCF_001735525.1    Facultative\nGCF_000016585.1    Anaerobic\nGCF_000169215.2  Aerobic\nGCF_000519065.1    Aerobic\nGCF_001591325.1    Anaerobic\nGCF_002157365.1  Facultative\nGCF_003315425.1    Aerobic\nGCF_000219105.1    Aerobic\nGCF_000988565.1    Aerobic\nGCF_900111765.1    Anaerobic\nGCF_000012685.1  Facultative\nGCF_000278585.1    Anaerobic",
-    #     "description": "trial description in terminal",
-    #     "phenotypeclass": "newTest",
-    #     "training_set_out": "fourColumn",
-    #     "workspace" : "sagoyal:narrative_1534292322496"
-    #     }
-    #     """
-
-    #     params = {
-    #     "shock_id": "502d096b-4236-462b-addf-9b7b56ff7b64",#"c2203dc8-01db-45a7-a246-09e9fade7d7a",
-    #     "list_name": "",
-    #     "description": "rast testing",
-    #     "phenotypeclass": "RASTPheno",
-    #     "training_set_out": "rastOut",
-    #     "workspace" : "sagoyal:narrative_1536939130038" #"sagoyal:narrative_1534292322496"
-    #     }
-
-    #     self.getImpl().upload_trainingset(self.getContext(), params)
+        self.getImpl().upload_trainingset(self.getContext(), params)
         
