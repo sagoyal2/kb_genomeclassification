@@ -425,6 +425,7 @@ class kb_genomeclfUtils(object):
 			#listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
 			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 		else:
+			print("printing the params to see RAST")
 			print(params)
 			file_path = self._download_shock(params.get('shock_id'))
 			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], params['description'], params['training_set_out'], just_DF = pd.read_excel(file_path))

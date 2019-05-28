@@ -92,7 +92,7 @@
       ],
       "field_type": "file",
       "id": "shock_id",
-      "optional": false,
+      "optional": true,
       "text_options": {
         "valid_ws_types": []
       }
