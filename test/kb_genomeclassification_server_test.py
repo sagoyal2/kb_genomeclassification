@@ -214,8 +214,8 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "Upload_File" : "/kb/module/data/testingData/prodTrial.xlsx",
         # "list_name": "Genome_ID Classification\n679190.3.RAST   facultative\n665954.3.RAST  facultative\n470145.6.RAST  aerobic\n457391.3.RAST  aerobic\n485918.5.RAST  anaerobic\n411154.5.RAST    anaerobic\n309807.19.RAST   facultative\n269798.12.RAST aerobic\n216432.3.RAST  anaerobic",
         "description": "myRASTtest",
-        "phenotypeclass": "gram",
-        "training_set_out": "withUploadFile",
+        "phenotypeclass": "respiration",
+        "training_set_out": "FullGo",
         "workspace" : "sagoyal:narrative_1536939130038"
         }
 

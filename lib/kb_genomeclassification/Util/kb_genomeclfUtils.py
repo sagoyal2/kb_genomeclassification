@@ -370,12 +370,34 @@ class kb_genomeclfUtils(object):
 		if params.get('list_name'):
 			#checks if empty string bool("") --> False
 			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'), for_predict = True)
-			listOfNames = self.intake_method(toEdit_all_classifications, for_predict = True)
-			all_attributes = self.get_wholeClassification(listOfNames, current_ws, params['attribute'], master_Role = master_Role ,for_predict = True)
+			#listOfNames = self.intake_method(toEdit_all_classifications, for_predict = True)
+			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws, params['RAST_Annotated'], just_DF = toEdit_all_classifications, for_predict = True)
+			all_attributes = self.get_wholeClassification(inKBASE, current_ws, params['attribute'], master_Role = master_Role ,for_predict = True)
 		else:
 			file_path = self._download_shock(params.get('shock_id'))
-			listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
-			all_attributes = self.get_wholeClassification(listOfNames, current_ws, params['attribute'], master_Role = master_Role ,for_predict = True)
+			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
+			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], just_DF = pd.read_excel(file_path), for_predict = True)
+			all_attributes = self.get_wholeClassification(inKBASE, current_ws, params['attribute'], master_Role = master_Role ,for_predict = True)
+
+		# if params.get('list_name'):
+		# 	#checks if empty string bool("") --> False
+		# 	print ("taking this path rn")
+		# 	print(params)
+		# 	toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
+		# 	(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], just_DF = toEdit_all_classifications, for_predict = True)
+		# 	#self.newReferencetoGenome(current_ws, params['description'], params['training_set_out'], inKBASE, inKBASE_Classification)
+		# 	#self.workRAST(current_ws, just_DF = toEdit_all_classifications)
+		# 	#listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
+		# 	#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
+		# else:
+		# 	print("printing the params to see RAST")
+		# 	print(params)
+		# 	#file_path = self._download_shock(params.get('shock_id'))
+		# 	(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], just_DF = pd.read_excel(file_path), for_predict = True)
+		# 	#self.newReferencetoGenome(current_ws, params['description'], params['training_set_out'], inKBASE, inKBASE_Classification)
+		# 	#self.workRAST(current_ws, just_DF = pd.read_excel(file_path))
+		# 	#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
+		# 	#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 
 		#PREDICTIONS on new data that needs to be classified
 		after_classifier_result = after_classifier.predict(all_attributes)
@@ -419,7 +441,7 @@ class kb_genomeclfUtils(object):
 			print ("taking this path rn")
 			print(params)
 			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
-			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], params['description'], params['training_set_out'], just_DF = toEdit_all_classifications)
+			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], just_DF = toEdit_all_classifications)
 			self.newReferencetoGenome(current_ws, params['description'], params['training_set_out'], inKBASE, inKBASE_Classification)
 			#self.workRAST(current_ws, just_DF = toEdit_all_classifications)
 			#listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
@@ -432,7 +454,7 @@ class kb_genomeclfUtils(object):
 			print(params.get('Upload_File'))
 			file_path = params.get('Upload_File')
 			print(os.system("ls"))
-			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], params['description'], params['training_set_out'], just_DF = pd.read_excel(file_path))
+			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], just_DF = pd.read_excel(file_path))
 			self.newReferencetoGenome(current_ws, params['description'], params['training_set_out'], inKBASE, inKBASE_Classification)
 			#self.workRAST(current_ws, just_DF = pd.read_excel(file_path))
 			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
@@ -1034,7 +1056,7 @@ class kb_genomeclfUtils(object):
 
 	# 	return missingGenomes
 
-	def createGenomeClassifierTrainingSet(self, current_ws, RAST_Annotated, description, trainingset_object_Name, just_DF):
+	def createGenomeClassifierTrainingSet(self, current_ws, RAST_Annotated, just_DF, for_predict = False):
 		"""
 		args:
 		---current_ws is same as before
@@ -1142,22 +1164,23 @@ class kb_genomeclfUtils(object):
 				all_Genome_Classification.append(["None"])
 				add_trainingSet.append(["No"])
 		
-		four_columns = pd.DataFrame.from_dict({'Genome Id': all_genome_ID, 'Loaded in the Narrative': loaded_Narrative, 'Classification' : all_Genome_Classification, 'Added to Training Set' : add_trainingSet})
-		four_columns = four_columns[['Genome Id', 'Loaded in the Narrative', 'Classification', 'Added to Training Set']]
+		if(for_predict == False):
+			four_columns = pd.DataFrame.from_dict({'Genome Id': all_genome_ID, 'Loaded in the Narrative': loaded_Narrative, 'Classification' : all_Genome_Classification, 'Added to Training Set' : add_trainingSet})
+			four_columns = four_columns[['Genome Id', 'Loaded in the Narrative', 'Classification', 'Added to Training Set']]
 
-		old_width = pd.get_option('display.max_colwidth')
-		pd.set_option('display.max_colwidth', -1)
-		four_columns.to_html(os.path.join(self.scratch, 'forZeroHTML', 'four_columns.html'), index=False, justify='center')
-		pd.set_option('display.max_colwidth', old_width)
+			old_width = pd.get_option('display.max_colwidth')
+			pd.set_option('display.max_colwidth', -1)
+			four_columns.to_html(os.path.join(self.scratch, 'forZeroHTML', 'four_columns.html'), index=False, justify='center')
+			pd.set_option('display.max_colwidth', old_width)
 
 
-		print "I'm print out the obj_save_ref"
-		print ""
-		print ""
-		print ""
+			print "I'm print out the obj_save_ref"
+			print ""
+			print ""
+			print ""
 
-		#print obj_save_ref
-		print "done"
+			#print obj_save_ref
+			print "done"
 
 		return (missingGenomes, inKBASE, inKBASE_Classification)
 

@@ -158,11 +158,13 @@ module kb_genomeclassification {
 
    typedef structure {
         string workspace;
+        string attribute;
         string classifier_name;
         string description;
         string phenotypeclass;
         string shock_id;
         string list_name;
+        int RAST_Annotated;
     } ClassifierPredictionInput;
 
 
