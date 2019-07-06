@@ -183,7 +183,7 @@ module kb_genomeclassification {
         mapping <string genome_id,ClassifierTrainingSet> classifier_training_set;
         string training_set_out;
         string target;
-        string shock_id;
+        string Upload_File;
         int RAST_Annotated;
         string list_name;
     }UploadTrainingSetInput;

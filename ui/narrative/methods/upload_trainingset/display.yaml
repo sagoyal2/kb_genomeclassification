@@ -27,11 +27,11 @@ suggestions:
 # Configure the display and description of parameters
 #
 parameters :
-    shock_id :
+    Upload_File :
         ui-name : |
-            File Name
+            File Path
         short-hint : |
-            File Name
+            File Path that is found by uploading via the staging area
     RAST_Annotated :
         ui-name : |
             Genomes RAST Annotated
