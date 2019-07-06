@@ -431,7 +431,7 @@ class kb_genomeclfUtils(object):
 			print("This is the file path")
 			print(params.get('Upload_File'))
 			file_path = params.get('Upload_File')
-			print(os.listdir())
+			print(os.system("ls"))
 			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], params['description'], params['training_set_out'], just_DF = pd.read_excel(file_path))
 			self.newReferencetoGenome(current_ws, params['description'], params['training_set_out'], inKBASE, inKBASE_Classification)
 			#self.workRAST(current_ws, just_DF = pd.read_excel(file_path))
