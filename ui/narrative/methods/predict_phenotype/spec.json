@@ -7,6 +7,10 @@
     "service-mapping": {
       "input_mapping": [
         {
+          "input_parameter": "RAST_Annotated",
+          "target_property": "RAST_Annotated"
+        },
+        {
           "input_parameter": "shock_id",
           "target_property": "shock_id"
         },
@@ -66,6 +70,23 @@
   "contact": "https://kbase.us/contact-us/",
   "job_id_output_field": "docker",
   "parameters": [
+    {
+      "advanced": false,
+      "allow_multiple": false,
+      "checkbox_options": {
+        "checked_value": 1,
+        "unchecked_value": 0
+      },
+      "default_values": [
+        "0"
+      ],
+      "field_type": "checkbox",
+      "id": "RAST_Annotated",
+      "optional": true,
+      "text_options": {
+        "valid_ws_types": []
+      }
+    },
     {
       "advanced": false,
       "allow_multiple": false,
