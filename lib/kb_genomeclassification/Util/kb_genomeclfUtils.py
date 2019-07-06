@@ -427,7 +427,10 @@ class kb_genomeclfUtils(object):
 		else:
 			print("printing the params to see RAST")
 			print(params)
-			file_path = self._download_shock(params.get('shock_id'))
+			#file_path = self._download_shock(params.get('shock_id'))
+			print("This is the file path")
+			print(params.get('Upload_File'))
+			file_path = params.get('Upload_File')
 			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], params['description'], params['training_set_out'], just_DF = pd.read_excel(file_path))
 			self.newReferencetoGenome(current_ws, params['description'], params['training_set_out'], inKBASE, inKBASE_Classification)
 			#self.workRAST(current_ws, just_DF = pd.read_excel(file_path))
@@ -1059,12 +1062,12 @@ class kb_genomeclfUtils(object):
 
 		back = self.ws_client.list_objects({'workspaces':[current_ws],'type':'KBaseGenomes.Genome'})
 
-		print(back)
+		#print(back)
 
 		for item in back:
 			list_allGenomesinWS.append(item[1])
 
-		print(list_allGenomesinWS)
+		#print(list_allGenomesinWS)
 
 		all_genome_ID = []
 		loaded_Narrative = []
@@ -1080,6 +1083,9 @@ class kb_genomeclfUtils(object):
 
 				print('printing positions')
 				print(position)
+
+				print("This is my RAST_Annotated value")
+				print(RAST_Annotated)
 
 				if(RAST_Annotated == 0):
 

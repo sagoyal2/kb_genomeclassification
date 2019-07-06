@@ -209,12 +209,13 @@ class kb_genomeclassificationTest(unittest.TestCase):
         """
 
         params = {
-        "RAST_Annotated": 1,
-        "shock_id": "",
-        "list_name": "Genome_ID Classification\n679190.3.RAST   facultative\n665954.3.RAST  facultative\n470145.6.RAST  aerobic\n457391.3.RAST  aerobic\n485918.5.RAST  anaerobic\n411154.5.RAST    anaerobic\n309807.19.RAST   facultative\n269798.12.RAST aerobic\n216432.3.RAST  anaerobic",
+        "RAST_Annotated": 0,
+        # "shock_id": "",
+        "Upload_File" : "/kb/module/data/testingData/prodTrial.xlsx",
+        # "list_name": "Genome_ID Classification\n679190.3.RAST   facultative\n665954.3.RAST  facultative\n470145.6.RAST  aerobic\n457391.3.RAST  aerobic\n485918.5.RAST  anaerobic\n411154.5.RAST    anaerobic\n309807.19.RAST   facultative\n269798.12.RAST aerobic\n216432.3.RAST  anaerobic",
         "description": "myRASTtest",
         "phenotypeclass": "gram",
-        "training_set_out": "myRASTOPut",
+        "training_set_out": "withUploadFile",
         "workspace" : "sagoyal:narrative_1536939130038"
         }
 
