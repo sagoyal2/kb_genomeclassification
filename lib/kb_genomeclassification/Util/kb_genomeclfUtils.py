@@ -371,7 +371,7 @@ class kb_genomeclfUtils(object):
 			#checks if empty string bool("") --> False
 			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'), for_predict = True)
 			#listOfNames = self.intake_method(toEdit_all_classifications, for_predict = True)
-			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws, params['RAST_Annotated'], just_DF = toEdit_all_classifications, for_predict = True)
+			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws, params['RAST_Annotated'], just_DF = pd.DataFrame({"Genome_ID":toEdit_all_classifications[1:]}), for_predict = True)
 			all_attributes = self.get_wholeClassification(inKBASE, current_ws, params['attribute'], master_Role = master_Role ,for_predict = True)
 		else:
 			file_path = self._download_shock(params.get('shock_id'))
@@ -1292,7 +1292,7 @@ class kb_genomeclfUtils(object):
 		if not for_predict:
 			return list(my_all_classifications.index), my_all_classifications
 		else:
-			return my_all_classifications.index
+			return list(my_all_classifications.index)
 
 
 	def get_wholeClassification(self, listOfNames, current_ws, search_attribute, master_Role = None, for_predict = False):
