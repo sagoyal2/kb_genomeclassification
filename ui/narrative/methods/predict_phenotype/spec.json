@@ -15,6 +15,10 @@
           "target_property": "list_name"
         },
         {
+          "input_parameter": "attribute",
+          "target_property": "attribute"
+        },
+        {
           "narrative_system_variable": "workspace",
           "target_property": "workspace"
         },
@@ -115,6 +119,44 @@
           "KBaseClassifier.GenomeCategorizer"
         ]
       }
+    },
+    {
+      "advanced": false,
+      "allow_multiple": false,
+      "default_values": [
+        "Functional annotations"
+      ],
+      "dropdown_options": {
+        "options": [
+          {
+            "display": "Functional annotations",
+            "id": "functional_roles",
+            "ui_name": "Functional annotations",
+            "value": "functional_roles"
+          },
+          {
+            "display": "Protein sequences",
+            "id": "prot_seq",
+            "ui_name": "Protein sequences",
+            "value": "prot_seq"
+          },
+          {
+            "display": "DNA K-mers 18mer",
+            "id": "dnakmer",
+            "ui_name": "DNA K-mers 18mer",
+            "value": "dnakmer"
+          },
+          {
+            "display": "Protein K-mers 18mer",
+            "id": "protkmer",
+            "ui_name": "Protein K-mers 18mer",
+            "value": "protkmer"
+          }
+        ]
+      },
+      "field_type": "dropdown",
+      "id": "attribute",
+      "optional": false
     },
     {
       "advanced": false,
