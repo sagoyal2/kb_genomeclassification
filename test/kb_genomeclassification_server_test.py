@@ -80,7 +80,17 @@ class kb_genomeclassificationTest(unittest.TestCase):
         return self.__class__.ctx
 
     def test_predict_phenotype(self):
-        pass
+        params = {        
+        "RAST_Annotated": 1,
+        "shock_id": "",
+        "list_name": "Genome_ID	Classification\n262543.4	facultative\n1134785.3	facultative\n269798.12	aerobic\n309807.19	aerobic\n411154.5	aerobic\n485917.5	aerobic\n485918.5	aerobic\n457391.3	anaerobic\n470145.6	anaerobic\n665954.3	anaerobic\n679190.3	anaerobic",
+        "description": "myFullGotest",
+        "classifier_name": "myFullGoCLF",
+        "attribute": "functional_roles",
+        "phenotypeclass": "Respiration",
+        "workspace" : "sagoyal:narrative_1536939130038"
+        }
+        self.getImpl().predict_phenotype(self.getContext(), params)
 
     def test_build_classifier(self):
     
@@ -207,7 +217,8 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "workspace" : "sagoyal:narrative_1536939130038" #"sagoyal:narrative_1534292322496"
         }
         """
-
+        pass
+        """
         params = {
         "RAST_Annotated": 0,
         # "shock_id": "",
@@ -220,4 +231,4 @@ class kb_genomeclassificationTest(unittest.TestCase):
         }
 
         self.getImpl().upload_trainingset(self.getContext(), params)
-        
+        """
