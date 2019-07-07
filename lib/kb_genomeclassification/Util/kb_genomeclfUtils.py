@@ -369,9 +369,13 @@ class kb_genomeclfUtils(object):
 
 		if params.get('list_name'):
 			#checks if empty string bool("") --> False
-			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'), for_predict = True)
+			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
 			#listOfNames = self.intake_method(toEdit_all_classifications, for_predict = True)
-			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws, params['RAST_Annotated'], just_DF = pd.DataFrame({"Genome_ID":toEdit_all_classifications[1:]}), for_predict = True)
+
+			print("this is toEdit_all_classifications")
+			print(toEdit_all_classifications)
+			
+			inKBASE = self.createGenomeClassifierTrainingSet(current_ws, params['RAST_Annotated'], just_DF = toEdit_all_classifications, for_predict = True)
 			all_attributes = self.get_wholeClassification(inKBASE, current_ws, params['attribute'], master_Role = master_Role ,for_predict = True)
 		else:
 			file_path = self._download_shock(params.get('shock_id'))
@@ -881,16 +885,16 @@ class kb_genomeclfUtils(object):
 			#print index
 			print >>tem_file, index
 
-		print "before closing"
+		print ("before closing")
 
 		tem_file.close()
 
 		if not for_predict:
 			print "I'm inside the if not for_predict"
-			my_workPD = pd.read_csv(os.path.join(self.scratch, 'trialoutput.txt'), delimiter="\s+")
+			my_workPD = pd.read_csv(os.path.join(self.scratch, 'trialoutput.txt'), dtype=str, delimiter="\s+")
 			#print my_workPD
 		else: 
-			my_workPD = pd.read_csv(os.path.join(self.scratch, 'trialoutput.txt'))
+			my_workPD = pd.read_csv(os.path.join(self.scratch, 'trialoutput.txt'),dtype=str)
 
 		os.remove(os.path.join(self.scratch, 'trialoutput.txt'))
 
@@ -1069,13 +1073,28 @@ class kb_genomeclfUtils(object):
 		"""
 		ctx = self.ctx
 
+		print("this is just_DF")
+		print(just_DF)
+
 		listintGNames = just_DF['Genome_ID']
 		
+		returnNow = []
+		if(for_predict):
+			if(RAST_Annotated==1):
+				for value in just_DF['Genome_ID']:
+					returnNow.append(value+".RAST")
+
+				return returnNow
+			else:
+				return just_DF['Genome_ID']
+
 		#vigorous string matching izip(self.list_name, self.list_statistics)
 		listGNames = list(map(str, listintGNames))
 		for string, index in izip(listGNames, range(len(listGNames))):
 			listGNames[index] = string.replace(" ", "")
 
+		
+		
 		listClassification = just_DF['Classification']
 		inKBASE_Classification =[]
 
@@ -1164,23 +1183,22 @@ class kb_genomeclfUtils(object):
 				all_Genome_Classification.append(["None"])
 				add_trainingSet.append(["No"])
 		
-		if(for_predict == False):
-			four_columns = pd.DataFrame.from_dict({'Genome Id': all_genome_ID, 'Loaded in the Narrative': loaded_Narrative, 'Classification' : all_Genome_Classification, 'Added to Training Set' : add_trainingSet})
-			four_columns = four_columns[['Genome Id', 'Loaded in the Narrative', 'Classification', 'Added to Training Set']]
+		four_columns = pd.DataFrame.from_dict({'Genome Id': all_genome_ID, 'Loaded in the Narrative': loaded_Narrative, 'Classification' : all_Genome_Classification, 'Added to Training Set' : add_trainingSet})
+		four_columns = four_columns[['Genome Id', 'Loaded in the Narrative', 'Classification', 'Added to Training Set']]
 
-			old_width = pd.get_option('display.max_colwidth')
-			pd.set_option('display.max_colwidth', -1)
-			four_columns.to_html(os.path.join(self.scratch, 'forZeroHTML', 'four_columns.html'), index=False, justify='center')
-			pd.set_option('display.max_colwidth', old_width)
+		old_width = pd.get_option('display.max_colwidth')
+		pd.set_option('display.max_colwidth', -1)
+		four_columns.to_html(os.path.join(self.scratch, 'forZeroHTML', 'four_columns.html'), index=False, justify='center')
+		pd.set_option('display.max_colwidth', old_width)
 
 
-			print "I'm print out the obj_save_ref"
-			print ""
-			print ""
-			print ""
+		print "I'm print out the obj_save_ref"
+		print ""
+		print ""
+		print ""
 
-			#print obj_save_ref
-			print "done"
+		#print obj_save_ref
+		print "done"
 
 		return (missingGenomes, inKBASE, inKBASE_Classification)
 
