@@ -80,6 +80,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         return self.__class__.ctx
 
     def test_predict_phenotype(self):
+        """
         params = {        
         "RAST_Annotated": 1,
         "shock_id": "",
@@ -90,6 +91,19 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "phenotypeclass": "Respiration",
         "workspace" : "sagoyal:narrative_1536939130038"
         }
+        """
+
+        params = {
+        "RAST_Annotated": 1,
+        "shock_id": "a753ec76-df84-4447-95f5-7186a755fc3b",
+        "list_name": "",
+        "description": "myFullGoFail",
+        "classifier_name": "myFullGoCLF",
+        "attribute": "functional_roles",
+        "phenotypeclass": "Respiration",
+        "workspace" : "sagoyal:narrative_1536939130038"
+        }
+
         self.getImpl().predict_phenotype(self.getContext(), params)
 
     def test_build_classifier(self):
