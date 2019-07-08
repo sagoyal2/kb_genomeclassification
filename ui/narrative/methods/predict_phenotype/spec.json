@@ -11,10 +11,6 @@
           "target_property": "RAST_Annotated"
         },
         {
-          "input_parameter": "shock_id",
-          "target_property": "shock_id"
-        },
-        {
           "input_parameter": "list_name",
           "target_property": "list_name"
         },
@@ -93,22 +89,9 @@
       "default_values": [
         ""
       ],
-      "field_type": "file",
-      "id": "shock_id",
-      "optional": false,
-      "text_options": {
-        "valid_ws_types": []
-      }
-    },
-    {
-      "advanced": false,
-      "allow_multiple": false,
-      "default_values": [
-        ""
-      ],
       "field_type": "textarea",
       "id": "list_name",
-      "optional": true,
+      "optional": false,
       "textarea_options": {
         "n_rows": 15
       }

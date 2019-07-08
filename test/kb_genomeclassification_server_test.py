@@ -92,7 +92,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "workspace" : "sagoyal:narrative_1536939130038"
         }
         """
-
+        """
         params = {
         "RAST_Annotated": 1,
         "shock_id": "a753ec76-df84-4447-95f5-7186a755fc3b",
@@ -105,6 +105,8 @@ class kb_genomeclassificationTest(unittest.TestCase):
         }
 
         self.getImpl().predict_phenotype(self.getContext(), params)
+        """
+        pass
 
     def test_build_classifier(self):
     
@@ -187,7 +189,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         }
         """
             
-        pass
+        
         # params =   {
         # "save_ts": 1,
         # "description": "testingAgain",
@@ -206,7 +208,25 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # "workspace" : "sagoyal:narrative_1536939130038"
         # }
 
-        # self.getImpl().build_classifier(self.getContext(), params)
+        params = {
+        "save_ts": 1,
+        "description": "myFullGoEverything",
+        "trainingset_name": "myFullGo",
+        "phenotypeclass": "Respiration",
+        "classifier": "run_all",
+        "attribute": "functional_roles",
+        "k_nearest_neighbors": None,
+        "gaussian_nb": None,
+        "logistic_regression": None,
+        "decision_tree_classifier": None,
+        "support_vector_machine": None,
+        "neural_network": None,
+        "ensemble_model": None,
+        "classifier_out": "myFullGoEverythingCLF",
+        "workspace" : "sagoyal:narrative_1536939130038"
+        }
+
+        self.getImpl().build_classifier(self.getContext(), params)
         
 
     def test_upload_trainingset(self):
