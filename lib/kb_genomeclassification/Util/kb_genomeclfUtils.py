@@ -375,12 +375,12 @@ class kb_genomeclfUtils(object):
 			print("this is toEdit_all_classifications")
 			print(toEdit_all_classifications)
 			
-			inKBASE = self.createGenomeClassifierTrainingSet(current_ws, params['RAST_Annotated'], just_DF = toEdit_all_classifications, for_predict = True)
+			(missingGenomes, inKBASE) = self.createGenomeClassifierTrainingSet(current_ws, params['RAST_Annotated'], just_DF = toEdit_all_classifications, for_predict = True)
 			all_attributes = self.get_wholeClassification(inKBASE, current_ws, params['attribute'], master_Role = master_Role ,for_predict = True)
 		else:
 			file_path = self._download_shock(params.get('shock_id'))
 			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
-			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], just_DF = pd.read_excel(file_path), for_predict = True)
+			(missingGenomes, inKBASE)  = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], just_DF = pd.read_excel(file_path, dtype=str), for_predict = True)
 			all_attributes = self.get_wholeClassification(inKBASE, current_ws, params['attribute'], master_Role = master_Role ,for_predict = True)
 
 		# if params.get('list_name'):
@@ -430,7 +430,7 @@ class kb_genomeclfUtils(object):
 		#csv
 		predict_table_pd.to_csv(r'/kb/module/work/tmp/pandas.txt', header=None, index=None, sep=' ', mode='a')
 		"""
-		self.html_report_3()
+		self.html_report_3(missingGenomes)
 		htmloutput_name = self.html_nodual("forSecHTML")
 
 		return htmloutput_name
@@ -1077,16 +1077,6 @@ class kb_genomeclfUtils(object):
 		print(just_DF)
 
 		listintGNames = just_DF['Genome_ID']
-		
-		returnNow = []
-		if(for_predict):
-			if(RAST_Annotated==1):
-				for value in just_DF['Genome_ID']:
-					returnNow.append(value+".RAST")
-
-				return returnNow
-			else:
-				return just_DF['Genome_ID']
 
 		#vigorous string matching izip(self.list_name, self.list_statistics)
 		listGNames = list(map(str, listintGNames))
@@ -1117,6 +1107,32 @@ class kb_genomeclfUtils(object):
 		add_trainingSet = []
 
 		inKBASE = []
+
+		if(for_predict):
+			for index in range(len(listGNames)):
+				try:
+					if(RAST_Annotated==1):
+						position = list_allGenomesinWS.index(listGNames[index]+".RAST")
+						inKBASE.append(listGNames[index]+".RAST")
+					else:
+						position = list_allGenomesinWS.index(listGNames[index])
+						inKBASE.append(listGNames[index])
+
+				except:
+					if(RAST_Annotated==1):
+						print (listGNames[index])
+						print ('The above Genome does not exist in workspace')
+						missingGenomes.append(listGNames[index]+".RAST")
+					else:
+						print (listGNames[index])
+						print ('The above Genome does not exist in workspace')
+						missingGenomes.append(listGNames[index])
+
+			print(inKBASE)
+			print(missingGenomes)
+
+			return (missingGenomes, inKBASE)
+
 
 		for index in range(len(listGNames)):
 
@@ -3335,13 +3351,30 @@ class kb_genomeclfUtils(object):
 		return "dual_12.html"
 
 	### For Predict_Phenotype App	
-	def html_report_3(self):
+	def html_report_3(self, missingGenomes):
 		"""
 		does: creates an .html file that makes the first report (second app).
 		"""
 		file = open(os.path.join(self.scratch, 'forSecHTML', 'html3.html'), u"w")
 
 		html_string = u"""
+		<!DOCTYPE html>
+		<html>
+		<body>
+
+		<p>If you have any missing genomes they are listed below (ie. these were included in your excel / pasted file but are not present in the workspace)</p>
+		<p>The missing genomes are: """ + str(missingGenomes) + """ </p>
+		<p>If there were missing genomes, we went ahead and still created a training set object excluding the missing genomes</p>
+
+		<br>
+
+		<p>Below is a more detailed table which shows which Genome ID, whether it was loaded into the Narrative, its Classification, and if it was Added to the Training Set</p>
+
+		"""
+		file.write(html_string)
+
+
+		sec_string = u"""
 		<!DOCTYPE html>
 		<html>
 		<head>
@@ -3381,7 +3414,7 @@ class kb_genomeclfUtils(object):
 
 
 		"""
-		file.write(html_string)
+		file.write(sec_string)
 
 		another_file = open(os.path.join(self.scratch, 'forSecHTML', 'html3folder', 'results.html'), u"r")
 		all_str = another_file.read()
