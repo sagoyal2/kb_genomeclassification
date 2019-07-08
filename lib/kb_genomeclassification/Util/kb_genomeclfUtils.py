@@ -420,7 +420,7 @@ class kb_genomeclfUtils(object):
 		maxEZ_df = pd.DataFrame(maxEZ, index=all_attributes.index, columns=["probability"])
 
 		predict_table_pd = pd.concat([after_classifier_df, maxEZ_df], axis=1)
-		predict_table_pd.to_html(os.path.join(self.scratch, 'forSecHTML', 'html3folder', 'results.html'))
+		predict_table_pd.to_html(os.path.join(self.scratch, 'forSecHTML', 'html3folder', 'results.html'), table_id="results")
 
 		#you can also save down table as text file or csv
 		"""
@@ -1205,7 +1205,7 @@ class kb_genomeclfUtils(object):
 
 		old_width = pd.get_option('display.max_colwidth')
 		pd.set_option('display.max_colwidth', -1)
-		four_columns.to_html(os.path.join(self.scratch, 'forZeroHTML', 'four_columns.html'), index=False, justify='center')
+		four_columns.to_html(os.path.join(self.scratch, 'forZeroHTML', 'four_columns.html'), index=False, justify='center', table_id = "four_columns")
 		pd.set_option('display.max_colwidth', old_width)
 
 
@@ -2153,7 +2153,7 @@ class kb_genomeclfUtils(object):
 			my_index.append(u'Average F1')
 
 			df = pd.DataFrame(data, index=my_index)
-			df.to_html(os.path.join(self.scratch, 'forHTML', 'html4folder', 'ensembleStatistics.html'))
+			df.to_html(os.path.join(self.scratch, 'forHTML', 'html4folder', 'ensembleStatistics.html'), table_id = "ensembleStatistics")
 
 			file = open(os.path.join(self.scratch, 'forHTML', 'html4folder', 'ensembleStatistics.html'), u'r')
 			allHTML = file.read()
@@ -2200,7 +2200,7 @@ class kb_genomeclfUtils(object):
 
 			df = pd.DataFrame(data, index=my_index)
 
-			df.to_html(os.path.join(self.scratch, 'forHTML', 'html1folder','newStatistics.html'))
+			df.to_html(os.path.join(self.scratch, 'forHTML', 'html1folder','newStatistics.html'), table_id = "newStatistics")
 
 			df['Max'] = df.idxmax(1)
 
@@ -2271,7 +2271,7 @@ class kb_genomeclfUtils(object):
 			"""
 
 			df = pd.DataFrame(data, index=my_index)
-			df.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'))
+			df.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'), table_id = "postStatistics")
 
 			df['Max'] = df.idxmax(1)
 			best_classifier_str = df['Max'].iloc[-1]
@@ -2572,7 +2572,7 @@ class kb_genomeclfUtils(object):
 
 		old_width = pd.get_option('display.max_colwidth')
 		pd.set_option('display.max_colwidth', -1)
-		df_top20.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'top20.html'), index=False, justify='center')
+		df_top20.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'top20.html'), index=False, justify='center', table_id = "top20")
 		pd.set_option('display.max_colwidth', old_width)
 
 		#create a downloadable link to all functional roles and weights
@@ -3362,25 +3362,28 @@ class kb_genomeclfUtils(object):
 		html_string = u"""
 		<!DOCTYPE html>
 		<html>
-		<body>
-
-		<p>If you have any missing genomes they are listed below (ie. these were included in your excel / pasted file but are not present in the workspace)</p>
-		<p>The missing genomes are: """ + str(missingGenomes) + """ </p>
-		<p>If there were missing genomes, we went ahead and still created a training set object excluding the missing genomes</p>
-
-		<br>
-
-		<p>Below is a more detailed table which shows which Genome ID, whether it was loaded into the Narrative, its Classification, and if it was Added to the Training Set</p>
-
-		"""
-		file.write(html_string)
-
-
-		sec_string = u"""
-		<!DOCTYPE html>
-		<html>
 		<head>
 		<style>
+
+		<!--
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+		<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.css">\
+		<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.js"></script>
+
+
+		<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
+		<script type="text/javascript" src="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
+
+		<link href="https://fonts.googleapis.com/css?family=Oxygen:400,700" rel="stylesheet">
+		<link rel="stylesheet" href="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.css"/>
+
+		<script type="text/javascript" language="javascript" class="init">
+		$(document).ready(function() {
+			$('#results').DataTable();
+		} );
+		</script>
+
+		
 		table, th, td {
 			border: 1px solid black;
 			border-collapse: collapse;
@@ -3402,9 +3405,24 @@ class kb_genomeclfUtils(object):
 			clear: both;
 			display: table;
 		}
+		
 		</style>
 		</head>
 		<body>
+
+		<p>If you have any missing genomes they are listed below (ie. these were included in your excel / pasted file but are not present in the workspace)</p>
+		<p>The missing genomes are: """ + str(missingGenomes) + """ </p>
+		<p>If there were missing genomes, we went ahead and still created a training set object excluding the missing genomes</p>
+
+		<br>
+
+		<p>Below is a more detailed table which shows which Genome ID, whether it was loaded into the Narrative, its Classification, and if it was Added to the Training Set</p>
+
+		"""
+		file.write(html_string)
+
+
+		sec_string = u"""
 
 		<h1 style="text-align:center;">Prediction Results</h1>
 
@@ -3418,11 +3436,13 @@ class kb_genomeclfUtils(object):
 		"""
 		file.write(sec_string)
 
+		
 		another_file = open(os.path.join(self.scratch, 'forSecHTML', 'html3folder', 'results.html'), u"r")
 		all_str = another_file.read()
 		another_file.close()
 
 		file.write(all_str)
+		
 
 		next_str= u"""
 		</body>

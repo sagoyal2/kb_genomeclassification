@@ -92,7 +92,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "workspace" : "sagoyal:narrative_1536939130038"
         }
         """
-        """
+        
         params = {
         "RAST_Annotated": 1,
         "shock_id": "a753ec76-df84-4447-95f5-7186a755fc3b",
@@ -105,8 +105,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         }
 
         self.getImpl().predict_phenotype(self.getContext(), params)
-        """
-        pass
+        
 
     def test_build_classifier(self):
     
@@ -208,6 +207,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # "workspace" : "sagoyal:narrative_1536939130038"
         # }
 
+        """
         params = {
         "save_ts": 1,
         "description": "myFullGoEverything",
@@ -227,6 +227,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         }
 
         self.getImpl().build_classifier(self.getContext(), params)
+        """
         
 
     def test_upload_trainingset(self):
