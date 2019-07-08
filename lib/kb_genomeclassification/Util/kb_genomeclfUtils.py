@@ -458,7 +458,7 @@ class kb_genomeclfUtils(object):
 			print(params.get('Upload_File'))
 			file_path = params.get('Upload_File')
 			print(os.system("ls"))
-			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], just_DF = pd.read_excel(file_path))
+			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], just_DF = pd.read_excel(os.path.join(os.path.sep,"staging",file_path)))
 			self.newReferencetoGenome(current_ws, params['description'], params['training_set_out'], inKBASE, inKBASE_Classification)
 			#self.workRAST(current_ws, just_DF = pd.read_excel(file_path))
 			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
@@ -692,7 +692,7 @@ class kb_genomeclfUtils(object):
 			"degree": 3,
 			"gamma": "auto",
 			"coef0": 0,
-			"probability": "False",
+			"probability": "True",
 			"shrinking": "True",
 			"svm_tolerance": 0.001,
 			"cache_size": 200,
@@ -833,7 +833,7 @@ class kb_genomeclfUtils(object):
 			"decision_tree_classifier_box": 1,
 			"support_vector_machine_box": 1,
 			"neural_network_box": 1,
-			"voting": "hard",
+			"voting": "soft",
 			"en_weights": "",
 			"en_n_jobs": 1,
 			"flatten_transform": ""
@@ -1180,6 +1180,7 @@ class kb_genomeclfUtils(object):
 					add_trainingSet.append(["Yes"])
 
 				else:
+					# you will end up with case where the genomes will be RAST annotated but not have .RAST attached to it
 
 					inKBASE.append(listGNames[index])
 					inKBASE_Classification.append(listClassification[index])
@@ -1645,6 +1646,7 @@ class kb_genomeclfUtils(object):
 
 		if not round_best:
 			# check if int, float, or None
+			clfA_params["presort"] = self.str_to_bool(clfA_params["presort"])
 			if clfA_params["dt_class_weight"] == "":
 				clfA_params["dt_class_weight"] = None
 			elif clfA_params["dt_class_weight"] == "balanced":

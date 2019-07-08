@@ -27,11 +27,6 @@ suggestions:
 # Configure the display and description of parameters
 #
 parameters :
-    shock_id :
-        ui-name : |
-            File Name
-        short-hint : |
-            File Name
     RAST_Annotated :
         ui-name : |
             Genomes RAST Annotated
@@ -44,9 +39,9 @@ parameters :
             Select the attribute that classifier be built
     list_name :
         ui-name : |
-            Categorizer Training Set
+            Genomes to Predict
         short-hint : |
-            Paste the list of traning set data
+            Paste a list of Genomes that you want predictions on
     description:
         ui-name : |
             Description
