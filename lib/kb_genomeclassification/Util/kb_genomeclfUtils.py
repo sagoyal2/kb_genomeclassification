@@ -412,15 +412,25 @@ class kb_genomeclfUtils(object):
 			after_classifier_result_forDF.append(my_mapping.keys()[my_mapping.values().index(current_result)])
 
 
-		after_classifier_df = pd.DataFrame(after_classifier_result_forDF, index=all_attributes.index, columns=[target])
-
-		#create a column for the probability of a prediction being accurate
+		#after_classifier_df = pd.DataFrame(after_classifier_result_forDF, index=all_attributes.index, columns=[target])
 		allProbs = after_classifier.predict_proba(all_attributes)
 		maxEZ = np.amax(allProbs, axis=1)
-		maxEZ_df = pd.DataFrame(maxEZ, index=all_attributes.index, columns=["probability"])
 
-		predict_table_pd = pd.concat([after_classifier_df, maxEZ_df], axis=1)
-		predict_table_pd.to_html(os.path.join(self.scratch, 'forSecHTML', 'html3folder', 'results.html'))
+		# after_classifier_df = pd.DataFrame.from_dict({'Genome Id': all_attributes.index,target: after_classifier_result_forDF})
+		# after_classifier_df = after_classifier_df[['Genome Id', target]]
+
+		#create a column for the probability of a prediction being accurate
+		# allProbs = after_classifier.predict_proba(all_attributes)
+		# maxEZ = np.amax(allProbs, axis=1)
+		# maxEZ_df = pd.DataFrame(maxEZ, index=all_attributes.index, columns=["Probability"])
+
+		predict_table_pd = pd.DataFrame.from_dict({'Genome Id': all_attributes.index, target: after_classifier_result_forDF, "Probability": maxEZ})
+		#predict_table_pd = predict_table_pd.set_index('Genome Id')
+		predict_table_pd = predict_table_pd[['Genome Id', target, "Probability"]]
+
+
+
+		predict_table_pd.to_html(os.path.join(self.scratch, 'forSecHTML', 'html3folder', 'results.html'), index=False, table_id="results", classes =["table", "table-striped", "table-bordered"])
 
 		#you can also save down table as text file or csv
 		"""
@@ -890,7 +900,7 @@ class kb_genomeclfUtils(object):
 		tem_file.close()
 
 		if not for_predict:
-			print "I'm inside the if not for_predict"
+			print ("I'm inside the if not for_predict")
 			my_workPD = pd.read_csv(os.path.join(self.scratch, 'trialoutput.txt'), dtype=str, delimiter="\s+")
 			#print my_workPD
 		else: 
@@ -1205,7 +1215,7 @@ class kb_genomeclfUtils(object):
 
 		old_width = pd.get_option('display.max_colwidth')
 		pd.set_option('display.max_colwidth', -1)
-		four_columns.to_html(os.path.join(self.scratch, 'forZeroHTML', 'four_columns.html'), index=False, justify='center')
+		four_columns.to_html(os.path.join(self.scratch, 'forZeroHTML', 'four_columns.html'), index=False, justify='center', table_id = "four_columns", classes =["table", "table-striped", "table-bordered"])
 		pd.set_option('display.max_colwidth', old_width)
 
 
@@ -1376,6 +1386,8 @@ class kb_genomeclfUtils(object):
 
 				for function in range(len (functionList)):
 					if str(functionList[function][search][0]).lower() != 'hypothetical protein':
+						# print("functionList[function][search]")
+						# print(functionList[function][search])
 						#print(str(functionList[function]['functions'][0]).find(" @ " ))
 						#if (str(functionList[function]['functions'][0]).find(" @ " ) > 0):
 						if " @ " in str(functionList[function][search][0]):
@@ -1386,7 +1398,7 @@ class kb_genomeclfUtils(object):
 						elif "; " in str(functionList[function][search][0]):
 							listOfFunctionalRoles.extend(str(functionList[function][search][0]).split("; "))
 						else:
-							listOfFunctionalRoles.append(str(functionList[function][search][0]))
+							listOfFunctionalRoles.append(str(functionList[function][search]))
 
 				# for function in range(len (functionList)):
 				# 	if str(functionList[function]['functions'][0]).lower() != 'hypothetical protein':
@@ -1424,6 +1436,7 @@ class kb_genomeclfUtils(object):
 						else:
 							listOfFunctionalRoles.append(str(functionList[function][search]))
 
+
 			name_and_roles[current_gName] = listOfFunctionalRoles
 
 			print "I have arrived inside the desired for loop!!"
@@ -1433,6 +1446,10 @@ class kb_genomeclfUtils(object):
 		if not for_predict:
 			master_pre_Role = list(itertools.chain(*name_and_roles.values()))
 			master_Role = list(set(master_pre_Role))
+		
+
+		print("this is my master_Role")
+		print(master_Role)
 
 		#In case you want to save functional roles (master_Role) and the dictionary containing {Genome_ID: [Functional Roles]}
 		"""
@@ -2153,7 +2170,7 @@ class kb_genomeclfUtils(object):
 			my_index.append(u'Average F1')
 
 			df = pd.DataFrame(data, index=my_index)
-			df.to_html(os.path.join(self.scratch, 'forHTML', 'html4folder', 'ensembleStatistics.html'))
+			df.to_html(os.path.join(self.scratch, 'forHTML', 'html4folder', 'ensembleStatistics.html'), table_id = "ensembleStatistics", classes =["table", "table-striped", "table-bordered"])
 
 			file = open(os.path.join(self.scratch, 'forHTML', 'html4folder', 'ensembleStatistics.html'), u'r')
 			allHTML = file.read()
@@ -2200,7 +2217,7 @@ class kb_genomeclfUtils(object):
 
 			df = pd.DataFrame(data, index=my_index)
 
-			df.to_html(os.path.join(self.scratch, 'forHTML', 'html1folder','newStatistics.html'))
+			df.to_html(os.path.join(self.scratch, 'forHTML', 'html1folder','newStatistics.html'), table_id = "newStatistics", classes =["table", "table-striped", "table-bordered"])
 
 			df['Max'] = df.idxmax(1)
 
@@ -2271,7 +2288,7 @@ class kb_genomeclfUtils(object):
 			"""
 
 			df = pd.DataFrame(data, index=my_index)
-			df.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'))
+			df.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'), table_id = "", classes =["display","table", "table-striped", "table-bordered"])
 
 			df['Max'] = df.idxmax(1)
 			best_classifier_str = df['Max'].iloc[-1]
@@ -2572,7 +2589,7 @@ class kb_genomeclfUtils(object):
 
 		old_width = pd.get_option('display.max_colwidth')
 		pd.set_option('display.max_colwidth', -1)
-		df_top20.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'top20.html'), index=False, justify='center')
+		df_top20.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'top20.html'), index=False, justify='center', table_id = "", classes =["display","table", "table-striped", "table-bordered"])
 		pd.set_option('display.max_colwidth', old_width)
 
 		#create a downloadable link to all functional roles and weights
@@ -2635,7 +2652,20 @@ class kb_genomeclfUtils(object):
 		html_string = u"""
 		<!DOCTYPE html>
 		<html>
+
+		<head>
+		
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css" rel="stylesheet">
+
+		<style>
+		table, th, td , tr{
+			text-align: center;
+		}
+		</style>
+
+		</head>
 		<body>
+		<div class="container">
 
 		<p>If you have any missing genomes they are listed below (ie. these were included in your excel / pasted file but are not present in the workspace)</p>
 		<p>The missing genomes are: """ + str(missingGenomes) + """ </p>
@@ -2654,7 +2684,17 @@ class kb_genomeclfUtils(object):
 		file.write(all_str)
 
 		next_str =u"""
+		</div>
 		</body>
+
+		<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
+		<script type="text/javascript" src="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
+    
+		<script type="text/javascript" language="javascript" class="init">
+   		$(document).ready(function() {
+			$('#four_columns').DataTable();
+		});
+		</script>
 		</html>
 		"""
 		file.write(next_str)
@@ -2671,32 +2711,20 @@ class kb_genomeclfUtils(object):
 		html_string = u"""
 		<!DOCTYPE html>
 		<html>
+
 		<head>
+		
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css" rel="stylesheet">
+
 		<style>
-		table, th, td {
-			border: 1px solid black;
-			border-collapse: collapse;
-		}
-
-		* {
-			box-sizing: border-box;
-		}
-
-		.column {
-			float: left;
-			width: 50%;
-			padding: 10px;
-		}
-
-		/* Clearfix (clear floats) */
-		.row::after {
-			content: "";
-			clear: both;
-			display: table;
+		table, th, td , tr{
+			text-align: center;
 		}
 		</style>
+
 		</head>
 		<body>
+		<div class="container">
 
 		<h1 style="text-align:center;">""" + global_target + """ Classifier</h1> """
 
@@ -2833,10 +2861,21 @@ class kb_genomeclfUtils(object):
 			file.write(next_str)
 
 		next_str = u"""
-		<a href="../html2folder/html2.html">Second html page</a>
+		</div>
+		</body>
+
+		<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
+		<script type="text/javascript" src="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
+    
+		<script type="text/javascript" language="javascript" class="init">
+   		$(document).ready(function() {
+			$('#newStatistics').DataTable();
+		});
+		</script>
+		</html>
 		"""
 
-		#file.write(next_str)
+		file.write(next_str)
 
 		file.close()
 
@@ -2849,32 +2888,20 @@ class kb_genomeclfUtils(object):
 		html_string = u"""
 		<!DOCTYPE html>
 		<html>
+
 		<head>
+		
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css" rel="stylesheet">
+
 		<style>
-		table, th, td {
-			border: 1px solid black;
-			border-collapse: collapse;
-		}
-
-		* {
-			box-sizing: border-box;
-		}
-
-		.column {
-			float: left;
-			width: 50%;
-			padding: 10px;
-		}
-
-		/* Clearfix (clear floats) */
-		.row::after {
-			content: "";
-			clear: both;
-			display: table;
+		table, th, td , tr{
+			text-align: center;
 		}
 		</style>
+
 		</head>
 		<body>
+		<div class="container">
 
 		<h1 style="text-align:center;">""" + global_target + """ - Decision Tree Tuning</h1>
 
@@ -3004,7 +3031,17 @@ class kb_genomeclfUtils(object):
 		file.write(all_str)
 
 		next_str = u"""
+		</div>
 		</body>
+
+		<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
+		<script type="text/javascript" src="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
+    
+		<script type="text/javascript" language="javascript" class="init">
+   		$(document).ready(function() {
+			$('table.display').DataTable();
+		});
+		</script>
 		</html>
 		"""
 		file.write(next_str)
@@ -3017,32 +3054,20 @@ class kb_genomeclfUtils(object):
 		html_string = u"""
 		<!DOCTYPE html>
 		<html>
+
 		<head>
+		
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css" rel="stylesheet">
+
 		<style>
-		table, th, td {
-			border: 1px solid black;
-			border-collapse: collapse;
-		}
-
-		* {
-			box-sizing: border-box;
-		}
-
-		.column {
-			float: left;
-			width: 50%;
-			padding: 10px;
-		}
-
-		/* Clearfix (clear floats) */
-		.row::after {
-			content: "";
-			clear: both;
-			display: table;
+		table, th, td , tr{
+			text-align: center;
 		}
 		</style>
+
 		</head>
 		<body>
+		<div class="container">
 
 		<h1 style="text-align:center;">""" + global_target + """ - Ensemble Model</h1>
 
@@ -3080,11 +3105,17 @@ class kb_genomeclfUtils(object):
 		next_str = u"""
 		</div>
 		</div>
-		"""
-		file.write(next_str)
-
-		next_str = u"""
+		</div>
 		</body>
+
+		<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
+		<script type="text/javascript" src="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
+    
+		<script type="text/javascript" language="javascript" class="init">
+   		$(document).ready(function() {
+			$('#ensembleStatistics').DataTable();
+		});
+		</script>
 		</html>
 		"""
 		file.write(next_str)
@@ -3362,7 +3393,20 @@ class kb_genomeclfUtils(object):
 		html_string = u"""
 		<!DOCTYPE html>
 		<html>
+
+		<head>
+		
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css" rel="stylesheet">
+
+		<style>
+		table, th, td , tr{
+			text-align: center;
+		}
+		</style>
+
+		</head>
 		<body>
+		<div class="container">
 
 		<p>If you have any missing genomes they are listed below (ie. these were included in your excel / pasted file but are not present in the workspace)</p>
 		<p>The missing genomes are: """ + str(missingGenomes) + """ </p>
@@ -3377,34 +3421,6 @@ class kb_genomeclfUtils(object):
 
 
 		sec_string = u"""
-		<!DOCTYPE html>
-		<html>
-		<head>
-		<style>
-		table, th, td {
-			border: 1px solid black;
-			border-collapse: collapse;
-		}
-
-		* {
-			box-sizing: border-box;
-		}
-
-		.column {
-			float: left;
-			width: 50%;
-			padding: 10px;
-		}
-
-		/* Clearfix (clear floats) */
-		.row::after {
-			content: "";
-			clear: both;
-			display: table;
-		}
-		</style>
-		</head>
-		<body>
 
 		<h1 style="text-align:center;">Prediction Results</h1>
 
@@ -3418,16 +3434,29 @@ class kb_genomeclfUtils(object):
 		"""
 		file.write(sec_string)
 
+		
 		another_file = open(os.path.join(self.scratch, 'forSecHTML', 'html3folder', 'results.html'), u"r")
 		all_str = another_file.read()
 		another_file.close()
 
 		file.write(all_str)
+		
 
 		next_str= u"""
+		</div>
 		</body>
+
+		<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
+		<script type="text/javascript" src="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
+    
+		<script type="text/javascript" language="javascript" class="init">
+   		$(document).ready(function() {
+			$('#results').DataTable();
+		});
+		</script>
 		</html>
 		"""
+
 		file.write(next_str)
 
 		file.close()

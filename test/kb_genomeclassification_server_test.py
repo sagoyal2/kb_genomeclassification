@@ -92,6 +92,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "workspace" : "sagoyal:narrative_1536939130038"
         }
         """
+        
         """
         params = {
         "RAST_Annotated": 1,
@@ -251,7 +252,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "workspace" : "sagoyal:narrative_1536939130038" #"sagoyal:narrative_1534292322496"
         }
         """
-        pass
+        
         """
         params = {
         "RAST_Annotated": 0,
@@ -263,6 +264,18 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "training_set_out": "FullGo",
         "workspace" : "sagoyal:narrative_1536939130038"
         }
+        """
+        """
+        params = {
+        "RAST_Annotated": 1,
+        "Upload_File": "prodTrialRAST.xlsx",
+        "list_name": "Genome_ID	Classification\n262543.4.RAST	facultative\n1134785.3.RAST	facultative\n216432.3.RAST	aerobic\n269798.12.RAST	aerobic\n309807.19.RAST	aerobic\n411154.5.RAST	aerobic\n485917.5.RAST	aerobic\n485918.5.RAST	aerobic\n457391.3.RAST	anaerobic\n470145.6.RAST	anaerobic\n665954.3.RAST	anaerobic\n679190.3.RAST	anaerobic",
+        "description": "myStagingTrial",
+        "phenotypeclass": "Respiration",
+        "training_set_out": "StagingRespiration",
+        "workspace" : "sagoyal:narrative_1536939130038"
+        }
 
         self.getImpl().upload_trainingset(self.getContext(), params)
         """
+        pass
