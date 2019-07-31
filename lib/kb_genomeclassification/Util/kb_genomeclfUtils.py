@@ -2288,7 +2288,7 @@ class kb_genomeclfUtils(object):
 			"""
 
 			df = pd.DataFrame(data, index=my_index)
-			df.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'), table_id = "", classes =["display","table", "table-striped", "table-bordered"])
+			df.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'), table_id = "postStatistics", classes =["table", "table-striped", "table-bordered"])
 
 			df['Max'] = df.idxmax(1)
 			best_classifier_str = df['Max'].iloc[-1]
@@ -2589,7 +2589,7 @@ class kb_genomeclfUtils(object):
 
 		old_width = pd.get_option('display.max_colwidth')
 		pd.set_option('display.max_colwidth', -1)
-		df_top20.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'top20.html'), index=False, justify='center', table_id = "", classes =["display","table", "table-striped", "table-bordered"])
+		df_top20.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'top20.html'), index=False, justify='center', table_id = "top20", classes =["table", "table-striped", "table-bordered"])
 		pd.set_option('display.max_colwidth', old_width)
 
 		#create a downloadable link to all functional roles and weights
@@ -2661,6 +2661,15 @@ class kb_genomeclfUtils(object):
 		table, th, td , tr{
 			text-align: center;
 		}
+		.table tbody tr td{background:#fff /*set your own color*/} 
+    	.table tbody tr th{background:#fff /*set your own color*/} 
+    	.table thead tr th{background:#fff /*set your own color*/} 
+		
+		.container {
+			max-width: 90%;
+			padding-top: 50px;
+      		padding-bottom: 50px;
+		}
 		</style>
 
 		</head>
@@ -2717,8 +2726,38 @@ class kb_genomeclfUtils(object):
 		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css" rel="stylesheet">
 
 		<style>
+		.dataTables_filter {
+      		width: 50%;
+      		float: right;
+      		text-align: right;
+    	}
 		table, th, td , tr{
 			text-align: center;
+		}
+		.table tbody tr td{background:#fff /*set your own color*/} 
+    	.table tbody tr th{background:#fff /*set your own color*/} 
+    	.table thead tr th{background:#fff /*set your own color*/} 
+
+		.container {
+			max-width: 90%;
+			padding-top: 50px;
+      		padding-bottom: 50px;
+		}
+		.row {
+			display: flex;
+			flex-wrap: wrap;
+			padding: 0 4px;
+		}
+
+		/* Create two equal columns that sits next to each other */
+		.column {
+			flex: 50%;
+			padding: 0 4px;
+		}
+
+		.column img {
+			margin-top: 8px;
+			vertical-align: middle;
 		}
 		</style>
 
@@ -2774,39 +2813,26 @@ class kb_genomeclfUtils(object):
 
 		if classifier_type == u"run_all":
 			next_str = u"""
-		<div class="row">
-		  <div class="column">
-			  <p style="text-align:left; font-size:160%;">A.) K-Nearest-Neighbors Classifier <a href="../forDATA/""" + classifier_name + """_KNeighborsClassifier.pickle" download> (Download) </a> </p>
-			<img src=" """+ classifier_name +"""_KNeighborsClassifier.png" alt="Snow" style="width:100%">
-			  <!-- <figcaption>Fig.1 - Trulli, Puglia, Italy.</figcaption> -->
-		  </div>
-		  <div class="column">
-			  <p style="text-align:left; font-size:160%;">B.) Logistic Regression Classifier <a href="../forDATA/""" + classifier_name + """_LogisticRegression.pickle" download> (Download) </a> </p>
-			<img src=" """+ classifier_name +"""_LogisticRegression.png" alt="Snow" style="width:100%">
-		  </div>
-		</div>
+			<div class="row"> 
+				<div class="column">
+					<p style="text-align:left; font-size:160%;">A.) K-Nearest-Neighbors Classifier <a href="../forDATA/""" + classifier_name + """_KNeighborsClassifier.pickle" download>  (Download) </a> </p>
+					<img src=" """+ classifier_name +"""_KNeighborsClassifier.png"  alt="Snow" style="width:100%">
+					<p style="text-align:left; font-size:160%;">C.) Naive Gaussian Bayes Classifier <a href="../forDATA/""" + classifier_name + """_GaussianNB.pickle" download> (Download) </a> </p>
+					<img src=" """+ classifier_name +"""_GaussianNB.png" alt="Snow" style="width:100%">
+					<p style="text-align:left; font-size:160%;">E.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier.pickle" download> (Download) </a> </p>
+					<img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
+				</div>
 
-		<div class="row">
-		  <div class="column">
-			  <p style="text-align:left; font-size:160%;">C.) Naive Gaussian Bayes Classifier <a href="../forDATA/""" + classifier_name + """_GaussianNB.pickle" download> (Download) </a> </p>
-			<img src=" """+ classifier_name +"""_GaussianNB.png" alt="Snow" style="width:100%">
-		  </div>
-		  <div class="column">
-			  <p style="text-align:left; font-size:160%;">D.) Support Vector Machine (SVM) Classifier <a href="../forDATA/""" + classifier_name + """_SVM.pickle" download> (Download) </a> </p>
-			<img src=" """+ classifier_name +"""_SVM.png" alt="Snow" style="width:100%">
-		  </div>
-		</div>
+				<div class="column">
+					<p style="text-align:left; font-size:160%;">B.) Logistic Regression Classifier <a href="../forDATA/""" + classifier_name + """_LogisticRegression.pickle" download> (Download) </a> </p>
+					<img src=" """+ classifier_name +"""_LogisticRegression.png" alt="Snow" style="width:100%">
+					<p style="text-align:left; font-size:160%;">D.) Support Vector Machine (SVM) Classifier <a href="../forDATA/""" + classifier_name + """_SVM.pickle" download> (Download) </a> </p>
+					<img src=" """+ classifier_name +"""_SVM.png" alt="Snow" style="width:100%">
+					<p style="text-align:left; font-size:160%;">F.) Neural Network Classifier <a href="../forDATA/""" + classifier_name + """_NeuralNetwork.pickle" download> (Download) </a> </p>
+					<img src=" """+ classifier_name +"""_NeuralNetwork.png" alt="Snow" style="width:100%">
+				</div> 
+			</div>
 
-		<div class="row">
-		  <div class="column">
-			  <p style="text-align:left; font-size:160%;">E.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier.pickle" download> (Download) </a> </p>
-			<img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
-		  </div>
-		  <div class="column">
-			  <p style="text-align:left; font-size:160%;">F.) Neural Network Classifier <a href="../forDATA/""" + classifier_name + """_NeuralNetwork.pickle" download> (Download) </a> </p>
-			<img src=" """+ classifier_name +"""_NeuralNetwork.png" alt="Snow" style="width:100%">
-		  </div>
-		</div>
 			"""
 			file.write(next_str)
 
@@ -2866,10 +2892,18 @@ class kb_genomeclfUtils(object):
 
 		<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
 		<script type="text/javascript" src="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
-    
+		<script type="text/javascript" src="https://cdn.datatables.net/fixedcolumns/3.2.6/js/dataTables.fixedColumns.min.js"></script>
+
 		<script type="text/javascript" language="javascript" class="init">
    		$(document).ready(function() {
-			$('#newStatistics').DataTable();
+			$('#newStatistics').DataTable({
+        		ordering:		false,
+				scrollY:        true,
+				scrollX:        true,
+				scrollCollapse: true,
+				paging:         false,
+				fixedColumns:   true
+			});
 		});
 		</script>
 		</html>
@@ -2894,9 +2928,39 @@ class kb_genomeclfUtils(object):
 		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css" rel="stylesheet">
 
 		<style>
+		.dataTables_filter {
+      		width: 50%;
+      		float: right;
+      		text-align: right;
+    	}
 		table, th, td , tr{
 			text-align: center;
 		}
+		.table tbody tr td{background:#fff /*set your own color*/} 
+    	.table tbody tr th{background:#fff /*set your own color*/} 
+    	.table thead tr th{background:#fff /*set your own color*/} 
+
+		.container {
+			max-width: 90%;
+			padding-top: 50px;
+      		padding-bottom: 50px;
+		}
+		.row {
+			display: flex;
+			flex-wrap: wrap;
+			padding: 0 4px;
+		}
+
+		/* Create two equal columns that sits next to each other */
+		.column {
+			flex: 50%;
+			padding: 0 4px;
+		}
+
+		.column img {
+			margin-top: 8px;
+			vertical-align: middle;
+		}		
 		</style>
 
 		</head>
@@ -3038,8 +3102,16 @@ class kb_genomeclfUtils(object):
 		<script type="text/javascript" src="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
     
 		<script type="text/javascript" language="javascript" class="init">
-   		$(document).ready(function() {
-			$('table.display').DataTable();
+		$(document).ready(function() {
+			$('#postStatistics').DataTable({
+        		ordering:		false,
+				scrollY:        true,
+				scrollX:        true,
+				scrollCollapse: true,
+				paging:         false,
+				fixedColumns:   true
+			});
+			$('#top20').DataTable();
 		});
 		</script>
 		</html>
@@ -3060,9 +3132,23 @@ class kb_genomeclfUtils(object):
 		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css" rel="stylesheet">
 
 		<style>
+		.dataTables_filter {
+      		width: 50%;
+      		float: right;
+      		text-align: right;
+    	}
 		table, th, td , tr{
 			text-align: center;
 		}
+
+		.container {
+      		max-width: 90%;
+			padding-top: 50px;
+      		padding-bottom: 50px;
+    	}
+		.table tbody tr td{background:#fff /*set your own color*/} 
+    	.table tbody tr th{background:#fff /*set your own color*/} 
+    	.table thead tr th{background:#fff /*set your own color*/} 
 		</style>
 
 		</head>
@@ -3089,12 +3175,6 @@ class kb_genomeclfUtils(object):
 		"""
 		file.write(next_str)
 
-		next_str = u"""
-		<p style="font-size:160%;">Comparison of statistics in the form of Accuracy, Precision, Recall and F1 Score calculated against the confusion matrices of respiration type for the classifiers</p>
-		<p style="font-size:100%;">Defintion of key statistics: Accuracy - how often is the classifier correct, Precision - when predition is positive how often is it correct, 
-		Recall - when the condition is correct how often is it correct, F1 Score - This is a weighted average of recall and precision </p>            
-		"""
-		file.write(next_str)
 
 		another_file = open(os.path.join(self.scratch, 'forHTML', 'html4folder', 'ensembleStatistics.html'), u"r")
 		all_str = another_file.read()
@@ -3105,6 +3185,13 @@ class kb_genomeclfUtils(object):
 		next_str = u"""
 		</div>
 		</div>
+		<p style="font-size:160%;">Comparison of statistics in the form of Accuracy, Precision, Recall and F1 Score calculated against the confusion matrices of respiration type for the classifiers</p>
+		<p style="font-size:100%;">Defintion of key statistics: Accuracy - how often is the classifier correct, Precision - when predition is positive how often is it correct, 
+		Recall - when the condition is correct how often is it correct, F1 Score - This is a weighted average of recall and precision </p>            
+		"""
+		file.write(next_str)
+
+		next_str = u"""
 		</div>
 		</body>
 
@@ -3113,7 +3200,13 @@ class kb_genomeclfUtils(object):
     
 		<script type="text/javascript" language="javascript" class="init">
    		$(document).ready(function() {
-			$('#ensembleStatistics').DataTable();
+			$('#ensembleStatistics').DataTable({
+        		ordering:		false,
+				scrollY:        true,
+				scrollX:        true,
+				scrollCollapse: true,
+				paging:         false
+			});
 		});
 		</script>
 		</html>
