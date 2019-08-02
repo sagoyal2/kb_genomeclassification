@@ -439,7 +439,7 @@ class kb_genomeclfUtils(object):
 		#csv
 		predict_table_pd.to_csv(r'/kb/module/work/tmp/pandas.txt', header=None, index=None, sep=' ', mode='a')
 		"""
-		self.html_report_3(missingGenomes)
+		self.html_report_3(missingGenomes, params['phenotypeclass'])
 		htmloutput_name = self.html_nodual("forSecHTML")
 
 		return htmloutput_name
@@ -2653,7 +2653,7 @@ class kb_genomeclfUtils(object):
 
 	### For Build_Classifier App
 
-	def html_report_0(self, phenotype, missingGenomes):
+	def html_report_0(self, missingGenomes, phenotype):
 		file = open(os.path.join(self.scratch, 'forZeroHTML', 'html0.html'), u"w")
 
 		html_string = u"""
@@ -3530,7 +3530,7 @@ class kb_genomeclfUtils(object):
 		return "dual_12.html"
 
 	### For Predict_Phenotype App	
-	def html_report_3(self, missingGenomes):
+	def html_report_3(self, missingGenomes, phenotype):
 		"""
 		does: creates an .html file that makes the first report (second app).
 		"""
@@ -3554,13 +3554,15 @@ class kb_genomeclfUtils(object):
 		<body>
 		<div class="container">
 
-		<p>If you have any missing genomes they are listed below (ie. these were included in your excel / pasted file but are not present in the workspace)</p>
-		<p>The missing genomes are: """ + str(missingGenomes) + """ </p>
-		<p>If there were missing genomes, we went ahead and still created a training set object excluding the missing genomes</p>
+		<h1 style="text-align:center;"> Predicting """ + phenotype + """ of Genomes</h1>
 
+		<p> Missing genomes are listed below (ie. these were included in your excel / pasted file but are not present in the workspace).
+		A training set object was created regardless of if there were missing genomes. In the event that there were missing genomes they were excluded  </p>
+		<p> The missing genomes are: """ + str(missingGenomes) + """ </p>
+		
 		<br>
 
-		<p>Below is a more detailed table which shows which Genome ID, whether it was loaded into the Narrative, its Classification, and if it was Added to the Training Set</p>
+		<p>Below is a detailed table which shows the Genome ID and whether it was loaded into the Narrative</p>
 
 		"""
 		file.write(html_string)
@@ -3573,9 +3575,13 @@ class kb_genomeclfUtils(object):
 		<!-- <h2>Maybe we can add some more text here later?</h2> -->
 		<!--<p>How to create side-by-side images with the CSS float property:</p> -->
 
-		<p style="text-align:center; font-size:160%;">  Here is a simple table that shows the prediction for each sample and the probability of that prediction being correct </p>
-		<p style="text-align:center; font-size:100%;">  (Remember you can always increase the probabilty of the prediction being correct by adding in more data in the build classifier app and then re-running this app. Good Luck!) </p>
+		<p>  Here is a simple table that shows the prediction for each sample and the probability of that prediction being correct </p>
 
+		<p> Ways of improving predictions </p>
+		<ul>
+			<li>Gather more data</li>
+			<li>Tune Hyperparameters (additional options in Build Classifier App)</li>
+		</ul> 
 
 		"""
 		file.write(sec_string)
