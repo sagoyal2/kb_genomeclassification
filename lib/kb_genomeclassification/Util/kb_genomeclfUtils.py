@@ -2534,7 +2534,7 @@ class kb_genomeclfUtils(object):
 
 		color_set = []
 		for class_current in range(len(class_list)):
-			color_set.extend(['%.4f'%random.uniform(0, 1) + " " + '%.4f'%random.uniform(0, 1) + " " + '0.925'])
+			color_set.extend(['%.4f'%random.uniform(0, 1) + " " + '%.4f'%random.uniform(0, 1) + " " + '0.900'])
 
 		for class_current, my_color in izip(range(len(class_list)),color_set):
 			third_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[class_current], ur'\1, color = "%s"' % my_color, third_fix)
