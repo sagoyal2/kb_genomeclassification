@@ -2288,7 +2288,7 @@ class kb_genomeclfUtils(object):
 			"""
 
 			df = pd.DataFrame(data, index=my_index)
-			df.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'), table_id = "", classes =["display","table", "table-striped", "table-bordered"])
+			df.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'), table_id = "postStatistics", classes =["table", "table-striped", "table-bordered"])
 
 			df['Max'] = df.idxmax(1)
 			best_classifier_str = df['Max'].iloc[-1]
@@ -2589,7 +2589,7 @@ class kb_genomeclfUtils(object):
 
 		old_width = pd.get_option('display.max_colwidth')
 		pd.set_option('display.max_colwidth', -1)
-		df_top20.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'top20.html'), index=False, justify='center', table_id = "", classes =["display","table", "table-striped", "table-bordered"])
+		df_top20.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'top20.html'), index=False, justify='center', table_id = "top20", classes =["table", "table-striped", "table-bordered"])
 		pd.set_option('display.max_colwidth', old_width)
 
 		#create a downloadable link to all functional roles and weights
@@ -2661,19 +2661,28 @@ class kb_genomeclfUtils(object):
 		table, th, td , tr{
 			text-align: center;
 		}
+		.table tbody tr td{background:#fff /*set your own color*/} 
+    	.table tbody tr th{background:#fff /*set your own color*/} 
+    	.table thead tr th{background:#fff /*set your own color*/} 
+		
+		.container {
+			max-width: 90%;
+			padding-top: 50px;
+      		padding-bottom: 50px;
+		}
 		</style>
 
 		</head>
 		<body>
 		<div class="container">
 
-		<p>If you have any missing genomes they are listed below (ie. these were included in your excel / pasted file but are not present in the workspace)</p>
-		<p>The missing genomes are: """ + str(missingGenomes) + """ </p>
-		<p>If there were missing genomes, we went ahead and still created a training set object excluding the missing genomes</p>
+		<p> Missing genomes are listed below (ie. these were included in your excel / pasted file but are not present in the workspace) </p>
+		<p> The missing genomes are: """ + str(missingGenomes) + """ </p>
+		<p> A training set object was created regardless of if there were missing genomes. In the event that there were missing genomes they were excluded </p>
 
 		<br>
 
-		<p>Below is a more detailed table which shows which Genome ID, whether it was loaded into the Narrative, its Classification, and if it was Added to the Training Set</p>
+		<p>Below is a detailed table which shows Genome ID, whether it was loaded into the Narrative, its Classification, and if it was Added to the Training Set</p>
 
 		"""
 		file.write(html_string)
@@ -2717,8 +2726,38 @@ class kb_genomeclfUtils(object):
 		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css" rel="stylesheet">
 
 		<style>
+		.dataTables_filter {
+      		width: 50%;
+      		float: right;
+      		text-align: right;
+    	}
 		table, th, td , tr{
 			text-align: center;
+		}
+		.table tbody tr td{background:#fff /*set your own color*/} 
+    	.table tbody tr th{background:#fff /*set your own color*/} 
+    	.table thead tr th{background:#fff /*set your own color*/} 
+
+		.container {
+			max-width: 90%;
+			padding-top: 50px;
+      		padding-bottom: 50px;
+		}
+		.row {
+			display: flex;
+			flex-wrap: wrap;
+			padding: 0 4px;
+		}
+
+		/* Create two equal columns that sits next to each other */
+		.column {
+			flex: 50%;
+			padding: 0 4px;
+		}
+
+		.column img {
+			margin-top: 8px;
+			vertical-align: middle;
 		}
 		</style>
 
@@ -2733,14 +2772,20 @@ class kb_genomeclfUtils(object):
 		if classifier_type == u"run_all":
 			
 			next_str = u"""
-			<p style="text-align:center; font-size:160%;">  Prediction of respiration type based on classifiers depicted in the form of confusion matrices*. 
-			A.) K-Nearest-Neighbors Classifier,  
-			B.) Logistic Regression Classifier,
-			C.) Naive Gaussian Bayes Classifier,
-			D.) Support Vector Machine (SVM) Classifier,
-			E.) Decision Tree Classifier,  
-			F.) Neural Network Classifier</p>
-			<h2> Disclaimer:No feature selection and parameter optimization was not done</h2>
+			<p style="text-align:center; font-size:160%;"> """ + global_target + """ Classification models were created based on the selected trainging set object, classification algorithim, and attribute.
+			The effectiveness of each model is displayed by a confusion matrix* and relevant statistical measures below. </p>
+
+			The selected classifiers were:
+			<ul>
+				<li>K-Nearest-Neighbors Classifier</li>
+				<li>Logistic Regression Classifier</li>
+				<li>Naive Gaussian Bayes Classifier</li>
+				<li>Support Vector Machine (SVM) Classifier</li>
+				<li>Decision Tree Classifier</li>
+				<li>Neural Network </li>
+			</ul> 
+
+			<p> Further more, advanced options were not selected so no feature selection and parameter optimization was conducted. </p>
 			"""
 
 			file.write(next_str)
@@ -2757,63 +2802,58 @@ class kb_genomeclfUtils(object):
 
 		next_str = u"""
 		<p style="font-size:110%;"> 
-		* A confusion matrix is a table that is used to describe the performance of a classifier
+		*A confusion matrix is a table that is used to describe the performance of a classifier
 		on a set of test data for which the true values are known - showing the comparision between the predicted labels and true labels. (In our case we used 
 		K-fold Cross Validation and the below confusion matrices represent the "average" of k-folds.) 
-		The number in each cell of the confusion matrix is the percentage of samples with a certain label. Confusion matrices are read by row. 
-		For example: ___number %___ of the ___row[0] label___ were predicted as being ___column[0] label___.
+		The number in each cell of the confusion matrix is the percentage of samples with a true label being classified with the predicted label.
 		A strong classifier is one that has a central diagonal with the highest percentages, meaning that the majority of the predicted labels match the true label.
-		</p>,
+		</p>
 
 		<br/>
 
-		<p style="font-size:110%;">**Furthermore each classifer is available to download via the Download link in a .pickle format (sklearn classifiers)</p>
+		<p> Note that each classfication model can be downloaded by either clicking the Download button or selecting the desired model under links. As of now,
+		the format of these models are python pickel object created from the sklearn library</p>
 		"""
 
 		file.write(next_str)
 
 		if classifier_type == u"run_all":
 			next_str = u"""
-		<div class="row">
-		  <div class="column">
-			  <p style="text-align:left; font-size:160%;">A.) K-Nearest-Neighbors Classifier <a href="../forDATA/""" + classifier_name + """_KNeighborsClassifier.pickle" download> (Download) </a> </p>
-			<img src=" """+ classifier_name +"""_KNeighborsClassifier.png" alt="Snow" style="width:100%">
-			  <!-- <figcaption>Fig.1 - Trulli, Puglia, Italy.</figcaption> -->
-		  </div>
-		  <div class="column">
-			  <p style="text-align:left; font-size:160%;">B.) Logistic Regression Classifier <a href="../forDATA/""" + classifier_name + """_LogisticRegression.pickle" download> (Download) </a> </p>
-			<img src=" """+ classifier_name +"""_LogisticRegression.png" alt="Snow" style="width:100%">
-		  </div>
-		</div>
+			<div class="row"> 
+				<div class="column">
+					<p style="text-align:left; font-size:160%;">A.) K-Nearest-Neighbors Classifier <a href="../forDATA/""" + classifier_name + """_KNeighborsClassifier.pickle" download>  (Download) </a> </p>
+					<img src=" """+ classifier_name +"""_KNeighborsClassifier.png"  alt="Snow" style="width:100%">
+					<p style="text-align:left; font-size:160%;">C.) Naive Gaussian Bayes Classifier <a href="../forDATA/""" + classifier_name + """_GaussianNB.pickle" download> (Download) </a> </p>
+					<img src=" """+ classifier_name +"""_GaussianNB.png" alt="Snow" style="width:100%">
+					<p style="text-align:left; font-size:160%;">E.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier.pickle" download> (Download) </a> </p>
+					<img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
+				</div>
 
-		<div class="row">
-		  <div class="column">
-			  <p style="text-align:left; font-size:160%;">C.) Naive Gaussian Bayes Classifier <a href="../forDATA/""" + classifier_name + """_GaussianNB.pickle" download> (Download) </a> </p>
-			<img src=" """+ classifier_name +"""_GaussianNB.png" alt="Snow" style="width:100%">
-		  </div>
-		  <div class="column">
-			  <p style="text-align:left; font-size:160%;">D.) Support Vector Machine (SVM) Classifier <a href="../forDATA/""" + classifier_name + """_SVM.pickle" download> (Download) </a> </p>
-			<img src=" """+ classifier_name +"""_SVM.png" alt="Snow" style="width:100%">
-		  </div>
-		</div>
+				<div class="column">
+					<p style="text-align:left; font-size:160%;">B.) Logistic Regression Classifier <a href="../forDATA/""" + classifier_name + """_LogisticRegression.pickle" download> (Download) </a> </p>
+					<img src=" """+ classifier_name +"""_LogisticRegression.png" alt="Snow" style="width:100%">
+					<p style="text-align:left; font-size:160%;">D.) Support Vector Machine (SVM) Classifier <a href="../forDATA/""" + classifier_name + """_SVM.pickle" download> (Download) </a> </p>
+					<img src=" """+ classifier_name +"""_SVM.png" alt="Snow" style="width:100%">
+					<p style="text-align:left; font-size:160%;">F.) Neural Network Classifier <a href="../forDATA/""" + classifier_name + """_NeuralNetwork.pickle" download> (Download) </a> </p>
+					<img src=" """+ classifier_name +"""_NeuralNetwork.png" alt="Snow" style="width:100%">
+				</div> 
+			</div>
 
-		<div class="row">
-		  <div class="column">
-			  <p style="text-align:left; font-size:160%;">E.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier.pickle" download> (Download) </a> </p>
-			<img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
-		  </div>
-		  <div class="column">
-			  <p style="text-align:left; font-size:160%;">F.) Neural Network Classifier <a href="../forDATA/""" + classifier_name + """_NeuralNetwork.pickle" download> (Download) </a> </p>
-			<img src=" """+ classifier_name +"""_NeuralNetwork.png" alt="Snow" style="width:100%">
-		  </div>
-		</div>
 			"""
 			file.write(next_str)
 
 			next_str = u"""
-			<p style="font-size:160%;">Comparison of statistics in the form of Accuracy, Precision, Recall and F1 Score calculated against the confusion matrices of respiration type for the classifiers</p>
-			<p style="font-size:100%;">Defintion of key statistics: Accuracy - how often is the classifier correct, Precision - when predition is positive how often is it correct, 
-			Recall - when the condition is correct how often is it correct, F1 Score - This is a weighted average of recall and precision </p>               
+			<br>
+
+			<p style="font-size:160%;">Below are statistics for each class based on each model: in the form of Accuracy, Precision, Recall and F1 Score. The statistics were derived from the confusion matricies.</p>
+			<p style="font-size:100%;">Defintion of key statistics:</p> 
+			
+			<ul>
+				<li>Accuracy - How often is the classifier correct</li>
+				<li>Precision - When predition is positive how often is it correct</li>
+				<li>Recall - When the condition is correct how often is it correct</li>
+				<li>F1 Score - The is a weighted average of recall and precision</li>
+			</ul>         
 			"""
 			file.write(next_str)
 
@@ -2824,8 +2864,9 @@ class kb_genomeclfUtils(object):
 			file.write(all_str)
 
 			next_str = u"""
-			<p style="text-align:center; font-size:100%;">  Based on these results it would be in your best interest to use the """ + unicode(best_classifier_str) + """ as your model as
-			it produced the strongest F1 score </p>
+			<br>
+
+			<p style="text-align:center; font-size:100%;">  The best model (based on the highest average F1 score) is: """ + unicode(best_classifier_str) + """ </p>
 			"""
 
 			file.write(next_str)
@@ -2842,9 +2883,18 @@ class kb_genomeclfUtils(object):
 			file.write(next_str)
 
 			next_str = u"""
-			<p style="font-size:160%;">Comparison of statistics in the form of Accuracy, Precision, Recall and F1 Score calculated against the confusion matrices of respiration type for the classifiers</p>
-			<p style="font-size:100%;">Defintion of key statistics: Accuracy - how often is the classifier correct, Precision - when predition is positive how often is it correct, 
-			Recall - when the condition is correct how often is it correct, F1 Score - This is a weighted average of recall and precision </p>            
+
+			<br>
+
+			<p style="font-size:160%;">Below are statistics for each class, for each model, in the form of Accuracy, Precision, Recall and F1 Score. The statistics were derived from the confusion matricies.</p>
+			<p style="font-size:100%;">Defintion of key statistics:</p> 
+			
+			<ul>
+				<li>Accuracy - How often is the classifier correct</li>
+				<li>Precision - When predition is positive how often is it correct</li>
+				<li>Recall - When the condition is correct how often is it correct</li>
+				<li>F1 Score - The is a weighted average of recall and precision</li>
+			</ul>           
 			"""
 			file.write(next_str)
 
@@ -2866,10 +2916,18 @@ class kb_genomeclfUtils(object):
 
 		<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
 		<script type="text/javascript" src="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
-    
+		<script type="text/javascript" src="https://cdn.datatables.net/fixedcolumns/3.2.6/js/dataTables.fixedColumns.min.js"></script>
+
 		<script type="text/javascript" language="javascript" class="init">
    		$(document).ready(function() {
-			$('#newStatistics').DataTable();
+			$('#newStatistics').DataTable({
+        		ordering:		false,
+				scrollY:        true,
+				scrollX:        true,
+				scrollCollapse: true,
+				paging:         false,
+				fixedColumns:   true
+			});
 		});
 		</script>
 		</html>
@@ -2894,9 +2952,39 @@ class kb_genomeclfUtils(object):
 		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css" rel="stylesheet">
 
 		<style>
+		.dataTables_filter {
+      		width: 50%;
+      		float: right;
+      		text-align: right;
+    	}
 		table, th, td , tr{
 			text-align: center;
 		}
+		.table tbody tr td{background:#fff /*set your own color*/} 
+    	.table tbody tr th{background:#fff /*set your own color*/} 
+    	.table thead tr th{background:#fff /*set your own color*/} 
+
+		.container {
+			max-width: 90%;
+			padding-top: 50px;
+      		padding-bottom: 50px;
+		}
+		.row {
+			display: flex;
+			flex-wrap: wrap;
+			padding: 0 4px;
+		}
+
+		/* Create two equal columns that sits next to each other */
+		.column {
+			flex: 50%;
+			padding: 0 4px;
+		}
+
+		.column img {
+			margin-top: 8px;
+			vertical-align: middle;
+		}		
 		</style>
 
 		</head>
@@ -2908,8 +2996,8 @@ class kb_genomeclfUtils(object):
 		<!-- <h2>Maybe we can add some more text here later?</h2> -->
 		<!--<p>How to create side-by-side images with the CSS float property:</p> -->
 
-		<p style="text-align:center; font-size:160%;">  Comparison of Accuracy between Training versus Testing data sets based on the Gini Criterion and the Entropy Criterion for 11 levels of Tree Depth </p>
-		<p style="text-align:center; font-size:100%;">  (Below is the training and testing accuracy at each tree depth. The tuning parameter choosen was criterion which measures the quality of a split. The criteria were "gini" for the Gini impurity and "entropy" for the information gain.) </p>
+		<p style="text-align:left; font-size:160%;">  We tune the Decision Tree based on two hyperparameters: Tree Depth and Criterion (quality of a split) </p>
+		<p style="text-align:left; font-size:100%;">  The two criterion were "gini" which uses the Gini impurity socre and "entropy" which uses information gain score. </p>
 		"""
 
 		file.write(html_string)
@@ -2920,7 +3008,6 @@ class kb_genomeclfUtils(object):
 		  <div class="column">
 			  <p style="text-align:left; font-size:160%;">Training vs Testing Score on Gini Criterion </p>
 			<img src=" """+ classifier_name +"""_gini_depth-met.png" alt="Snow" style="width:100%">
-			  <!-- <figcaption>Fig.1 - Trulli, Puglia, Italy.</figcaption> -->
 		  </div>
 		  <div class="column">
 			  <p style="text-align:left; font-size:160%;">Training vs Testing Score on Entropy Criterion</p>
@@ -2932,11 +3019,8 @@ class kb_genomeclfUtils(object):
 		file.write(next_str)
 
 		if best_classifier_str == None :
-			next_str = u"""<p style="text-align:center; font-size:160%;">  Comparison of tuned Gini and Entropy based Decision Tree Classifiers depicted in the form of confusion matrices. 
-			A.) Decision Tree Classifier 
-			B.) Decision Tree Classifier-Gini 
-			C.) Decision Tree Classifier-Entropy 
-			<p style="text-align:center; font-size:100%;">  The original Decision Tree Classifier model was chosen as a base comparision </p>
+			next_str = u"""<p style="text-align:center; font-size:160%;">  The effectiveness of each model is displayed by a confusion matrix. We also include the 
+			original Decision Tree Classifier model as a baseline. </p>
 
 			<div class="row">
 			  <div class="column">
@@ -2945,12 +3029,8 @@ class kb_genomeclfUtils(object):
 			  </div>
 			"""
 		else:
-			next_str = u"""<p style="text-align:center; font-size:160%;">  Comparison of tuned Gini and Entropy based Decision Tree Classifiers depicted in the form of confusion matrices. 
-			A.) Decision Tree Classifier 
-			B.) Decision Tree Classifier-Gini 
-			C.) Decision Tree Classifier-Entropy 
-			D.) """+ best_classifier_str + """ </p>
-			<p style="text-align:center; font-size:100%;">  The original Decision Tree Classifier model was chosen as a base comparision and """+ best_classifier_str + """  was chosen since it showed the best average F1 Score </p>
+			next_str = u"""<p style="text-align:center; font-size:160%;">  The effectiveness of each model is displayed by a confusion matrix. We also include the 
+			original Decision Tree Classifier model as a baseline  and """+ best_classifier_str + """ as it showed the highest average F1 Score </p>
 
 			<div class="row">
 			  <div class="column">
@@ -3003,7 +3083,8 @@ class kb_genomeclfUtils(object):
 			file.write(next_str)
 
 		next_str= u"""
-		<p style="font-size:160%;">Comparison of statistics in the form of Accuracy, Precision, Recall and F1 Score calculated against the confusion matrices of respiration type for the classifiers</p>
+		<br>
+		<p style="font-size:160%;">Below are statistics for each class, for each model, in the form of Accuracy, Precision, Recall and F1 Score. The statistics were derived from the confusion matricies.</p>
 		"""
 		file.write(next_str)
 
@@ -3013,14 +3094,14 @@ class kb_genomeclfUtils(object):
 		file.write(all_str)
 
 		next_str= u"""
-		<p style="font-size:160%;"> Below is a tree created that displays a visual for how genomes were classified.</p>
-		<p style="font-size:100%;"> READ: if __functional__role__ is absent (true) then move left otherwise if __functional__role__ is present (false) move right</p>
-
+		<br>
+		<p style="font-size:160%;"> Below is a visual for the Decision Tree Classifier with the highest F1 Score.</p>
 		<img src="NAMEmyTreeLATER.png" alt="Snow" style="width:100%">
 
 		<br>
 		<br>
 
+		<p style="font-size:100%;"> Below is a list of the Top 20 Roles that were given the highest importance by the Decision Tree Classifier.</p>
 		<p style="text-align:left; font-size:160%;">D.) Table with prioritized_weights <a href="../forDATA/prioritized_weights.xlsx" download> (Download) </a> </p>
 		"""
 		file.write(next_str)
@@ -3038,8 +3119,16 @@ class kb_genomeclfUtils(object):
 		<script type="text/javascript" src="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
     
 		<script type="text/javascript" language="javascript" class="init">
-   		$(document).ready(function() {
-			$('table.display').DataTable();
+		$(document).ready(function() {
+			$('#postStatistics').DataTable({
+        		ordering:		false,
+				scrollY:        true,
+				scrollX:        true,
+				scrollCollapse: true,
+				paging:         false,
+				fixedColumns:   true
+			});
+			$('#top20').DataTable();
 		});
 		</script>
 		</html>
@@ -3060,9 +3149,23 @@ class kb_genomeclfUtils(object):
 		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css" rel="stylesheet">
 
 		<style>
+		.dataTables_filter {
+      		width: 50%;
+      		float: right;
+      		text-align: right;
+    	}
 		table, th, td , tr{
 			text-align: center;
 		}
+
+		.container {
+      		max-width: 90%;
+			padding-top: 50px;
+      		padding-bottom: 50px;
+    	}
+		.table tbody tr td{background:#fff /*set your own color*/} 
+    	.table tbody tr th{background:#fff /*set your own color*/} 
+    	.table thead tr th{background:#fff /*set your own color*/} 
 		</style>
 
 		</head>
@@ -3071,10 +3174,9 @@ class kb_genomeclfUtils(object):
 
 		<h1 style="text-align:center;">""" + global_target + """ - Ensemble Model</h1>
 
-		<!-- <h2>Maybe we can add some more text here later?</h2> -->
-		<!--<p>How to create side-by-side images with the CSS float property:</p> -->
+		<p> Below is an Ensemble Classfier based on a "hard" majority rule voting
+		mechanism as its weights from the selected models:  """+ estimators_inHTML + """.  </p>
 
-		<p style="text-align:center; font-size:160%;"> Ensemble Classifier based on selected models ("""+ estimators_inHTML + """)</p>
 		"""
 
 		file.write(html_string)
@@ -3089,12 +3191,6 @@ class kb_genomeclfUtils(object):
 		"""
 		file.write(next_str)
 
-		next_str = u"""
-		<p style="font-size:160%;">Comparison of statistics in the form of Accuracy, Precision, Recall and F1 Score calculated against the confusion matrices of respiration type for the classifiers</p>
-		<p style="font-size:100%;">Defintion of key statistics: Accuracy - how often is the classifier correct, Precision - when predition is positive how often is it correct, 
-		Recall - when the condition is correct how often is it correct, F1 Score - This is a weighted average of recall and precision </p>            
-		"""
-		file.write(next_str)
 
 		another_file = open(os.path.join(self.scratch, 'forHTML', 'html4folder', 'ensembleStatistics.html'), u"r")
 		all_str = another_file.read()
@@ -3102,10 +3198,13 @@ class kb_genomeclfUtils(object):
 
 		file.write(all_str)
 
+
 		next_str = u"""
 		</div>
-		</div>
-		</div>
+		
+		<p> The effectiveness of each model is displayed by a confusion matrix above. Furthermore statistics for each class, for each model,
+		 in the form of Accuracy, Precision, Recall and F1 Score are above. The statistics were derived from the confusion matricies. </p>  
+		
 		</body>
 
 		<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
@@ -3113,7 +3212,13 @@ class kb_genomeclfUtils(object):
     
 		<script type="text/javascript" language="javascript" class="init">
    		$(document).ready(function() {
-			$('#ensembleStatistics').DataTable();
+			$('#ensembleStatistics').DataTable({
+        		ordering:		false,
+				scrollY:        true,
+				scrollX:        true,
+				scrollCollapse: true,
+				paging:         false
+			});
 		});
 		</script>
 		</html>
@@ -3211,7 +3316,7 @@ class kb_genomeclfUtils(object):
 		<p></p>
 
 		<div class="tab">
-		  <button class="tablinks" onclick="openTab(event, 'Overview')" id="defaultOpen">Main Page</button>
+		  <button class="tablinks" onclick="openTab(event, 'Overview')" id="defaultOpen">Main Analysis</button>
 		  <button class="tablinks" onclick="openTab(event, 'Visualization')">Decision Tree Analysis</button>
 		  <button class="tablinks" onclick="openTab(event, 'ThirdPage')">Ensemble Model</button>
 		</div>
@@ -3344,7 +3449,7 @@ class kb_genomeclfUtils(object):
 		<p></p>
 
 		<div class="tab">
-		  <button class="tablinks" onclick="openTab(event, 'Overview')" id="defaultOpen">Main Page</button>
+		  <button class="tablinks" onclick="openTab(event, 'Overview')" id="defaultOpen">Main Analysis</button>
 		  <button class="tablinks" onclick="openTab(event, 'Visualization')">Decision Tree Analysis</button>
 		</div>
 
@@ -3558,7 +3663,7 @@ class kb_genomeclfUtils(object):
 			<p></p>
 
 			<div class="tab">
-			  <button class="tablinks" onclick="openTab(event, 'Overview')" id="defaultOpen">Main Page</button>
+			  <button class="tablinks" onclick="openTab(event, 'Overview')" id="defaultOpen">Main Analysis</button>
 		  </div>
 		"""
 		file.write(html_string)
