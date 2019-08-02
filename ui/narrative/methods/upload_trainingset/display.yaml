@@ -36,7 +36,7 @@ parameters :
         ui-name : |
             Genomes RAST Annotated
         short-hint : |
-            Check box if Genomes are already RAST Annotated, if not module will first annotate and then create trainingset
+            Check box if Genomes are already annotated in a consistent format, if not module will first RAST Annotate all genomes and then create trainingset
     description:
         ui-name : |
             Description
