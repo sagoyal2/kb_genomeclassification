@@ -497,8 +497,8 @@ parameter-groups :
             Additional user adjustable parameters for Neural Network
     ensemble_model :
         ui-name: |
-            Ensemble Model
+            Ensemble Model  
         short-hint : |
-            Additional user adjustable parameters for Ensemble Model
+            Additional user adjustable parameters for Ensemble Model. Note Ensemble Model will only get created if "Run All Classifier" is selected. (ie. you can cannot create an Ensemble by itself nor can you combine it with one other classification)
 description : |
     <p>This method allows the user to split a Reads Library into a randomly subsampled Reads Libraries, organized into a ReadsSet.</p>"""

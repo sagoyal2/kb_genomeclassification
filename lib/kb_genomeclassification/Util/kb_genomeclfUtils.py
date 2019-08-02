@@ -104,7 +104,7 @@ class kb_genomeclfUtils(object):
 		#print "Below is the classifierAdvanced_params"
 		#print(self.editBuildArguments(params)["classifierAdvanced_params"])
 
-		toEdit_all_classifications, training_set_ref = self.unloadGenomeClassifierTrainingSet(current_ws, params['trainingset_name'])
+		toEdit_all_classifications, training_set_ref, num_classes = self.unloadGenomeClassifierTrainingSet(current_ws, params['trainingset_name'])
 		listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
 		all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws, params['attribute'])
 	
@@ -277,12 +277,12 @@ class kb_genomeclfUtils(object):
 			classifierTest_params['htmlfolder'] = folderhtml2
 			self.classifierTest(classifierTest_params)
 
-			self.html_report_1(global_target, classifier_type, classifier_name, best_classifier_str= best_classifier_str)
+			self.html_report_1(global_target, classifier_type, classifier_name, params['phenotypeclass'], num_classes, best_classifier_str= best_classifier_str)
 
 			classifierTest_params['classifier_name'] = classifier_name
 			classifierTest_params['htmlfolder'] = folderhtml2
 			self.tune_Decision_Tree(classifierTest_params, best_classifier_str)
-			self.html_report_2(global_target, classifier_name, best_classifier_str)
+			self.html_report_2(global_target, classifier_name, num_classes, best_classifier_str)
 
 			classifierTest_params['classifier'], estimators_inHTML = self.ensembleCreation(params["ensemble_model"], params)
 			
@@ -297,7 +297,7 @@ class kb_genomeclfUtils(object):
 
 				self.to_HTML_Statistics(class_list, classifier_name, known = classifierTest_params['classifier_name'], for_ensemble = True)
 
-				self.html_report_4(global_target, classifier_name, estimators_inHTML)
+				self.html_report_4(global_target, classifier_name, estimators_inHTML, num_classes)
 
 				htmloutput_name = self.html_dual_123()
 
@@ -309,23 +309,22 @@ class kb_genomeclfUtils(object):
 
 			self.to_HTML_Statistics(class_list, classifier_name)
 			
-			self.html_report_1(global_target, classifier_type, classifier_name)
+			self.html_report_1(global_target, classifier_type, classifier_name, params['phenotypeclass'], num_classes)
 
 
 			classifierTest_params['htmlfolder'] = folderhtml2
 			self.tune_Decision_Tree(classifierTest_params)
 			
-			self.html_report_2(global_target, classifier_name)
+			self.html_report_2(global_target, classifier_name, num_classes)
 			htmloutput_name = self.html_dual_12()
 
 		else:
-
 			#classifierTest_params['classifier'] = self.whichClassifier(classifier_type)
 			classifierTest_params['classifier'] = self.whichClassifierAdvanced(classifier_type, params["classifierAdvanced_params"])
 			self.classifierTest(classifierTest_params)
 
 			self.to_HTML_Statistics(class_list, classifier_name)
-			self.html_report_1(global_target, classifier_type, classifier_name)
+			self.html_report_1(global_target, classifier_type, classifier_name, params['phenotypeclass'], num_classes)
 			htmloutput_name = self.html_nodual("forHTML")
 
 		return htmloutput_name
@@ -474,7 +473,7 @@ class kb_genomeclfUtils(object):
 			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
 			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
 
-		self.html_report_0(missingGenomes)
+		self.html_report_0(missingGenomes, params['phenotypeclass'])
 		htmloutput_name = self.html_nodual("forZeroHTML")
 
 		return htmloutput_name
@@ -543,7 +542,7 @@ class kb_genomeclfUtils(object):
 		# }
 
 
-	def makeHtmlReport(self, htmloutput_name, current_ws, which_report, for_predict = False):
+	def makeHtmlReport(self, htmloutput_name, current_ws, which_report, description, for_predict = False):
 		"""
 		args:
 		---htmloutput_name the name of the html file 'something.html'
@@ -572,9 +571,9 @@ class kb_genomeclfUtils(object):
 		report_shock_id = self.dfu.file_to_shock({'file_path': output_directory,'pack': 'zip'})['shock_id']
 
 		htmloutput = {
-		'description' : 'htmloutuputdescription',
+		'description' : description,
 		'name' : htmloutput_name,
-		'label' : 'htmloutputlabel',
+		'label' : 'Open New Tab',
 		'shock_id': report_shock_id
 		}
 
@@ -740,99 +739,105 @@ class kb_genomeclfUtils(object):
 			return_params['neural_network'] = params["neural_network"]
 
 		elif params.get("classifier") == "KNeighborsClassifier":
-			params["k_nearest_neighbors"] = {
-			"n_neighbors": 5,
-			"weights": "uniform",
-			"algorithm": "auto",
-			"leaf_size": 30,
-			"p": 2,
-			"metric": "minkowski",
-			"metric_params": "",
-			"knn_n_jobs": 1
-			}
+			if params["k_nearest_neighbors"] == None:
+				params["k_nearest_neighbors"] = {
+				"n_neighbors": 5,
+				"weights": "uniform",
+				"algorithm": "auto",
+				"leaf_size": 30,
+				"p": 2,
+				"metric": "minkowski",
+				"metric_params": "",
+				"knn_n_jobs": 1
+				}
 			return_params['k_nearest_neighbors'] = params["k_nearest_neighbors"]
 
 		elif params.get("classifier") == "GaussianNB":
-			params["gaussian_nb"] = {
-			"priors": ""
-			}
+			if params["gaussian_nb"] == None:
+				params["gaussian_nb"] = {
+				"priors": ""
+				}
 			return_params['gaussian_nb'] = params["gaussian_nb"]
 		elif params.get("classifier") == "LogisticRegression":
-			params["logistic_regression"] = {
-			"penalty": "l2",
-			"dual": "False",
-			"lr_tolerance": 0.0001,
-			"lr_C": 1,
-			"fit_intercept": "True",
-			"intercept_scaling": 1,
-			"lr_class_weight": "",
-			"lr_random_state": 0,
-			"lr_solver": "newton-cg",
-			"lr_max_iter": 100,
-			"multi_class": "ovr",
-			"lr_verbose": 0,
-			"lr_warm_start": "False",
-			"lr_n_jobs": 1
-			}
+			if params["logistic_regression"] == None:
+				params["logistic_regression"] = {
+				"penalty": "l2",
+				"dual": "False",
+				"lr_tolerance": 0.0001,
+				"lr_C": 1,
+				"fit_intercept": "True",
+				"intercept_scaling": 1,
+				"lr_class_weight": "",
+				"lr_random_state": 0,
+				"lr_solver": "newton-cg",
+				"lr_max_iter": 100,
+				"multi_class": "ovr",
+				"lr_verbose": 0,
+				"lr_warm_start": "False",
+				"lr_n_jobs": 1
+				}
 			return_params['logistic_regression'] = params["logistic_regression"]
 		elif params.get("classifier") == "DecisionTreeClassifier":
-			params["decision_tree_classifier"] = {
-			"criterion": "gini",
-			"splitter": "best",
-			"max_depth": None,
-			"min_samples_split": 2,
-			"min_samples_leaf": 1,
-			"min_weight_fraction_leaf": 0,
-			"max_features": "",
-			"dt_random_state": 0,
-			"max_leaf_nodes": None,
-			"min_impurity_decrease": 0,
-			"dt_class_weight": "",
-			"presort": "False"
-			}
+			if params["decision_tree_classifier"] == None:
+				params["decision_tree_classifier"] = {
+				"criterion": "gini",
+				"splitter": "best",
+				"max_depth": None,
+				"min_samples_split": 2,
+				"min_samples_leaf": 1,
+				"min_weight_fraction_leaf": 0,
+				"max_features": "",
+				"dt_random_state": 0,
+				"max_leaf_nodes": None,
+				"min_impurity_decrease": 0,
+				"dt_class_weight": "",
+				"presort": "False"
+				}
 			return_params['decision_tree_classifier'] = params["decision_tree_classifier"]
 		elif params.get("classifier") == "SVM":
-			params["support_vector_machine"] = {
-			"svm_C": 1,
-			"kernel": "linear",
-			"degree": 3,
-			"gamma": "auto",
-			"coef0": 0,
-			"probability": "False",
-			"shrinking": "True",
-			"svm_tolerance": 0.001,
-			"cache_size": 200,
-			"svm_class_weight": "",
-			"svm_verbose": "False",
-			"svm_max_iter": -1,
-			"decision_function_shape": "ovr",
-			"svm_random_state": 0
-			}
+			if params["support_vector_machine"] == None:
+				params["support_vector_machine"] = {
+				"svm_C": 1,
+				"kernel": "linear",
+				"degree": 3,
+				"gamma": "auto",
+				"coef0": 0,
+				"probability": "False",
+				"shrinking": "True",
+				"svm_tolerance": 0.001,
+				"cache_size": 200,
+				"svm_class_weight": "",
+				"svm_verbose": "False",
+				"svm_max_iter": -1,
+				"decision_function_shape": "ovr",
+				"svm_random_state": 0
+				}
 			return_params['support_vector_machine'] = params["support_vector_machine"]
 		elif params.get("classifier") == "NeuralNetwork":
-			params["neural_network"] = {
-			"hidden_layer_sizes": "(100,)",
-			"activation": "relu",
-			"mlp_solver": "adam",
-			"alpha": 0.0001,
-			"batch_size": "auto",
-			"learning_rate": "constant",
-			"learning_rate_init": 0.001,
-			"power_t": 0.05,
-			"mlp_max_iter": 200,
-			"shuffle": "True",
-			"mlp_random_state": 0,
-			"mlp_tolerance": 0.0001,
-			"mlp_verbose": "False",
-			"mlp_warm_start": "False",
-			"momentum": 0.9,
-			"nesterovs_momentum": "True",
-			"early_stopping": "False",
-			"validation_fraction": 0.1,
-			"beta_1": 0.9,
-			"beta_2": 0.999,
-			"epsilon": 1e-8
-			}
+			if params["neural_network"] == None:
+				params["neural_network"] = {
+				"hidden_layer_sizes": "(100,)",
+				"activation": "relu",
+				"mlp_solver": "adam",
+				"alpha": 0.0001,
+				"batch_size": "auto",
+				"learning_rate": "constant",
+				"learning_rate_init": 0.001,
+				"power_t": 0.05,
+				"mlp_max_iter": 200,
+				"shuffle": "True",
+				"mlp_random_state": 0,
+				"mlp_tolerance": 0.0001,
+				"mlp_verbose": "False",
+				"mlp_warm_start": "False",
+				"momentum": 0.9,
+				"nesterovs_momentum": "True",
+				"early_stopping": "False",
+				"validation_fraction": 0.1,
+				"beta_1": 0.9,
+				"beta_2": 0.999,
+				"epsilon": 1e-8
+				}
 			return_params['neural_network'] = params["neural_network"]
 
 		if params["ensemble_model"] == None:
@@ -1304,9 +1309,11 @@ class kb_genomeclfUtils(object):
 					'Classification': listClassification
 					}
 
+		numClasses = len(set(listClassification))
+
 		remadeDF = pd.DataFrame.from_dict(detailsDF)
 
-		return remadeDF, training_set_ref
+		return remadeDF, training_set_ref, numClasses
 
 	def intake_method(self, just_DF, for_predict = False):
 		"""
@@ -2646,7 +2653,7 @@ class kb_genomeclfUtils(object):
 
 	### For Build_Classifier App
 
-	def html_report_0(self, missingGenomes):
+	def html_report_0(self, phenotype, missingGenomes):
 		file = open(os.path.join(self.scratch, 'forZeroHTML', 'html0.html'), u"w")
 
 		html_string = u"""
@@ -2676,13 +2683,15 @@ class kb_genomeclfUtils(object):
 		<body>
 		<div class="container">
 
-		<p> Missing genomes are listed below (ie. these were included in your excel / pasted file but are not present in the workspace) </p>
-		<p> The missing genomes are: """ + str(missingGenomes) + """ </p>
-		<p> A training set object was created regardless of if there were missing genomes. In the event that there were missing genomes they were excluded </p>
+		<h1 style="text-align:center;"> Missing Genomes in Training Data </h1>
 
+		<p> Missing genomes are listed below (ie. these were included in your excel / pasted file but are not present in the workspace).
+		A training set object was created regardless of if there were missing genomes. In the event that there were missing genomes they were excluded  </p>
+		<p> The missing genomes are: """ + str(missingGenomes) + """ </p>
+		
 		<br>
 
-		<p>Below is a detailed table which shows Genome ID, whether it was loaded into the Narrative, its Classification, and if it was Added to the Training Set</p>
+		<p>Below is a detailed table which shows Genome ID, whether it was loaded into the Narrative, its """ + phenotype + """ Classification, and if it was Added to the Training Set</p>
 
 		"""
 		file.write(html_string)
@@ -2711,7 +2720,7 @@ class kb_genomeclfUtils(object):
 
 		#return "html0.html"
 
-	def html_report_1(self, global_target, classifier_type, classifier_name, best_classifier_str = None):
+	def html_report_1(self, global_target, classifier_type, classifier_name, phenotype, num_classes, best_classifier_str = None):
 		"""
 		does: creates an .html file that makes the frist report (first app).
 		"""
@@ -2765,7 +2774,7 @@ class kb_genomeclfUtils(object):
 		<body>
 		<div class="container">
 
-		<h1 style="text-align:center;">""" + global_target + """ Classifier</h1> """
+		<h1 style="text-align:center;">""" + global_target + """ - Classifier</h1> """
 
 		file.write(html_string)
 
@@ -2773,9 +2782,9 @@ class kb_genomeclfUtils(object):
 			
 			next_str = u"""
 			<p style="text-align:center; font-size:160%;"> """ + global_target + """ Classification models were created based on the selected trainging set object, classification algorithim, and attribute.
-			The effectiveness of each model is displayed by a confusion matrix* and relevant statistical measures below. </p>
+			The effectiveness of each model to predict """+ phenotype +""" is displayed by a confusion matrix* and relevant statistical measures below. </p>
 
-			The selected classifiers were:
+			<p> The selected classifiers were: </p>
 			<ul>
 				<li>K-Nearest-Neighbors Classifier</li>
 				<li>Logistic Regression Classifier</li>
@@ -2793,9 +2802,15 @@ class kb_genomeclfUtils(object):
 		else :
 
 			next_str = u"""
-			<p style="text-align:center; font-size:160%;">  Prediction of respiration type based on classifiers depicted in the form of confusion matrices*. <br/>
-			 A.) """ + classifier_type + """</p>  
-			<h2> Disclaimer:No feature selection and parameter optimization was not done</h2>
+			<p style="text-align:center; font-size:160%;"> """ + global_target + """ Classification models were created based on the selected trainging set object, classification algorithim, and attribute.
+			The effectiveness of each model is displayed by a confusion matrix* and relevant statistical measures below. </p>
+
+			<p> The selected classifiers were: </p>
+			<ul>
+				<li>""" + classifier_type + """</li>
+			</ul> 
+
+			<p> Further more, advanced options were not selected so no feature selection and parameter optimization was conducted. </p>
 			"""
 
 			file.write(next_str)
@@ -2818,29 +2833,36 @@ class kb_genomeclfUtils(object):
 		file.write(next_str)
 
 		if classifier_type == u"run_all":
-			next_str = u"""
-			<div class="row"> 
-				<div class="column">
-					<p style="text-align:left; font-size:160%;">A.) K-Nearest-Neighbors Classifier <a href="../forDATA/""" + classifier_name + """_KNeighborsClassifier.pickle" download>  (Download) </a> </p>
-					<img src=" """+ classifier_name +"""_KNeighborsClassifier.png"  alt="Snow" style="width:100%">
-					<p style="text-align:left; font-size:160%;">C.) Naive Gaussian Bayes Classifier <a href="../forDATA/""" + classifier_name + """_GaussianNB.pickle" download> (Download) </a> </p>
-					<img src=" """+ classifier_name +"""_GaussianNB.png" alt="Snow" style="width:100%">
-					<p style="text-align:left; font-size:160%;">E.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier.pickle" download> (Download) </a> </p>
-					<img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
+			if num_classes >= 6:
+				next_str = u"""
+				<p style="color: #ff5050;> Sorry, we cannot display confusion matricies for classifiers with greater than 6 classes. However statistics are still produced below. </p>
+				"""
+				file.write(next_str)
+
+			else:
+				next_str = u"""
+				<div class="row"> 
+					<div class="column">
+						<p style="text-align:left; font-size:160%;">A.) K-Nearest-Neighbors Classifier <a href="../forDATA/""" + classifier_name + """_KNeighborsClassifier.pickle" download>  (Download) </a> </p>
+						<img src=" """+ classifier_name +"""_KNeighborsClassifier.png"  alt="Snow" style="width:100%">
+						<p style="text-align:left; font-size:160%;">C.) Naive Gaussian Bayes Classifier <a href="../forDATA/""" + classifier_name + """_GaussianNB.pickle" download> (Download) </a> </p>
+						<img src=" """+ classifier_name +"""_GaussianNB.png" alt="Snow" style="width:100%">
+						<p style="text-align:left; font-size:160%;">E.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier.pickle" download> (Download) </a> </p>
+						<img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
+					</div>
+
+					<div class="column">
+						<p style="text-align:left; font-size:160%;">B.) Logistic Regression Classifier <a href="../forDATA/""" + classifier_name + """_LogisticRegression.pickle" download> (Download) </a> </p>
+						<img src=" """+ classifier_name +"""_LogisticRegression.png" alt="Snow" style="width:100%">
+						<p style="text-align:left; font-size:160%;">D.) Support Vector Machine (SVM) Classifier <a href="../forDATA/""" + classifier_name + """_SVM.pickle" download> (Download) </a> </p>
+						<img src=" """+ classifier_name +"""_SVM.png" alt="Snow" style="width:100%">
+						<p style="text-align:left; font-size:160%;">F.) Neural Network Classifier <a href="../forDATA/""" + classifier_name + """_NeuralNetwork.pickle" download> (Download) </a> </p>
+						<img src=" """+ classifier_name +"""_NeuralNetwork.png" alt="Snow" style="width:100%">
+					</div> 
 				</div>
 
-				<div class="column">
-					<p style="text-align:left; font-size:160%;">B.) Logistic Regression Classifier <a href="../forDATA/""" + classifier_name + """_LogisticRegression.pickle" download> (Download) </a> </p>
-					<img src=" """+ classifier_name +"""_LogisticRegression.png" alt="Snow" style="width:100%">
-					<p style="text-align:left; font-size:160%;">D.) Support Vector Machine (SVM) Classifier <a href="../forDATA/""" + classifier_name + """_SVM.pickle" download> (Download) </a> </p>
-					<img src=" """+ classifier_name +"""_SVM.png" alt="Snow" style="width:100%">
-					<p style="text-align:left; font-size:160%;">F.) Neural Network Classifier <a href="../forDATA/""" + classifier_name + """_NeuralNetwork.pickle" download> (Download) </a> </p>
-					<img src=" """+ classifier_name +"""_NeuralNetwork.png" alt="Snow" style="width:100%">
-				</div> 
-			</div>
-
-			"""
-			file.write(next_str)
+				"""
+				file.write(next_str)
 
 			next_str = u"""
 			<br>
@@ -2872,15 +2894,21 @@ class kb_genomeclfUtils(object):
 			file.write(next_str)
 
 		else:
-			next_str = u"""
-			<div class="row">
-		  <div class="column">
-			<p style="text-align:left; font-size:160%;">A.) """ + classifier_type + """ <a href="../forDATA/""" + classifier_name + """.pickle" download> (Download) </a> </p>
-			<img src=" """+ classifier_name +""".png" alt="Snow" style="width:100%">
-		  </div>
-		  <div class="column">
-			"""
-			file.write(next_str)
+			if num_classes >= 9:
+				next_str = u"""
+				<p style="color: #ff5050;"> Sorry, we cannot display confusion matricies for classifiers with greater than 9 classes. However statistics are still produced below. </p>
+				"""
+				file.write(next_str)
+			else:
+				next_str = u"""
+				<div class="row">
+					<div class="column">
+						<p style="text-align:left; font-size:160%;">A.) """ + classifier_type + """ <a href="../forDATA/""" + classifier_name + """.pickle" download> (Download) </a> </p>
+						<img src=" """+ classifier_name +""".png" alt="Snow" style="width:100%">
+					</div>
+					<div class="column">
+				"""
+				file.write(next_str)
 
 			next_str = u"""
 
@@ -2937,7 +2965,7 @@ class kb_genomeclfUtils(object):
 
 		file.close()
 
-	def html_report_2(self, global_target, classifier_name, best_classifier_str = None):
+	def html_report_2(self, global_target, classifier_name, num_classes, best_classifier_str = None):
 		"""
 		does: creates an .html file that makes the second report (first app).
 		"""
@@ -3018,69 +3046,73 @@ class kb_genomeclfUtils(object):
 
 		file.write(next_str)
 
-		if best_classifier_str == None :
-			next_str = u"""<p style="text-align:center; font-size:160%;">  The effectiveness of each model is displayed by a confusion matrix. We also include the 
-			original Decision Tree Classifier model as a baseline. </p>
+		if (best_classifier_str == None) or ("DecisionTreeClassifier" in best_classifier_str):
+			if num_classes >= 6:
+				next_str = u"""
+				<p style="color: #ff5050;"> Sorry, we cannot display confusion matricies for classifiers with greater than 6 classes. However statistics are still produced below. </p>
+				"""
+				file.write(next_str)
 
-			<div class="row">
-			  <div class="column">
-				  <p style="text-align:left; font-size:160%;">A.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """.pickle" download> (Download) </a> </p>
-				<img src=" """+ classifier_name +""".png" alt="Snow" style="width:100%">
-			  </div>
-			"""
-		else:
-			next_str = u"""<p style="text-align:center; font-size:160%;">  The effectiveness of each model is displayed by a confusion matrix. We also include the 
-			original Decision Tree Classifier model as a baseline  and """+ best_classifier_str + """ as it showed the highest average F1 Score </p>
+			else:	
+				next_str = u"""
+				<p style="text-align:center; font-size:160%;">  The effectiveness of each model is displayed by a confusion matrix. We also include the 
+				original Decision Tree Classifier model as a baseline. </p>
 
-			<div class="row">
-			  <div class="column">
-				  <p style="text-align:left; font-size:160%;">A.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier.pickle" download> (Download) </a> </p>
-				<img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
-			  </div>
-			"""
-
-		file.write(next_str)
-
-		if best_classifier_str == None :
-
-			next_str = u"""
-			</div>
-
-			<div class="row">
+				<div class="row">
 				<div class="column">
-					<p style="text-align:left; font-size:160%;">B.) Decision Tree Classifier - Gini <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_gini.pickle" download> (Download) </a> </p>
-					<img src=" """+ classifier_name +"""_DecisionTreeClassifier_gini.png" alt="Snow" style="width:100%">
+					<p style="text-align:left; font-size:160%;">A.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier.pickle" download> (Download) </a> </p>
+					<img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
 				</div>
-				<div class="column">
-					<p style="text-align:left; font-size:160%;">C.) Decision Tree Classifier - Entropy <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_entropy.pickle" download> (Download) </a> </p>
-					<img src=" """+ classifier_name +"""_DecisionTreeClassifier_entropy.png" alt="Snow" style="width:100%">
+
 				</div>
-			</div>
-			"""
 
-			file.write(next_str)
-
+				<div class="row">
+					<div class="column">
+						<p style="text-align:left; font-size:160%;">B.) Decision Tree Classifier - Gini <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_gini.pickle" download> (Download) </a> </p>
+						<img src=" """+ classifier_name +"""_DecisionTreeClassifier_gini.png" alt="Snow" style="width:100%">
+					</div>
+					<div class="column">
+						<p style="text-align:left; font-size:160%;">C.) Decision Tree Classifier - Entropy <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_entropy.pickle" download> (Download) </a> </p>
+						<img src=" """+ classifier_name +"""_DecisionTreeClassifier_entropy.png" alt="Snow" style="width:100%">
+					</div>
+				</div>
+				"""
+				file.write(next_str)
 		else:
+			if num_classes >= 6:
+				next_str = u"""
+				<p style="color: #ff5050;"> Sorry, we cannot display confusion matricies for classifiers with greater than 6 classes. However statistics are still produced below. </p>
+				"""
+				file.write(next_str)
 
-			next_str = u"""
+			else:	
+				next_str = u"""<p style="text-align:center; font-size:160%;">  The effectiveness of each model is displayed by a confusion matrix. We also include the 
+				original Decision Tree Classifier model as a baseline  and """+ best_classifier_str + """ as it showed the highest average F1 Score </p>
+
+				<div class="row">
+				<div class="column">
+					<p style="text-align:left; font-size:160%;">A.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier.pickle" download> (Download) </a> </p>
+					<img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
+				</div>
+
 				<div class="column">
 					<p style="text-align:left; font-size:160%;">B.) """+ best_classifier_str + """ <a href="../forDATA/""" + best_classifier_str + """.pickle" download> (Download) </a> </p>
 					<img src=" """+ best_classifier_str + """.png" alt="Snow" style="width:100%">
+					</div>
 				</div>
-			</div>
 
-			<div class="row">
-				<div class="column">
-					<p style="text-align:left; font-size:160%;">C.) Decision Tree Classifier - Gini <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_gini.pickle" download> (Download) </a> </p>
-					<img src=" """+ classifier_name +"""_DecisionTreeClassifier_gini.png" alt="Snow" style="width:100%">
+				<div class="row">
+					<div class="column">
+						<p style="text-align:left; font-size:160%;">C.) Decision Tree Classifier - Gini <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_gini.pickle" download> (Download) </a> </p>
+						<img src=" """+ classifier_name +"""_DecisionTreeClassifier_gini.png" alt="Snow" style="width:100%">
+					</div>
+					<div class="column">
+						<p style="text-align:left; font-size:160%;">D.) Decision Tree Classifier - Entropy <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_entropy.pickle" download> (Download) </a> </p>
+						<img src=" """+ classifier_name +"""_DecisionTreeClassifier_entropy.png" alt="Snow" style="width:100%">
+					</div>
 				</div>
-				<div class="column">
-					<p style="text-align:left; font-size:160%;">D.) Decision Tree Classifier - Entropy <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_entropy.pickle" download> (Download) </a> </p>
-					<img src=" """+ classifier_name +"""_DecisionTreeClassifier_entropy.png" alt="Snow" style="width:100%">
-				</div>
-			</div>
-			"""
-			file.write(next_str)
+				"""
+				file.write(next_str)
 
 		next_str= u"""
 		<br>
@@ -3137,7 +3169,7 @@ class kb_genomeclfUtils(object):
 
 		file.close()
 
-	def html_report_4(self, global_target, classifier_name, estimators_inHTML):
+	def html_report_4(self, global_target, classifier_name, estimators_inHTML, num_classes):
 		file = open(os.path.join(self.scratch, 'forHTML', 'html4folder', 'html4.html'), u"w")
 		
 		html_string = u"""
@@ -3180,16 +3212,25 @@ class kb_genomeclfUtils(object):
 		"""
 
 		file.write(html_string)
+		
+		if num_classes >= 6:
+				next_str = u"""
+				<p style="color: #ff5050;"> Sorry, we cannot display confusion matricies for classifiers with greater than 6 classes. However statistics are still produced below. </p>
+				"""
+				file.write(next_str)
 
-		next_str = u"""
-		<div class="row">
-		<div class="column">
-			<p style="text-align:left; font-size:160%;"> Ensemble Classifier <a href="../forDATA/""" + classifier_name + """_Ensemble_Model.pickle" download> (Download) </a> </p>
-			<img src=" """+ classifier_name +"""_Ensemble_Model.png" alt="Snow" style="width:100%">
-		</div>
-	  <div class="column">
-		"""
-		file.write(next_str)
+		else:	
+			next_str = u"""
+			<div class="row">
+				<div class="column">
+					<p style="text-align:left; font-size:160%;"> Ensemble Classifier <a href="../forDATA/""" + classifier_name + """_Ensemble_Model.pickle" download> (Download) </a> </p>
+					<img src=" """+ classifier_name +"""_Ensemble_Model.png" alt="Snow" style="width:100%">
+				</div>
+				<div class="column">
+				</div>
+			</div>
+			"""
+			file.write(next_str)
 
 
 		another_file = open(os.path.join(self.scratch, 'forHTML', 'html4folder', 'ensembleStatistics.html'), u"r")
@@ -3200,11 +3241,11 @@ class kb_genomeclfUtils(object):
 
 
 		next_str = u"""
-		</div>
 		
 		<p> The effectiveness of each model is displayed by a confusion matrix above. Furthermore statistics for each class, for each model,
-		 in the form of Accuracy, Precision, Recall and F1 Score are above. The statistics were derived from the confusion matricies. </p>  
+		 in the form of Accuracy, Precision, Recall and F1 Score is below. The statistics were derived from the confusion matricies. </p>  
 		
+		</div>
 		</body>
 
 		<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
