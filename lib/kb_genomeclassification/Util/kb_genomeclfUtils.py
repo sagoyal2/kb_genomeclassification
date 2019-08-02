@@ -319,7 +319,6 @@ class kb_genomeclfUtils(object):
 			htmloutput_name = self.html_dual_12()
 
 		else:
-
 			#classifierTest_params['classifier'] = self.whichClassifier(classifier_type)
 			classifierTest_params['classifier'] = self.whichClassifierAdvanced(classifier_type, params["classifierAdvanced_params"])
 			self.classifierTest(classifierTest_params)
@@ -740,99 +739,105 @@ class kb_genomeclfUtils(object):
 			return_params['neural_network'] = params["neural_network"]
 
 		elif params.get("classifier") == "KNeighborsClassifier":
-			params["k_nearest_neighbors"] = {
-			"n_neighbors": 5,
-			"weights": "uniform",
-			"algorithm": "auto",
-			"leaf_size": 30,
-			"p": 2,
-			"metric": "minkowski",
-			"metric_params": "",
-			"knn_n_jobs": 1
-			}
+			if params["k_nearest_neighbors"] == None:
+				params["k_nearest_neighbors"] = {
+				"n_neighbors": 5,
+				"weights": "uniform",
+				"algorithm": "auto",
+				"leaf_size": 30,
+				"p": 2,
+				"metric": "minkowski",
+				"metric_params": "",
+				"knn_n_jobs": 1
+				}
 			return_params['k_nearest_neighbors'] = params["k_nearest_neighbors"]
 
 		elif params.get("classifier") == "GaussianNB":
-			params["gaussian_nb"] = {
-			"priors": ""
-			}
+			if params["gaussian_nb"] == None:
+				params["gaussian_nb"] = {
+				"priors": ""
+				}
 			return_params['gaussian_nb'] = params["gaussian_nb"]
 		elif params.get("classifier") == "LogisticRegression":
-			params["logistic_regression"] = {
-			"penalty": "l2",
-			"dual": "False",
-			"lr_tolerance": 0.0001,
-			"lr_C": 1,
-			"fit_intercept": "True",
-			"intercept_scaling": 1,
-			"lr_class_weight": "",
-			"lr_random_state": 0,
-			"lr_solver": "newton-cg",
-			"lr_max_iter": 100,
-			"multi_class": "ovr",
-			"lr_verbose": 0,
-			"lr_warm_start": "False",
-			"lr_n_jobs": 1
-			}
+			if params["logistic_regression"] == None:
+				params["logistic_regression"] = {
+				"penalty": "l2",
+				"dual": "False",
+				"lr_tolerance": 0.0001,
+				"lr_C": 1,
+				"fit_intercept": "True",
+				"intercept_scaling": 1,
+				"lr_class_weight": "",
+				"lr_random_state": 0,
+				"lr_solver": "newton-cg",
+				"lr_max_iter": 100,
+				"multi_class": "ovr",
+				"lr_verbose": 0,
+				"lr_warm_start": "False",
+				"lr_n_jobs": 1
+				}
 			return_params['logistic_regression'] = params["logistic_regression"]
 		elif params.get("classifier") == "DecisionTreeClassifier":
-			params["decision_tree_classifier"] = {
-			"criterion": "gini",
-			"splitter": "best",
-			"max_depth": None,
-			"min_samples_split": 2,
-			"min_samples_leaf": 1,
-			"min_weight_fraction_leaf": 0,
-			"max_features": "",
-			"dt_random_state": 0,
-			"max_leaf_nodes": None,
-			"min_impurity_decrease": 0,
-			"dt_class_weight": "",
-			"presort": "False"
-			}
+			if params["decision_tree_classifier"] == None:
+				params["decision_tree_classifier"] = {
+				"criterion": "gini",
+				"splitter": "best",
+				"max_depth": None,
+				"min_samples_split": 2,
+				"min_samples_leaf": 1,
+				"min_weight_fraction_leaf": 0,
+				"max_features": "",
+				"dt_random_state": 0,
+				"max_leaf_nodes": None,
+				"min_impurity_decrease": 0,
+				"dt_class_weight": "",
+				"presort": "False"
+				}
 			return_params['decision_tree_classifier'] = params["decision_tree_classifier"]
 		elif params.get("classifier") == "SVM":
-			params["support_vector_machine"] = {
-			"svm_C": 1,
-			"kernel": "linear",
-			"degree": 3,
-			"gamma": "auto",
-			"coef0": 0,
-			"probability": "False",
-			"shrinking": "True",
-			"svm_tolerance": 0.001,
-			"cache_size": 200,
-			"svm_class_weight": "",
-			"svm_verbose": "False",
-			"svm_max_iter": -1,
-			"decision_function_shape": "ovr",
-			"svm_random_state": 0
-			}
+			if params["support_vector_machine"] == None:
+				params["support_vector_machine"] = {
+				"svm_C": 1,
+				"kernel": "linear",
+				"degree": 3,
+				"gamma": "auto",
+				"coef0": 0,
+				"probability": "False",
+				"shrinking": "True",
+				"svm_tolerance": 0.001,
+				"cache_size": 200,
+				"svm_class_weight": "",
+				"svm_verbose": "False",
+				"svm_max_iter": -1,
+				"decision_function_shape": "ovr",
+				"svm_random_state": 0
+				}
 			return_params['support_vector_machine'] = params["support_vector_machine"]
 		elif params.get("classifier") == "NeuralNetwork":
-			params["neural_network"] = {
-			"hidden_layer_sizes": "(100,)",
-			"activation": "relu",
-			"mlp_solver": "adam",
-			"alpha": 0.0001,
-			"batch_size": "auto",
-			"learning_rate": "constant",
-			"learning_rate_init": 0.001,
-			"power_t": 0.05,
-			"mlp_max_iter": 200,
-			"shuffle": "True",
-			"mlp_random_state": 0,
-			"mlp_tolerance": 0.0001,
-			"mlp_verbose": "False",
-			"mlp_warm_start": "False",
-			"momentum": 0.9,
-			"nesterovs_momentum": "True",
-			"early_stopping": "False",
-			"validation_fraction": 0.1,
-			"beta_1": 0.9,
-			"beta_2": 0.999,
-			"epsilon": 1e-8
-			}
+			if params["neural_network"] == None:
+				params["neural_network"] = {
+				"hidden_layer_sizes": "(100,)",
+				"activation": "relu",
+				"mlp_solver": "adam",
+				"alpha": 0.0001,
+				"batch_size": "auto",
+				"learning_rate": "constant",
+				"learning_rate_init": 0.001,
+				"power_t": 0.05,
+				"mlp_max_iter": 200,
+				"shuffle": "True",
+				"mlp_random_state": 0,
+				"mlp_tolerance": 0.0001,
+				"mlp_verbose": "False",
+				"mlp_warm_start": "False",
+				"momentum": 0.9,
+				"nesterovs_momentum": "True",
+				"early_stopping": "False",
+				"validation_fraction": 0.1,
+				"beta_1": 0.9,
+				"beta_2": 0.999,
+				"epsilon": 1e-8
+				}
 			return_params['neural_network'] = params["neural_network"]
 
 		if params["ensemble_model"] == None:
@@ -2676,11 +2681,16 @@ class kb_genomeclfUtils(object):
 		<body>
 		<div class="container">
 
-		<p> Missing genomes are listed below (ie. these were included in your excel / pasted file but are not present in the workspace) </p>
-		<p> The missing genomes are: """ + str(missingGenomes) + """ </p>
-		<p> A training set object was created regardless of if there were missing genomes. In the event that there were missing genomes they were excluded </p>
+		<h1 style="text-align:center;"> Missing Genomes in Training Data </h1>
 
+		<p> Missing genomes are listed below (ie. these were included in your excel / pasted file but are not present in the workspace).
+		A training set object was created regardless of if there were missing genomes. In the event that there were missing genomes they were excluded  </p>
+		<p> The missing genomes are: """ + str(missingGenomes) + """ </p>
+		
 		<br>
+
+		<p> Description Provided: """ + description + """ </p>
+		<p> Phenotype Provided: """ + phenotype + """ </p>
 
 		<p>Below is a detailed table which shows Genome ID, whether it was loaded into the Narrative, its Classification, and if it was Added to the Training Set</p>
 
@@ -2711,7 +2721,7 @@ class kb_genomeclfUtils(object):
 
 		#return "html0.html"
 
-	def html_report_1(self, global_target, classifier_type, classifier_name, best_classifier_str = None):
+	def html_report_1(self, global_target, classifier_type, classifier_name, description, phenotype, best_classifier_str = None):
 		"""
 		does: creates an .html file that makes the frist report (first app).
 		"""
@@ -2773,9 +2783,9 @@ class kb_genomeclfUtils(object):
 			
 			next_str = u"""
 			<p style="text-align:center; font-size:160%;"> """ + global_target + """ Classification models were created based on the selected trainging set object, classification algorithim, and attribute.
-			The effectiveness of each model is displayed by a confusion matrix* and relevant statistical measures below. </p>
+			The effectiveness of each model to predict """+ phenotype +""" is displayed by a confusion matrix* and relevant statistical measures below. </p>
 
-			The selected classifiers were:
+			<p> The selected classifiers were: </p>
 			<ul>
 				<li>K-Nearest-Neighbors Classifier</li>
 				<li>Logistic Regression Classifier</li>
@@ -2793,9 +2803,15 @@ class kb_genomeclfUtils(object):
 		else :
 
 			next_str = u"""
-			<p style="text-align:center; font-size:160%;">  Prediction of respiration type based on classifiers depicted in the form of confusion matrices*. <br/>
-			 A.) """ + classifier_type + """</p>  
-			<h2> Disclaimer:No feature selection and parameter optimization was not done</h2>
+			<p style="text-align:center; font-size:160%;"> """ + global_target + """ Classification models were created based on the selected trainging set object, classification algorithim, and attribute.
+			The effectiveness of each model is displayed by a confusion matrix* and relevant statistical measures below. </p>
+
+			<p> The selected classifiers were: </p>
+			<ul>
+				<li>""" + classifier_type + """</li>
+			</ul> 
+
+			<p> Further more, advanced options were not selected so no feature selection and parameter optimization was conducted. </p>
 			"""
 
 			file.write(next_str)
@@ -2810,6 +2826,8 @@ class kb_genomeclfUtils(object):
 		</p>
 
 		<br/>
+
+		<p> Description Provided: """ + description + """ </p>
 
 		<p> Note that each classfication model can be downloaded by either clicking the Download button or selecting the desired model under links. As of now,
 		the format of these models are python pickel object created from the sklearn library</p>
