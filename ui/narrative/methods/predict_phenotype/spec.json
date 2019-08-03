@@ -11,6 +11,10 @@
           "target_property": "RAST_Annotated"
         },
         {
+          "input_parameter": "Upload_File",
+          "target_property": "Upload_File"
+        },
+        {
           "input_parameter": "list_name",
           "target_property": "list_name"
         },
@@ -81,6 +85,17 @@
       "optional": true,
       "text_options": {
         "valid_ws_types": []
+      }
+    },
+    {
+      "id" : "Upload_File",
+      "optional" : true,
+      "advanced" : false,
+      "allow_multiple" : false,
+      "default_values" : [ "" ],
+      "field_type" : "dynamic_dropdown",
+      "dynamic_dropdown_options" : {
+        "data_source": "ftp_staging"
       }
     },
     {

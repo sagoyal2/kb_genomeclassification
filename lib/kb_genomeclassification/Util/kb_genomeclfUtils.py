@@ -363,6 +363,9 @@ class kb_genomeclfUtils(object):
 		my_mapping = classifier_object[0]['data']['class_list_mapping']
 
 		#after_classifier = pickle.loads(codecs.decode(base64str.encode(), "base64"))
+		os.system("pip freeze")
+		os.system("pip install -U scikit-learn")
+		os.system("pip freeze")
 		pickle_in = open(clf_file_path, "rb")
 		after_classifier = pickle.load(pickle_in)
 
@@ -375,11 +378,13 @@ class kb_genomeclfUtils(object):
 			print(toEdit_all_classifications)
 			
 			(missingGenomes, inKBASE) = self.createGenomeClassifierTrainingSet(current_ws, params['RAST_Annotated'], just_DF = toEdit_all_classifications, for_predict = True)
+			#Will error out if inKBASE == 0
 			all_attributes = self.get_wholeClassification(inKBASE, current_ws, params['attribute'], master_Role = master_Role ,for_predict = True)
 		else:
 			file_path = self._download_shock(params.get('shock_id'))
 			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
 			(missingGenomes, inKBASE)  = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], just_DF = pd.read_excel(file_path, dtype=str), for_predict = True)
+			#Will error out if inKBASE == 0
 			all_attributes = self.get_wholeClassification(inKBASE, current_ws, params['attribute'], master_Role = master_Role ,for_predict = True)
 
 		# if params.get('list_name'):
@@ -463,10 +468,6 @@ class kb_genomeclfUtils(object):
 			print("printing the params to see RAST")
 			print(params)
 			#file_path = self._download_shock(params.get('shock_id'))
-			print("This is the file path")
-			print(params.get('Upload_File'))
-			file_path = params.get('Upload_File')
-			print(os.system("ls"))
 			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['RAST_Annotated'], just_DF = pd.read_excel(os.path.join(os.path.sep,"staging",file_path)))
 			self.newReferencetoGenome(current_ws, params['description'], params['training_set_out'], inKBASE, inKBASE_Classification)
 			#self.workRAST(current_ws, just_DF = pd.read_excel(file_path))
@@ -1099,8 +1100,6 @@ class kb_genomeclfUtils(object):
 			listGNames[index] = string.replace(" ", "")
 
 		
-		
-		listClassification = just_DF['Classification']
 		inKBASE_Classification =[]
 
 		list_allGenomesinWS = []
@@ -1127,27 +1126,63 @@ class kb_genomeclfUtils(object):
 			for index in range(len(listGNames)):
 				try:
 					if(RAST_Annotated==1):
-						position = list_allGenomesinWS.index(listGNames[index]+".RAST")
-						inKBASE.append(listGNames[index]+".RAST")
-					else:
 						position = list_allGenomesinWS.index(listGNames[index])
 						inKBASE.append(listGNames[index])
 
-				except:
-					if(RAST_Annotated==1):
-						print (listGNames[index])
-						print ('The above Genome does not exist in workspace')
-						missingGenomes.append(listGNames[index]+".RAST")
 					else:
-						print (listGNames[index])
-						print ('The above Genome does not exist in workspace')
-						missingGenomes.append(listGNames[index])
+						#do some rast annotation
+						# position = list_allGenomesinWS.index(listGNames[index])
+						# inKBASE.append(listGNames[index])
+
+						for index in range(len(listGNames)):
+							try:
+								position = list_allGenomesinWS.index(listGNames[index])
+
+								print('printing positions')
+								print(position)
+
+								params_RAST =	{
+								"workspace": current_ws,#"sagoyal:narrative_1536939130038",
+								"input_genome": listGNames[index],
+								"output_genome": listGNames[index]+".RAST",
+								"call_features_rRNA_SEED": 0,
+								"call_features_tRNA_trnascan": 0,
+								"call_selenoproteins": 0,
+								"call_pyrrolysoproteins": 0,
+								"call_features_repeat_region_SEED": 0,
+								"call_features_strep_suis_repeat": 0,
+								"call_features_strep_pneumo_repeat": 0,
+								"call_features_crispr": 0,
+								"call_features_CDS_glimmer3": 0,
+								"call_features_CDS_prodigal": 0,
+								"annotate_proteins_kmer_v2": 1,
+								"kmer_v1_parameters": 1,
+								"annotate_proteins_similarity": 1,
+								"retain_old_anno_for_hypotheticals": 0,
+								"resolve_overlapping_features": 0,
+								"call_features_prophage_phispy": 0
+								}
+
+								output = self.rast.annotate_genome(params_RAST)
+
+								inKBASE.append(listGNames[index]+".RAST")
+
+							except:
+								print (listGNames[index])
+								print ('The above Genome does not exist in workspace')
+								missingGenomes.append(listGNames[index])
+
+				except:
+					print (listGNames[index])
+					print ('The above Genome does not exist in workspace')
+					missingGenomes.append(listGNames[index])
 
 			print(inKBASE)
 			print(missingGenomes)
 
 			return (missingGenomes, inKBASE)
 
+		listClassification = just_DF['Classification']
 
 		for index in range(len(listGNames)):
 
@@ -1456,7 +1491,7 @@ class kb_genomeclfUtils(object):
 		
 
 		print("this is my master_Role")
-		print(master_Role)
+		# print(master_Role)
 
 		#In case you want to save functional roles (master_Role) and the dictionary containing {Genome_ID: [Functional Roles]}
 		"""
@@ -3557,12 +3592,10 @@ class kb_genomeclfUtils(object):
 		<h1 style="text-align:center;"> Predicting """ + phenotype + """ of Genomes</h1>
 
 		<p> Missing genomes are listed below (ie. these were included in your excel / pasted file but are not present in the workspace).
-		A training set object was created regardless of if there were missing genomes. In the event that there were missing genomes they were excluded  </p>
+		In the event that there were missing genomes they were excluded  </p>
 		<p> The missing genomes are: """ + str(missingGenomes) + """ </p>
 		
 		<br>
-
-		<p>Below is a detailed table which shows the Genome ID and whether it was loaded into the Narrative</p>
 
 		"""
 		file.write(html_string)
@@ -3570,7 +3603,7 @@ class kb_genomeclfUtils(object):
 
 		sec_string = u"""
 
-		<h1 style="text-align:center;">Prediction Results</h1>
+		<h1 style="text-align:left;">Prediction Results</h1>
 
 		<!-- <h2>Maybe we can add some more text here later?</h2> -->
 		<!--<p>How to create side-by-side images with the CSS float property:</p> -->
