@@ -363,9 +363,6 @@ class kb_genomeclfUtils(object):
 		my_mapping = classifier_object[0]['data']['class_list_mapping']
 
 		#after_classifier = pickle.loads(codecs.decode(base64str.encode(), "base64"))
-		os.system("pip freeze")
-		os.system("pip install -U scikit-learn")
-		os.system("pip freeze")
 		pickle_in = open(clf_file_path, "rb")
 		after_classifier = pickle.load(pickle_in)
 
