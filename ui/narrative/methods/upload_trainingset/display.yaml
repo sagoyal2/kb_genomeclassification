@@ -32,7 +32,7 @@ parameters :
             File Path
         short-hint : |
             File Path that is found by uploading via the staging area
-    RAST_Annotated :
+    Annotated :
         ui-name : |
             Genomes RAST Annotated
         short-hint : |

@@ -7,8 +7,8 @@
     "service-mapping": {
       "input_mapping": [
         {
-          "input_parameter": "RAST_Annotated",
-          "target_property": "RAST_Annotated"
+          "input_parameter": "Annotated",
+          "target_property": "Annotated"
         },
         {
           "input_parameter": "Upload_File",
@@ -81,7 +81,7 @@
         "0"
       ],
       "field_type": "checkbox",
-      "id": "RAST_Annotated",
+      "id": "Annotated",
       "optional": true,
       "text_options": {
         "valid_ws_types": []
