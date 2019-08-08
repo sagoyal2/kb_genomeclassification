@@ -139,7 +139,36 @@ module kb_genomeclassification {
         EnsembleModelOptions ensemble_model;
     }BuildClassifierInput;
 
+	typedef structure{
+		string attribute_type;
+		string attribute;
+		float weight;
+
+	}attributeWeights;
+
+
+
+	typedef structure{
+		string phenotypeclass;
+		float accuracy;
+		float precision;
+		float recall;
+		float f1score;
+		float dtentropy;
+		float dtgini;
+		list<attributeWeights> attribute_weights;
+
+	}phenotypeClassInfo;
+
+	typedef structure{
+		string classifier_name;
+		string classifier_ref;
+		list<phenotypeClassInfo> phenotype_class_info;
+		float averagef1;
+	}classifierInfo;
+
     typedef structure {
+    	list<classifierInfo> classifier_info;
         string report_name;
         string report_ref;
     }ClassifierOut;
@@ -191,6 +220,18 @@ module kb_genomeclassification {
     }UploadTrainingSetInput;
 
     typedef structure {
+        string phenotype;
+        string genome_name;
+        string genome_ref;
+        int load_status;
+        int RAST_annotation_status;
+    } ClassifierTrainingSetOut;
+
+
+
+    typedef structure {
+    	string description;
+    	mapping <string genome_id,ClassifierTrainingSetOut> classifier_training_set;
         string report_name;
         string report_ref;
     }UploadTrainingSetOut;
