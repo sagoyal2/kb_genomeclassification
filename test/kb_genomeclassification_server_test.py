@@ -242,7 +242,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "description": "mywaydescription",
         "trainingset_name": "myWayTSEt",
         "phenotypeclass": "myway",
-        "classifier": "run_all",
+        "classifier": "KNeighborsClassifier",
         "attribute": "functional_roles",
         "k_nearest_neighbors": None,
         "gaussian_nb": None,

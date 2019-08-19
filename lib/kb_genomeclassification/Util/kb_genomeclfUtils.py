@@ -358,6 +358,7 @@ class kb_genomeclfUtils(object):
 		#base64str = str(classifier_object[0]['data']['classifier_data'])
 		clf_shock_id = classifier_object[0]['data']['classifier_handle_ref']
 		clf_shock_id  = str(current_ws + '/' + classifier_name + ';' + clf_shock_id)
+		print(clf_shock_id)
 		clf_file_path = self._download_shock(handle_id=clf_shock_id)
 
 		master_Role = classifier_object[0]['data']['attribute_data']
