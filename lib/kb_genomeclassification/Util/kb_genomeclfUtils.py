@@ -1927,7 +1927,7 @@ class kb_genomeclfUtils(object):
 			'classifier_type' : classifier_type, # Neural network
 			'classifier_name' : classifier_name,
 			#'classifier_data' : pickled,
-			'classifier_handle_ref' : handle_id,
+			'classifier_handle_ref' : shock_id,
 			'classifier_description' : description,
 			'lib_name' : 'sklearn',
 			'attribute_type' : 'functional_roles',
@@ -2662,7 +2662,7 @@ class kb_genomeclfUtils(object):
 		"""
 		dir_path = self._make_dir()
 
-		file_path = self.dfu.shock_to_file({'handle_id': shock_id, #also takes handles
+		file_path = self.dfu.shock_to_file({'shock_id': shock_id, #also takes handles
 											'file_path': dir_path})['file_path']
 
 		return file_path
