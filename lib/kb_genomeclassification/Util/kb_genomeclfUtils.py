@@ -358,7 +358,7 @@ class kb_genomeclfUtils(object):
 		#base64str = str(classifier_object[0]['data']['classifier_data'])
 		clf_shock_id = classifier_object[0]['data']['classifier_handle_ref']
 		clf_shock_id  = str(current_ws + '/' + classifier_name + ';' + clf_shock_id)
-		clf_file_path = self._download_shock(clf_shock_id)
+		clf_file_path = self._download_shock(handle_id=clf_shock_id)
 
 		master_Role = classifier_object[0]['data']['attribute_data']
 		my_mapping = classifier_object[0]['data']['class_list_mapping']
@@ -379,7 +379,7 @@ class kb_genomeclfUtils(object):
 			#Will error out if inKBASE == 0
 			all_attributes = self.get_wholeClassification(inKBASE, current_ws, params['attribute'], master_Role = master_Role ,for_predict = True)
 		else:
-			file_path = self._download_shock(params.get('shock_id'))
+			file_path = self._download_shock(shock_id = params.get('shock_id'))
 			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
 			(missingGenomes, inKBASE)  = self.createGenomeClassifierTrainingSet(current_ws,params['Annotated'], just_DF = pd.read_excel(file_path, dtype=str), for_predict = True)
 			#Will error out if inKBASE == 0
@@ -1928,7 +1928,7 @@ class kb_genomeclfUtils(object):
 			'classifier_type' : classifier_type, # Neural network
 			'classifier_name' : classifier_name,
 			#'classifier_data' : pickled,
-			'classifier_handle_ref' : shock_id,
+			'classifier_handle_ref' : handle_id,
 			'classifier_description' : description,
 			'lib_name' : 'sklearn',
 			'attribute_type' : 'functional_roles',
@@ -2656,14 +2656,19 @@ class kb_genomeclfUtils(object):
 
 		return dir_path
 
-	def _download_shock(self, shock_id):
+	def _download_shock(self, shock_id = None, handle_id = None):
 		"""
 		does:
 		---using kbase dfu tool to allow users to insert excel files 
 		"""
 		dir_path = self._make_dir()
 
-		file_path = self.dfu.shock_to_file({'shock_id': shock_id, #also takes handles
+		if(handle_id):
+			file_path = self.dfu.shock_to_file({'handle_id': handle_id,
+											'file_path': dir_path})['file_path']
+		
+		else:
+			file_path = self.dfu.shock_to_file({'shock_id': shock_id,
 											'file_path': dir_path})['file_path']
 
 		return file_path
