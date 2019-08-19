@@ -200,7 +200,8 @@ module kb_genomeclassification {
    typedef structure {
         float prediction_accuracy;
         mapping<string genome_id,string predicted_phenotype> predictions;
-
+        string report_name;
+        string report_ref;
    }ClassifierPredictionOutput;
 
    funcdef predict_phenotype(ClassifierPredictionInput params)
@@ -230,7 +231,6 @@ module kb_genomeclassification {
 
 
     typedef structure {
-    	string description;
     	mapping <string genome_id,ClassifierTrainingSetOut> classifier_training_set;
         string report_name;
         string report_ref;

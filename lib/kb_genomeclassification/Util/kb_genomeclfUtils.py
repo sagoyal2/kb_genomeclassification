@@ -461,7 +461,7 @@ class kb_genomeclfUtils(object):
 			print ("taking this path rn")
 			print(params)
 			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
-			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['Annotated'], just_DF = toEdit_all_classifications)
+			(missingGenomes, inKBASE, inKBASE_Classification, classifier_training_set_mapping) = self.createGenomeClassifierTrainingSet(current_ws,params['Annotated'], just_DF = toEdit_all_classifications)
 			self.newReferencetoGenome(current_ws, params['description'], params['training_set_out'], inKBASE, inKBASE_Classification)
 			#self.workRAST(current_ws, just_DF = toEdit_all_classifications)
 			#listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
@@ -470,7 +470,7 @@ class kb_genomeclfUtils(object):
 			print("printing the params to see RAST")
 			print(params)
 			#file_path = self._download_shock(params.get('shock_id'))
-			(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['Annotated'], just_DF = pd.read_excel(os.path.join(os.path.sep,"staging",file_path)))
+			(missingGenomes, inKBASE, inKBASE_Classification, classifier_training_set_mapping) = self.createGenomeClassifierTrainingSet(current_ws,params['Annotated'], just_DF = pd.read_excel(os.path.join(os.path.sep,"staging",file_path)))
 			self.newReferencetoGenome(current_ws, params['description'], params['training_set_out'], inKBASE, inKBASE_Classification)
 			#self.workRAST(current_ws, just_DF = pd.read_excel(file_path))
 			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
@@ -479,7 +479,15 @@ class kb_genomeclfUtils(object):
 		self.html_report_0(missingGenomes, params['phenotypeclass'])
 		htmloutput_name = self.html_nodual("forZeroHTML")
 
-		return htmloutput_name
+		# typedef structure {
+        # string phenotype;
+        # string genome_name;
+        # string genome_ref;
+        # int load_status;
+        # int RAST_annotation_status;
+    	# 	}	 ClassifierTrainingSetOut;
+		# mapping <string genome_id,ClassifierTrainingSetOut> classifier_training_set;
+		return htmloutput_name, classifier_training_set_mapping
 
 	def workRAST(self, current_ws, just_DF):
 
@@ -1186,7 +1194,13 @@ class kb_genomeclfUtils(object):
 
 		listClassification = just_DF['Classification']
 
+		classifier_training_set_mapping = {}
+
+		#self.ws_client.get_objects([{'workspace':current_ws, 'name':'357804.5'}])[0]['refs'][0]
+
 		for index in range(len(listGNames)):
+
+			eachGenomeDict = {}
 
 			try:
 				position = list_allGenomesinWS.index(listGNames[index])
@@ -1231,6 +1245,12 @@ class kb_genomeclfUtils(object):
 					all_Genome_Classification.append(listClassification[index])
 					add_trainingSet.append(["Yes"])
 
+					eachGenomeDict['genome_name'] = listGNames[index]+".RAST"
+					eachGenomeDict['genome_ref'] = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': eachGenomeDict['genome_name'] }])[0]['refs'][0])
+					eachGenomeDict['phenotype'] = listClassification[index]
+					eachGenomeDict['load_status'] = 1
+					eachGenomeDict['RAST_annotation_status'] = 1
+
 				else:
 					# you will end up with case where the genomes will be RAST annotated but not have .RAST attached to it
 
@@ -1242,6 +1262,12 @@ class kb_genomeclfUtils(object):
 					all_Genome_Classification.append(listClassification[index])
 					add_trainingSet.append(["Yes"])
 
+					eachGenomeDict['genome_name'] = listGNames[index]
+					eachGenomeDict['genome_ref'] = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': eachGenomeDict['genome_name'] }])[0]['refs'][0])
+					eachGenomeDict['phenotype'] = listClassification[index]
+					eachGenomeDict['load_status'] = 1
+					eachGenomeDict['RAST_annotation_status'] = 1
+
 			except:
 				print (listGNames[index])
 				print ('The above Genome does not exist in workspace')
@@ -1249,9 +1275,17 @@ class kb_genomeclfUtils(object):
 
 				all_genome_ID.append(listGNames[index])
 				loaded_Narrative.append(["No"])
-				all_Genome_Classification.append(["None"])
+				all_Genome_Classification.append(listClassification[index])
 				add_trainingSet.append(["No"])
-		
+
+				eachGenomeDict['genome_name'] = listGNames[index]
+				eachGenomeDict['genome_ref'] = "None"
+				eachGenomeDict['phenotype'] = listClassification[index]
+				eachGenomeDict['load_status'] = 0
+				eachGenomeDict['RAST_annotation_status'] = 0
+
+			classifier_training_set_mapping[eachGenomeDict['genome_ref']] = eachGenomeDict
+
 		four_columns = pd.DataFrame.from_dict({'Genome Id': all_genome_ID, 'Loaded in the Narrative': loaded_Narrative, 'Classification' : all_Genome_Classification, 'Added to Training Set' : add_trainingSet})
 		four_columns = four_columns[['Genome Id', 'Loaded in the Narrative', 'Classification', 'Added to Training Set']]
 
@@ -1261,15 +1295,18 @@ class kb_genomeclfUtils(object):
 		pd.set_option('display.max_colwidth', old_width)
 
 
-		print "I'm print out the obj_save_ref"
-		print ""
-		print ""
-		print ""
+		print("done")
 
-		#print obj_save_ref
-		print "done"
+		# typedef structure {
+        # string phenotype;
+        # string genome_name;
+        # string genome_ref;
+        # int load_status;
+        # int RAST_annotation_status;
+    	# 	}	 ClassifierTrainingSetOut;
+		# mapping <string genome_id,ClassifierTrainingSetOut> classifier_training_set;
 
-		return (missingGenomes, inKBASE, inKBASE_Classification)
+		return (missingGenomes, inKBASE, inKBASE_Classification, classifier_training_set_mapping)
 
 	def newReferencetoGenome(self, current_ws, description, trainingset_object_Name, inKBASE, inKBASE_Classification):
 
@@ -1313,6 +1350,7 @@ class kb_genomeclfUtils(object):
 													  'provenance': ctx.get('provenance')  # ctx should be passed into this func.
 													  }]
 													})[0]
+
 
 	def unloadGenomeClassifierTrainingSet(self, current_ws, trainingset_name):
 		"""

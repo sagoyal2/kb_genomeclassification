@@ -237,24 +237,25 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # "workspace" : "sagoyal:narrative_1536939130038"
         # }
 
-        params = {
-        "save_ts": 1,
-        "description": "mywaydescription",
-        "trainingset_name": "myWayTSEt",
-        "phenotypeclass": "myway",
-        "classifier": "KNeighborsClassifier",
-        "attribute": "functional_roles",
-        "k_nearest_neighbors": None,
-        "gaussian_nb": None,
-        "logistic_regression": None,
-        "decision_tree_classifier": None,
-        "support_vector_machine": None,
-        "neural_network": None,
-        "ensemble_model": None,
-        "classifier_out": "myWayCLF",
-        "workspace" : "sagoyal:narrative_1536939130038"
-        }
-        self.getImpl().build_classifier(self.getContext(), params)
+        # params = {
+        # "save_ts": 1,
+        # "description": "mywaydescription",
+        # "trainingset_name": "myWayTSEt",
+        # "phenotypeclass": "myway",
+        # "classifier": "KNeighborsClassifier",
+        # "attribute": "functional_roles",
+        # "k_nearest_neighbors": None,
+        # "gaussian_nb": None,
+        # "logistic_regression": None,
+        # "decision_tree_classifier": None,
+        # "support_vector_machine": None,
+        # "neural_network": None,
+        # "ensemble_model": None,
+        # "classifier_out": "myWayCLF",
+        # "workspace" : "sagoyal:narrative_1536939130038"
+        # }
+        # self.getImpl().build_classifier(self.getContext(), params)
+        pass
         
 
     def test_upload_trainingset(self):
@@ -292,7 +293,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "workspace" : "sagoyal:narrative_1536939130038"
         }
         """
-        """
+        
         params = {
         "Annotated": 1,
         "Upload_File": "prodTrialRAST.xlsx",
@@ -304,5 +305,4 @@ class kb_genomeclassificationTest(unittest.TestCase):
         }
 
         self.getImpl().upload_trainingset(self.getContext(), params)
-        """
-        pass
+
