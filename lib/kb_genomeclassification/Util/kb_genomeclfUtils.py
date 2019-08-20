@@ -434,15 +434,15 @@ class kb_genomeclfUtils(object):
 			print("this is toEdit_all_classifications")
 			print(toEdit_all_classifications)
 			
-			(missingGenomes, inKBASE) = self.createGenomeClassifierTrainingSet(current_ws, params['Annotated'], just_DF = toEdit_all_classifications, for_predict = True)
+			(missingGenomes, inKBASE, ref_list) = self.createGenomeClassifierTrainingSet(current_ws, params['Annotated'], just_DF = toEdit_all_classifications, for_predict = True)
 			#Will error out if inKBASE == 0
-			all_attributes = self.get_wholeClassification(inKBASE, current_ws, params['attribute'], master_Role = master_Role ,for_predict = True)
+			all_attributes = self.get_wholeClassification(inKBASE, current_ws, params['attribute'], refs = ref_list, master_Role = master_Role ,for_predict = True)
 		else:
 			file_path = self._download_shock(shock_id = params.get('shock_id'))
 			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
-			(missingGenomes, inKBASE)  = self.createGenomeClassifierTrainingSet(current_ws,params['Annotated'], just_DF = pd.read_excel(file_path, dtype=str), for_predict = True)
+			(missingGenomes, inKBASE, ref_list)  = self.createGenomeClassifierTrainingSet(current_ws,params['Annotated'], just_DF = pd.read_excel(file_path, dtype=str), for_predict = True)
 			#Will error out if inKBASE == 0
-			all_attributes = self.get_wholeClassification(inKBASE, current_ws, params['attribute'], master_Role = master_Role ,for_predict = True)
+			all_attributes = self.get_wholeClassification(inKBASE, current_ws, params['attribute'], refs = ref_list, master_Role = master_Role ,for_predict = True)
 
 		# if params.get('list_name'):
 		# 	#checks if empty string bool("") --> False
@@ -500,7 +500,7 @@ class kb_genomeclfUtils(object):
 			innerStruct['phenotype'] = phenotype
 			innerStruct['prediction_accuracy'] = prediction_accuracy
 
-			predictions_mapping['genome_ref'] = innerStruct
+			predictions_mapping[genome_ref] = innerStruct
 			del innerStruct
 
 		predict_table_pd.to_html(os.path.join(self.scratch, 'forSecHTML', 'html3folder', 'results.html'), index=False, table_id="results", classes =["table", "table-striped", "table-bordered"])
@@ -1216,10 +1216,12 @@ class kb_genomeclfUtils(object):
 		inKBASE = []
 
 		if(for_predict):
+			ref_names = []
 			for index in range(len(listGNames)):
 				try:
 					if(Annotated==1):
 						position = list_allGenomesinWS.index(listGNames[index])
+						ref_names.append(str(self.ws_client.get_objects([{'workspace':current_ws, 'name': listGNames[index] }])[0]['refs'][0]))
 						inKBASE.append(listGNames[index])
 
 					else:
@@ -1259,21 +1261,24 @@ class kb_genomeclfUtils(object):
 								output = self.rast.annotate_genome(params_RAST)
 
 								inKBASE.append(listGNames[index]+".RAST")
+								ref_names.append(str(self.ws_client.get_objects([{'workspace':current_ws, 'name': listGNames[index]+".RAST" }])[0]['refs'][0]))
 
 							except:
 								print (listGNames[index])
 								print ('The above Genome does not exist in workspace')
 								missingGenomes.append(listGNames[index])
+								ref_names.append(str(self.ws_client.get_objects([{'workspace':current_ws, 'name': listGNames[index] }])[0]['refs'][0]))
 
 				except:
 					print (listGNames[index])
 					print ('The above Genome does not exist in workspace')
 					missingGenomes.append(listGNames[index])
+					ref_names.append(str(self.ws_client.get_objects([{'workspace':current_ws, 'name': listGNames[index] }])[0]['refs'][0]))
 
 			print(inKBASE)
 			print(missingGenomes)
 
-			return (missingGenomes, inKBASE)
+			return (missingGenomes, inKBASE, ref_names)
 
 		listClassification = just_DF['Classification']
 
@@ -1544,15 +1549,17 @@ class kb_genomeclfUtils(object):
 
 
 		# for current_gName in listOfNames:
+
+
+		print("here are refs")
+		print(refs)
+		
 		for current_ref, current_gName in izip(refs, listOfNames):
 			listOfFunctionalRoles = []
 			try:
 				#functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['cdss']
 				#functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['non_coding_features']
 				functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['non_coding_features']
-
-				print("here is functionList")
-
 				for function in range(len (functionList)):
 					if str(functionList[function][search][0]).lower() != 'hypothetical protein':
 						# print("functionList[function][search]")
@@ -1568,51 +1575,95 @@ class kb_genomeclfUtils(object):
 							listOfFunctionalRoles.extend(str(functionList[function][search][0]).split("; "))
 						else:
 							listOfFunctionalRoles.append(str(functionList[function][search]))
-
-				# for function in range(len (functionList)):
-				# 	if str(functionList[function]['functions'][0]).lower() != 'hypothetical protein':
-				# 		#print(str(functionList[function]['functions'][0]).find(" @ " ))
-				# 		#if (str(functionList[function]['functions'][0]).find(" @ " ) > 0):
-				# 		if " @ " in str(functionList[function]['functions'][0]):
-				# 			listOfFunctionalRoles.extend(str(functionList[function]['functions'][0]).split(" @ "))
-				# 			print("I went inside the if statement")
-				# 		elif " / " in str(functionList[function]['functions'][0]):
-				# 			listOfFunctionalRoles.extend(str(functionList[function]['functions'][0]).split(" / "))
-				# 		elif "; " in str(functionList[function]['functions'][0]):
-				# 			listOfFunctionalRoles.extend(str(functionList[function]['functions'][0]).split("; "))
-				# 		else:
-				# 			listOfFunctionalRoles.append(str(functionList[function]['functions'][0]))
-
 			except:
-				functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['features']
-				#['data'][0]['data']['features']
-				#functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['features']
-				# functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['non_coding_features']
+				try:
+					functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['non_coding_features']
+					print("here is functionList")
+
+					for function in range(len (functionList)):
+						if str(functionList[function][search][0]).lower() != 'hypothetical protein':
+							# print("functionList[function][search]")
+							# print(functionList[function][search])
+							#print(str(functionList[function]['functions'][0]).find(" @ " ))
+							#if (str(functionList[function]['functions'][0]).find(" @ " ) > 0):
+							if " @ " in str(functionList[function][search][0]):
+								listOfFunctionalRoles.extend(str(functionList[function][search][0]).split(" @ "))
+								print("I went inside the if statement")
+							elif " / " in str(functionList[function][search][0]):
+								listOfFunctionalRoles.extend(str(functionList[function][search][0]).split(" / "))
+							elif "; " in str(functionList[function][search][0]):
+								listOfFunctionalRoles.extend(str(functionList[function][search][0]).split("; "))
+							else:
+								listOfFunctionalRoles.append(str(functionList[function][search]))
+
+					# for function in range(len (functionList)):
+					# 	if str(functionList[function]['functions'][0]).lower() != 'hypothetical protein':
+					# 		#print(str(functionList[function]['functions'][0]).find(" @ " ))
+					# 		#if (str(functionList[function]['functions'][0]).find(" @ " ) > 0):
+					# 		if " @ " in str(functionList[function]['functions'][0]):
+					# 			listOfFunctionalRoles.extend(str(functionList[function]['functions'][0]).split(" @ "))
+					# 			print("I went inside the if statement")
+					# 		elif " / " in str(functionList[function]['functions'][0]):
+					# 			listOfFunctionalRoles.extend(str(functionList[function]['functions'][0]).split(" / "))
+					# 		elif "; " in str(functionList[function]['functions'][0]):
+					# 			listOfFunctionalRoles.extend(str(functionList[function]['functions'][0]).split("; "))
+					# 		else:
+					# 			listOfFunctionalRoles.append(str(functionList[function]['functions'][0]))
+
+				except:
+					try:
+						functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['features']
+						#['data'][0]['data']['features']
+						#functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['features']
+						# functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['non_coding_features']
 
 
-				# print("here is functionList")
-				# print(functionList)
+						# print("here is functionList")
+						# print(functionList)
 
-				for function in range(len (functionList)):
-					if str(functionList[function][search]).lower() != 'hypothetical protein':
-						#print(str(functionList[function]['functions'][0]).find(" @ " ))
-						#if (str(functionList[function]['functions'][0]).find(" @ " ) > 0):
-						if " @ " in str(functionList[function][search]):
-							listOfFunctionalRoles.extend(str(functionList[function][search]).split(" @ "))
-							print("I went inside the if statement #2")
-						elif " / " in str(functionList[function][search]):
-							listOfFunctionalRoles.extend(str(functionList[function][search]).split(" / "))
-						elif "; " in str(functionList[function][search]):
-							listOfFunctionalRoles.extend(str(functionList[function][search]).split("; "))
-						else:
-							listOfFunctionalRoles.append(str(functionList[function][search]))
+						for function in range(len (functionList)):
+							if str(functionList[function][search]).lower() != 'hypothetical protein':
+								#print(str(functionList[function]['functions'][0]).find(" @ " ))
+								#if (str(functionList[function]['functions'][0]).find(" @ " ) > 0):
+								if " @ " in str(functionList[function][search]):
+									listOfFunctionalRoles.extend(str(functionList[function][search]).split(" @ "))
+									print("I went inside the if statement #2")
+								elif " / " in str(functionList[function][search]):
+									listOfFunctionalRoles.extend(str(functionList[function][search]).split(" / "))
+								elif "; " in str(functionList[function][search]):
+									listOfFunctionalRoles.extend(str(functionList[function][search]).split("; "))
+								else:
+									listOfFunctionalRoles.append(str(functionList[function][search]))
+					except:
+						#functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['features']
+						#['data'][0]['data']['features']
+						functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['features']
+						# functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['non_coding_features']
 
+
+						# print("here is functionList")
+						# print(functionList)
+
+						for function in range(len (functionList)):
+							if str(functionList[function][search]).lower() != 'hypothetical protein':
+								#print(str(functionList[function]['functions'][0]).find(" @ " ))
+								#if (str(functionList[function]['functions'][0]).find(" @ " ) > 0):
+								if " @ " in str(functionList[function][search]):
+									listOfFunctionalRoles.extend(str(functionList[function][search]).split(" @ "))
+									print("I went inside the if statement #2")
+								elif " / " in str(functionList[function][search]):
+									listOfFunctionalRoles.extend(str(functionList[function][search]).split(" / "))
+								elif "; " in str(functionList[function][search]):
+									listOfFunctionalRoles.extend(str(functionList[function][search]).split("; "))
+								else:
+									listOfFunctionalRoles.append(str(functionList[function][search]))
 
 			name_and_roles[current_gName] = listOfFunctionalRoles
 
 			print "I have arrived inside the desired for loop!!"
 			print(len(listOfFunctionalRoles))
 			print(current_gName)
+
 
 		if not for_predict:
 			master_pre_Role = list(itertools.chain(*name_and_roles.values()))
