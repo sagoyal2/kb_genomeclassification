@@ -140,13 +140,9 @@ module kb_genomeclassification {
     }BuildClassifierInput;
 
 	typedef structure{
-		string attribute_type;
 		string attribute;
 		float weight;
-
 	}attributeWeights;
-
-
 
 	typedef structure{
 		string phenotypeclass;
@@ -154,10 +150,6 @@ module kb_genomeclassification {
 		float precision;
 		float recall;
 		float f1score;
-		float dtentropy;
-		float dtgini;
-		list<attributeWeights> attribute_weights;
-
 	}phenotypeClassInfo;
 
 	typedef structure{
@@ -168,6 +160,7 @@ module kb_genomeclassification {
 	}classifierInfo;
 
     typedef structure {
+        list<attributeWeights> attribute_weights;
     	list<classifierInfo> classifier_info;
         string report_name;
         string report_ref;
@@ -191,15 +184,21 @@ module kb_genomeclassification {
         string classifier_name;
         string description;
         string phenotypeclass;
-        string shock_id;
+        string Upload_File;
         string list_name;
         int Annotated;
     } ClassifierPredictionInput;
 
 
-   typedef structure {
+    typedef structure {
         float prediction_accuracy;
-        mapping<string genome_id,string predicted_phenotype> predictions;
+        string phenotype;
+        string genome_name;
+        string genome_ref;
+    } PredictedPhenotypeOut;
+
+   typedef structure {
+        mapping<string genome_id, PredictedPhenotypeOut> predictions;
         string report_name;
         string report_ref;
    }ClassifierPredictionOutput;

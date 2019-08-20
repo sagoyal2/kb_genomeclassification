@@ -246,19 +246,38 @@ class kb_genomeclfUtils(object):
 
 		#RUNNING the classifiers depending on classifier_type
 
+		classifier_info_list = []
+
 		if classifier_type == u"run_all":
+	# 			typedef structure{
+	# 	string classifier_name;
+	# 	string classifier_ref;
+	# 	list<phenotypeClassInfo> phenotype_class_info;
+	# 	float averagef1;
+	# }classifierInfo;
 
 			listRunAll = ['KNeighborsClassifier', 'GaussianNB', 'LogisticRegression', 'DecisionTreeClassifier', 'SVM', 'NeuralNetwork']
 			all_advanced = ["k_nearest_neighbors", "gaussian_nb", "logistic_regression", "decision_tree_classifier", "support_vector_machine", "neural_network"]
 
 			for run, advanced in izip(listRunAll, all_advanced):
 				#classifierTest_params['classifier'] = self.whichClassifier(run)
+				classifier_info_list_mapping = {}
+
 				classifierTest_params['classifier'] = self.whichClassifierAdvanced(run, params[advanced])
 				classifierTest_params['classifier_type'] = run
 				classifierTest_params['classifier_name'] = classifier_name + u'_' + run
 				classifierTest_params['htmlfolder'] = folderhtml1
 
-				self.classifierTest(classifierTest_params)
+
+				classifier_info_list_mapping['classifier_name'] = classifierTest_params['classifier_name']
+				(test_av, test_std, val_av, val_std), phenotype_class_info_list, avgf1 = self.classifierTest(classifierTest_params)
+				classifier_info_list_mapping['phenotype_class_info'] = phenotype_class_info_list
+				classifier_info_list_mapping['classifier_ref'] = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': classifierTest_params['classifier_name'] }])[0]['refs'][0])
+				classifier_info_list_mapping['averagef1'] = avgf1
+
+				classifier_info_list.append(classifier_info_list_mapping)
+
+				del classifier_info_list_mapping
 
 			best_classifier_str = self.to_HTML_Statistics(class_list, classifier_name)
 
@@ -271,6 +290,7 @@ class kb_genomeclfUtils(object):
 			#to create another "best in html2"
 			
 			#classifierTest_params['classifier'] = self.whichClassifier(best_classifier_type)
+			
 			classifierTest_params['classifier'] = self.whichClassifierAdvanced(best_classifier_type, params[all_advanced[best_classifier_type_index]], True)
 			classifierTest_params['classifier_type'] = best_classifier_type
 			classifierTest_params['classifier_name'] = classifier_name+u"_" + best_classifier_type
@@ -281,7 +301,11 @@ class kb_genomeclfUtils(object):
 
 			classifierTest_params['classifier_name'] = classifier_name
 			classifierTest_params['htmlfolder'] = folderhtml2
-			self.tune_Decision_Tree(classifierTest_params, best_classifier_str)
+
+			classifier_info_list_mapping_fromDTentropy, classifier_info_list_mapping_fromDTgini, weight_list  = self.tune_Decision_Tree(classifierTest_params, current_ws)
+			classifier_info_list.append(classifier_info_list_mapping_fromDTentropy)
+			classifier_info_list.append(classifier_info_list_mapping_fromDTgini)
+
 			self.html_report_2(global_target, classifier_name, num_classes, best_classifier_str)
 
 			classifierTest_params['classifier'], estimators_inHTML = self.ensembleCreation(params["ensemble_model"], params)
@@ -293,7 +317,16 @@ class kb_genomeclfUtils(object):
 				classifierTest_params['classifier_type'] = "Ensemble_Model"
 				classifierTest_params['classifier_name'] = classifier_name+u"_" + "Ensemble_Model"
 				classifierTest_params['htmlfolder'] = folderhtml4
-				self.classifierTest(classifierTest_params)
+
+				classifier_info_list_mapping = {}
+				classifier_info_list_mapping['classifier_name'] = classifierTest_params['classifier_name']
+				(test_av, test_std, val_av, val_std), phenotype_class_info_list, avgf1 = self.classifierTest(classifierTest_params)
+				classifier_info_list_mapping['phenotype_class_info'] = phenotype_class_info_list
+				classifier_info_list_mapping['classifier_ref'] = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': classifierTest_params['classifier_name'] }])[0]['refs'][0])
+				classifier_info_list_mapping['averagef1'] = avgf1
+
+				classifier_info_list.append(classifier_info_list_mapping)
+				del classifier_info_list_mapping
 
 				self.to_HTML_Statistics(class_list, classifier_name, known = classifierTest_params['classifier_name'], for_ensemble = True)
 
@@ -305,7 +338,16 @@ class kb_genomeclfUtils(object):
 
 			#classifierTest_params['classifier'] = self.whichClassifier(classifier_type)
 			classifierTest_params['classifier'] = self.whichClassifierAdvanced(classifier_type, params["classifierAdvanced_params"])
-			self.classifierTest(classifierTest_params)
+
+			classifier_info_list_mapping = {}
+			classifier_info_list_mapping['classifier_name'] = classifierTest_params['classifier_name']
+			(test_av, test_std, val_av, val_std), phenotype_class_info_list, avgf1 = self.classifierTest(classifierTest_params)
+			classifier_info_list_mapping['phenotype_class_info'] = phenotype_class_info_list
+			classifier_info_list_mapping['classifier_ref'] = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': classifierTest_params['classifier_name'] }])[0]['refs'][0])
+			classifier_info_list_mapping['averagef1'] = avgf1
+
+			classifier_info_list.append(classifier_info_list_mapping)
+			del classifier_info_list_mapping
 
 			self.to_HTML_Statistics(class_list, classifier_name)
 			
@@ -313,7 +355,9 @@ class kb_genomeclfUtils(object):
 
 
 			classifierTest_params['htmlfolder'] = folderhtml2
-			self.tune_Decision_Tree(classifierTest_params)
+			classifier_info_list_mapping_fromDTentropy, classifier_info_list_mapping_fromDTgini, weight_list  = self.tune_Decision_Tree(classifierTest_params, current_ws)
+			classifier_info_list.append(classifier_info_list_mapping_fromDTentropy)
+			classifier_info_list.append(classifier_info_list_mapping_fromDTgini)
 			
 			self.html_report_2(global_target, classifier_name, num_classes)
 			htmloutput_name = self.html_dual_12()
@@ -321,13 +365,24 @@ class kb_genomeclfUtils(object):
 		else:
 			#classifierTest_params['classifier'] = self.whichClassifier(classifier_type)
 			classifierTest_params['classifier'] = self.whichClassifierAdvanced(classifier_type, params["classifierAdvanced_params"])
-			self.classifierTest(classifierTest_params)
+			
+			classifier_info_list_mapping = {}
+			classifier_info_list_mapping['classifier_name'] = classifierTest_params['classifier_name']
+			(test_av, test_std, val_av, val_std), phenotype_class_info_list, avgf1 = self.classifierTest(classifierTest_params)
+			classifier_info_list_mapping['phenotype_class_info'] = phenotype_class_info_list
+			classifier_info_list_mapping['classifier_ref'] = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': classifierTest_params['classifier_name'] }])[0]['refs'][0])
+			classifier_info_list_mapping['averagef1'] = avgf1
+
+			classifier_info_list.append(classifier_info_list_mapping)
+			del classifier_info_list_mapping
 
 			self.to_HTML_Statistics(class_list, classifier_name)
 			self.html_report_1(global_target, classifier_type, classifier_name, params['phenotypeclass'], num_classes)
 			htmloutput_name = self.html_nodual("forHTML")
 
-		return htmloutput_name
+			weight_list = []
+
+		return htmloutput_name, classifier_info_list, weight_list
 		
 	def fullPredict(self, params, current_ws):
 		"""
@@ -434,9 +489,36 @@ class kb_genomeclfUtils(object):
 		#predict_table_pd = predict_table_pd.set_index('Genome Id')
 		predict_table_pd = predict_table_pd[['Genome Id', target, "Probability"]]
 
+		predictions_mapping = {}
 
+		for genome_name, phenotype, prediction_accuracy in izip(all_attributes.index, after_classifier_result_forDF, maxEZ):
+			genome_ref = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': genome_name }])[0]['refs'][0])
+			
+			innerStruct = {}
+
+			innerStruct['genome_name'] = genome_name
+			innerStruct['phenotype'] = phenotype
+			innerStruct['prediction_accuracy'] = prediction_accuracy
+
+			predictions_mapping['genome_ref'] = innerStruct
+			del innerStruct
 
 		predict_table_pd.to_html(os.path.join(self.scratch, 'forSecHTML', 'html3folder', 'results.html'), index=False, table_id="results", classes =["table", "table-striped", "table-bordered"])
+
+
+
+		#     typedef structure {
+		#         float prediction_accuracy;
+		#         string phenotype;
+		#         string genome_name;
+		#         string genome_ref;
+		#     } PredictedPhenotypeOut;
+
+		#    typedef structure {
+		#         mapping<string genome_id, PredictedPhenotypeOut> predictions;
+		#         string report_name;
+		#         string report_ref;
+		#    }ClassifierPredictionOutput;
 
 		#you can also save down table as text file or csv
 		"""
@@ -449,7 +531,8 @@ class kb_genomeclfUtils(object):
 		self.html_report_3(missingGenomes, params['phenotypeclass'])
 		htmloutput_name = self.html_nodual("forSecHTML")
 
-		return htmloutput_name
+		return htmloutput_name, predictions_mapping
+		
 
 	def fullUpload(self, params, current_ws):
 
@@ -1285,6 +1368,7 @@ class kb_genomeclfUtils(object):
 				eachGenomeDict['RAST_annotation_status'] = 0
 
 			classifier_training_set_mapping[eachGenomeDict['genome_ref']] = eachGenomeDict
+			del eachGenomeDict
 
 		four_columns = pd.DataFrame.from_dict({'Genome Id': all_genome_ID, 'Loaded in the Narrative': loaded_Narrative, 'Classification' : all_Genome_Classification, 'Added to Training Set' : add_trainingSet})
 		four_columns = four_columns[['Genome Id', 'Loaded in the Narrative', 'Classification', 'Added to Training Set']]
@@ -2004,10 +2088,13 @@ class kb_genomeclfUtils(object):
 			print obj_save_ref
 			print "done"        
 
+		phenotype_class_info_list = None
+		avgf1 = None
+
 		if print_cfm:
 
 			cnf_av = cnf_matrix/splits
-			self.NClasses(class_list, cnf_av)
+			phenotype_class_info_list, avgf1 = self.NClasses(class_list, cnf_av)
 
 			self.plot_confusion_matrix(np.round(cnf_matrix_f/splits*100.0,1),class_list,u'Confusion Matrix', htmlfolder, classifier_name, classifier_type)
 
@@ -2088,11 +2175,13 @@ class kb_genomeclfUtils(object):
 		print u"%6.3f\t%6.3f\t%6.3f\t%6.3f" % (
 		np.average(train_score), np.std(train_score), np.average(validate_score), np.std(validate_score))
 
-		return (np.average(train_score), np.std(train_score), np.average(validate_score), np.std(validate_score))
+		return (np.average(train_score), np.std(train_score), np.average(validate_score), np.std(validate_score)), phenotype_class_info_list, avgf1
 
 	def NClasses(self, class_list, cnf_av):
 		
 		list_forDict = []
+
+		phenotype_class_info_list = []
 
 		for class_current in range(len(class_list)):
 			print(class_list[class_current])
@@ -2103,8 +2192,19 @@ class kb_genomeclfUtils(object):
 			TN = self.forTN(FP, FN, class_current, cnf_av)
 			
 			list_forDict.extend([None])
-			list_forDict.extend(self.cf_stats(TN,TP,FP,FN))
+			cf_stats_list = self.cf_stats(TN,TP,FP,FN)
+			list_forDict.extend(cf_stats_list)
 			list_forDict.extend([None])
+
+			phenotype_class_info_mapping = {}
+			phenotype_class_info_mapping['phenotypeclass'] = class_list[class_current]
+			phenotype_class_info_mapping['accuracy'] = cf_stats_list[0]
+			phenotype_class_info_mapping['precision'] = cf_stats_list[1]
+			phenotype_class_info_mapping['recall'] = cf_stats_list[2]
+			phenotype_class_info_mapping['f1score'] = cf_stats_list[3]
+			
+			phenotype_class_info_list.append(phenotype_class_info_mapping)
+			del phenotype_class_info_mapping
 
 		#try fixing this line below more
 		fScore_indexes = [(4 + 6*a) for a in range(len(class_list))]
@@ -2126,9 +2226,12 @@ class kb_genomeclfUtils(object):
 		for f_index in fScore_indexes:
 			list_fScore.extend([list_forDict[f_index]])
 
-		list_forDict.extend([np.nanmean(list_fScore)])
+		avgf1 = np.nanmean(list_fScore)
+		list_forDict.extend([avgf1])
 
 		self.list_statistics.append(list_forDict)
+
+		return phenotype_class_info_list, avgf1
 			
 	def forTN(self, FP, FN, class_current, cnf_av):
 		sum_TN = 0
@@ -2394,7 +2497,7 @@ class kb_genomeclfUtils(object):
 
 	#### Below is code for tuning Decision Tree ####
 
-	def tune_Decision_Tree(self,classifierTest_paramsInput, best_classifier_str = None):
+	def tune_Decision_Tree(self,classifierTest_paramsInput, current_ws, best_classifier_str = None):
 		"""
 		args:
 		---classifierTest_paramsInput is same dictionary as classifierTest_params passed in with few updates
@@ -2439,7 +2542,7 @@ class kb_genomeclfUtils(object):
 		for d in xrange(1, 12):
 			classifierTest_params['classifier'] = DecisionTreeClassifier(random_state=0, max_depth=d)
 			val[d] = d
-			(test_av[d], test_std[d], val_av[d], val_std[d]) = self.classifierTest(classifierTest_params)
+			(test_av[d], test_std[d], val_av[d], val_std[d]), val1, val2 = self.classifierTest(classifierTest_params)
 
 		fig, ax = plt.subplots(figsize=(6, 6))
 		plt.errorbar(val[1:], test_av[1:], yerr=test_std[1:], fmt=u'o', label=u'Training set')
@@ -2470,7 +2573,7 @@ class kb_genomeclfUtils(object):
 		for d in xrange(1, 12):
 			classifierTest_params['classifier'] = DecisionTreeClassifier(random_state=0, max_depth=d, criterion=u'entropy')
 			val[d] = d
-			(test_av[d], test_std[d], val_av[d], val_std[d]) = self.classifierTest(classifierTest_params)
+			(test_av[d], test_std[d], val_av[d], val_std[d]), val1, val2 = self.classifierTest(classifierTest_params)
 
 		fig, ax = plt.subplots(figsize=(6, 6))
 		plt.errorbar(val[1:], test_av[1:], yerr=test_std[1:], fmt=u'o', label=u'Training set')
@@ -2494,21 +2597,36 @@ class kb_genomeclfUtils(object):
 		classifierTest_params['classifier'] = DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini')
 		classifierTest_params['classifier_name'] = classifierTest_paramsInput['classifier_name'] + u"_DecisionTreeClassifier_gini"
 		classifierTest_params['print_cfm'] = True
-		self.classifierTest(classifierTest_params)
 		
+		classifier_info_list_mapping_fromDTentropy = {}
+		classifier_info_list_mapping_fromDTentropy['classifier_name'] = classifierTest_params['classifier_name']
+		(test_av, test_std, val_av, val_std), phenotype_class_info_list, avgf1 = self.classifierTest(classifierTest_params)
+		classifier_info_list_mapping_fromDTentropy['phenotype_class_info'] = phenotype_class_info_list
+		classifier_info_list_mapping_fromDTentropy['classifier_ref'] = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': classifierTest_params['classifier_name'] }])[0]['refs'][0])
+		classifier_info_list_mapping_fromDTentropy['averagef1'] = avgf1
+
 
 		classifierTest_params['classifier'] = DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy')
 		classifierTest_params['classifier_name'] = classifierTest_paramsInput['classifier_name'] + u"_DecisionTreeClassifier_entropy"
 		classifierTest_params['print_cfm'] = True
-		self.classifierTest(classifierTest_params)
+
+		classifier_info_list_mapping_fromDTgini = {}
+		classifier_info_list_mapping_fromDTgini['classifier_name'] = classifierTest_params['classifier_name']
+		(test_av, test_std, val_av, val_std), phenotype_class_info_list, avgf1 = self.classifierTest(classifierTest_params)
+		classifier_info_list_mapping_fromDTgini['phenotype_class_info'] = phenotype_class_info_list
+		classifier_info_list_mapping_fromDTgini['classifier_ref'] = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': classifierTest_params['classifier_name'] }])[0]['refs'][0])
+		classifier_info_list_mapping_fromDTgini['averagef1'] = avgf1
 
 		self.to_HTML_Statistics(classifierTest_params['class_list'], classifierTest_paramsInput['classifier_name'], known = best_classifier_str,additional=True)
 
 		if gini_best > entropy_best:
-			self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini'), classifierTest_params['all_attributes'], classifierTest_params['all_classifications'], classifierTest_params['master_Role'], classifierTest_params['class_list'])
+			weightlist = self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini'), classifierTest_params['all_attributes'], classifierTest_params['all_classifications'], classifierTest_params['master_Role'], classifierTest_params['class_list'])
+			# classifier_info_list_mapping_fromDTgini['phenotype_class_info']['attribute_weights'] = weightlist
 		else:
-			self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy'), classifierTest_params['all_attributes'], classifierTest_params['all_classifications'], classifierTest_params['master_Role'], classifierTest_params['class_list'])
+			weightlist = self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy'), classifierTest_params['all_attributes'], classifierTest_params['all_classifications'], classifierTest_params['master_Role'], classifierTest_params['class_list'])
+			# classifier_info_list_mapping_fromDTentropy['phenotype_class_info']['attribute_weights'] = weightlist
 
+		return classifier_info_list_mapping_fromDTentropy, classifier_info_list_mapping_fromDTgini, weightlist
 
 	def tree_code(self, optimized_tree, all_attributes, all_classifications, master_Role, class_list, spacer_base=u"    "):
 		"""
@@ -2559,7 +2677,7 @@ class kb_genomeclfUtils(object):
 
 		recurse(left, right, threshold, features, 0, 0)
 
-		self.printTree(tree, u"NAMEmyTreeLATER", master_Role, class_list)
+		return self.printTree(tree, u"NAMEmyTreeLATER", master_Role, class_list)
 
 	def printTree(self,tree, pass_name, master_Role, class_list):
 		"""
@@ -2586,7 +2704,7 @@ class kb_genomeclfUtils(object):
 		dotfile.write(contents)
 		dotfile.close()
 
-		self.parse_lookNice(pass_name,tree, master_Role, class_list)
+		return self.parse_lookNice(pass_name,tree, master_Role, class_list)
 
 	def parse_lookNice(self, name, tree, master_Role, class_list):
 		"""
@@ -2624,7 +2742,7 @@ class kb_genomeclfUtils(object):
 		f.close()
 
 		os.system(u'dot -Tpng ' + os.path.join(self.scratch, 'dotFolder', 'niceTree.dot') + ' >  '+ os.path.join(self.scratch, 'forHTML', 'html2folder', name + u'.png '))
-		self.top20Important(tree, master_Role)
+		return self.top20Important(tree, master_Role)
 
 		"""
 		if class_list.__len__() == 3:
@@ -2685,11 +2803,23 @@ class kb_genomeclfUtils(object):
 		list_top = list(top)
 		list_top_weight = list(top_weight)
 
+		attribute_list = []
+
+		for list_top_value, list_top_weight_value in izip(list_top20, list_top20_weight):
+			attribute_struct = {}
+			attribute_struct['attribute'] = list_top_value
+			attribute_struct['weight'] = list_top_weight_value
+
+			attribute_list.append(attribute_struct)
+			del attribute_struct
+
 		df_top = pd.DataFrame.from_dict({'Top Prioritized Roles': list_top, 'Weights': list_top_weight})
 
 		writer = pd.ExcelWriter(os.path.join(self.scratch, 'forHTML', 'forDATA', 'prioritized_weights.xlsx'), engine='xlsxwriter')
 		df_top.to_excel(writer, sheet_name='Sheet1')
 		writer.save()
+
+		return attribute_list
 
 	### Extra methods being used 
 	def _make_dir(self):
