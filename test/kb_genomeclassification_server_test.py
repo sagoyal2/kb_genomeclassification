@@ -105,18 +105,18 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "workspace" : "sagoyal:narrative_1536939130038"
         }
         """
-        pass
 
-        params = {
-        "Annotated": 1,
-        "list_name": "Genome_ID\n204669.6\n234267.13\n240015.3\n1806.1",
-        "description": "Genomes to Predict",
-        "classifier_name": "myWayCLF_NeuralNetwork",
-        "attribute": "functional_roles",
-        "phenotypeclass": "Respiration",
-        "workspace" : "sagoyal:narrative_1536939130038"
-        }
-        self.getImpl().predict_phenotype(self.getContext(), params)
+        # params = {
+        # "Annotated": 1,
+        # "list_name": "Genome_ID\n204669.6\n234267.13\n240015.3\n1806.1",
+        # "description": "Genomes to Predict",
+        # "classifier_name": "myWayCLF_NeuralNetwork",
+        # "attribute": "functional_roles",
+        # "phenotypeclass": "Respiration",
+        # "workspace" : "sagoyal:narrative_1536939130038"
+        # }
+        # self.getImpl().predict_phenotype(self.getContext(), params)
+        pass
  
 
     def test_build_classifier(self):
@@ -237,25 +237,24 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # "workspace" : "sagoyal:narrative_1536939130038"
         # }
 
-        # params = {
-        # "save_ts": 1,
-        # "description": "mywaydescription",
-        # "trainingset_name": "myWayTSEt",
-        # "phenotypeclass": "myway",
-        # "classifier": "run_all",
-        # "attribute": "functional_roles",
-        # "k_nearest_neighbors": None,
-        # "gaussian_nb": None,
-        # "logistic_regression": None,
-        # "decision_tree_classifier": None,
-        # "support_vector_machine": None,
-        # "neural_network": None,
-        # "ensemble_model": None,
-        # "classifier_out": "myWayCLF",
-        # "workspace" : "sagoyal:narrative_1536939130038"
-        # }
-        # self.getImpl().build_classifier(self.getContext(), params)
-        pass
+        params = {
+        "save_ts": 1,
+        "description": "mywaydescription",
+        "trainingset_name": "myWayTSEt",
+        "phenotypeclass": "myway",
+        "classifier": "KNeighborsClassifier",
+        "attribute": "functional_roles",
+        "k_nearest_neighbors": None,
+        "gaussian_nb": None,
+        "logistic_regression": None,
+        "decision_tree_classifier": None,
+        "support_vector_machine": None,
+        "neural_network": None,
+        "ensemble_model": None,
+        "classifier_out": "ForShockTesting",
+        "workspace" : "sagoyal:narrative_1536939130038"
+        }
+        self.getImpl().build_classifier(self.getContext(), params)
         
 
     def test_upload_trainingset(self):
