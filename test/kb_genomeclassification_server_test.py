@@ -116,8 +116,18 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # "workspace" : "sagoyal:narrative_1536939130038"
         # }
         # self.getImpl().predict_phenotype(self.getContext(), params)
-        pass
- 
+        
+        params = {
+        "classifier_name": "ForHandelTestingCLF2",
+        "description": "trial",
+        "attribute": "functional_roles",
+        "phenotypeclass": "trial",
+        "list_name": "Genome_ID\nGCF_000216435.1\nGCF_000611305.1\nGCF_000216515.1\nGCF_000216495.1\nGCF_000216475.1",
+        "Annotated": 1,
+        "Upload_File": "",
+        "workspace" : "sagoyal:narrative_1534292322496"
+        }
+        self.getImpl().predict_phenotype(self.getContext(), params)
 
     def test_build_classifier(self):
     
@@ -256,24 +266,24 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # }
         # self.getImpl().build_classifier(self.getContext(), params)
 
-        params = {
-        "save_ts": 1,
-        "description": "mywaydescription",
-        "trainingset_name": "ForHandelTesting",
-        "phenotypeclass": "myway",
-        "classifier": "KNeighborsClassifier",
-        "attribute": "functional_roles",
-        "k_nearest_neighbors": None,
-        "gaussian_nb": None,
-        "logistic_regression": None,
-        "decision_tree_classifier": None,
-        "support_vector_machine": None,
-        "neural_network": None,
-        "ensemble_model": None,
-        "classifier_out": "ForHandelTestingCLF",
-        "workspace" : "sagoyal:narrative_1534292322496"
-        }
-        self.getImpl().build_classifier(self.getContext(), params)
+        # params = {
+        # "save_ts": 1,
+        # "description": "mywaydescription",
+        # "trainingset_name": "ForHandelTesting",
+        # "phenotypeclass": "myway",
+        # "classifier": "KNeighborsClassifier",
+        # "attribute": "functional_roles",
+        # "k_nearest_neighbors": None,
+        # "gaussian_nb": None,
+        # "logistic_regression": None,
+        # "decision_tree_classifier": None,
+        # "support_vector_machine": None,
+        # "neural_network": None,
+        # "ensemble_model": None,
+        # "classifier_out": "ForHandelTestingCLF2",
+        # "workspace" : "sagoyal:narrative_1534292322496"
+        # }
+        # self.getImpl().build_classifier(self.getContext(), params)
         pass
         
 

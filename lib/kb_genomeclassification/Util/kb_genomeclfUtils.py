@@ -419,6 +419,7 @@ class kb_genomeclfUtils(object):
 		print(clf_shock_id)
 		clf_file_path = self._download_shock(handle_id=clf_shock_id)
 
+		print("Getting to here 1")
 		master_Role = classifier_object[0]['data']['attribute_data']
 		my_mapping = classifier_object[0]['data']['class_list_mapping']
 
@@ -426,6 +427,7 @@ class kb_genomeclfUtils(object):
 		pickle_in = open(clf_file_path, "rb")
 		after_classifier = pickle.load(pickle_in)
 
+		print("Getting to here 2")
 		if params.get('list_name'):
 			#checks if empty string bool("") --> False
 			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
@@ -444,6 +446,7 @@ class kb_genomeclfUtils(object):
 			#Will error out if inKBASE == 0
 			all_attributes = self.get_wholeClassification(inKBASE, current_ws, params['attribute'], refs = ref_list, master_Role = master_Role ,for_predict = True)
 
+		print("Getting to here 3")
 		# if params.get('list_name'):
 		# 	#checks if empty string bool("") --> False
 		# 	print ("taking this path rn")
@@ -469,6 +472,7 @@ class kb_genomeclfUtils(object):
 
 		after_classifier_result_forDF = []
 
+		print("Getting to here 4")
 		for current_result in after_classifier_result:
 			after_classifier_result_forDF.append(my_mapping.keys()[my_mapping.values().index(current_result)])
 
@@ -485,6 +489,7 @@ class kb_genomeclfUtils(object):
 		# maxEZ = np.amax(allProbs, axis=1)
 		# maxEZ_df = pd.DataFrame(maxEZ, index=all_attributes.index, columns=["Probability"])
 
+		print("Getting to here 5")
 		predict_table_pd = pd.DataFrame.from_dict({'Genome Id': all_attributes.index, target: after_classifier_result_forDF, "Probability": maxEZ})
 		#predict_table_pd = predict_table_pd.set_index('Genome Id')
 		predict_table_pd = predict_table_pd[['Genome Id', target, "Probability"]]
@@ -505,6 +510,7 @@ class kb_genomeclfUtils(object):
 
 		predict_table_pd.to_html(os.path.join(self.scratch, 'forSecHTML', 'html3folder', 'results.html'), index=False, table_id="results", classes =["table", "table-striped", "table-bordered"])
 
+		print("Getting to here 6")
 
 
 		#     typedef structure {
@@ -530,6 +536,8 @@ class kb_genomeclfUtils(object):
 		"""
 		self.html_report_3(missingGenomes, params['phenotypeclass'])
 		htmloutput_name = self.html_nodual("forSecHTML")
+
+		print("Getting to here 7")
 
 		return htmloutput_name, predictions_mapping
 		
@@ -2088,7 +2096,7 @@ class kb_genomeclfUtils(object):
 	
 			obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
 														  'objects':[{
-														  'type': 'KBaseClassifier.GenomeCategorizer',
+														  'type': 'KBaseClassifier.GenomeCategorizer-2.0',
 														  'data': classifier_object,
 														  'name': classifier_name,  
 														  'provenance': ctx.get('provenance')  # ctx should be passed into this func.
