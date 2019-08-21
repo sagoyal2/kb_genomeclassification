@@ -237,10 +237,29 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # "workspace" : "sagoyal:narrative_1536939130038"
         # }
 
+        # params = {
+        # "save_ts": 1,
+        # "description": "mywaydescription",
+        # "trainingset_name": "myWayTSEt",
+        # "phenotypeclass": "myway",
+        # "classifier": "KNeighborsClassifier",
+        # "attribute": "functional_roles",
+        # "k_nearest_neighbors": None,
+        # "gaussian_nb": None,
+        # "logistic_regression": None,
+        # "decision_tree_classifier": None,
+        # "support_vector_machine": None,
+        # "neural_network": None,
+        # "ensemble_model": None,
+        # "classifier_out": "ForShockTesting",
+        # "workspace" : "sagoyal:narrative_1536939130038"
+        # }
+        # self.getImpl().build_classifier(self.getContext(), params)
+
         params = {
         "save_ts": 1,
         "description": "mywaydescription",
-        "trainingset_name": "myWayTSEt",
+        "trainingset_name": "ForHandelTesting",
         "phenotypeclass": "myway",
         "classifier": "KNeighborsClassifier",
         "attribute": "functional_roles",
@@ -251,10 +270,11 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "support_vector_machine": None,
         "neural_network": None,
         "ensemble_model": None,
-        "classifier_out": "ForShockTesting",
-        "workspace" : "sagoyal:narrative_1536939130038"
+        "classifier_out": "ForHandelTestingCLF",
+        "workspace" : "sagoyal:narrative_1534292322496"
         }
         self.getImpl().build_classifier(self.getContext(), params)
+        pass
         
 
     def test_upload_trainingset(self):
@@ -305,5 +325,16 @@ class kb_genomeclassificationTest(unittest.TestCase):
 
         # self.getImpl().upload_trainingset(self.getContext(), params)
 
+        # params = {
+        # "Annotated": 1,
+        # "Upload_File": "",
+        # "list_name": "Genome_ID Classification\nGCF_000010525.1    Facultative\nGCF_000007365.1    Aerobic\nGCF_000007725.1    Anaerobic\nGCF_000009605.1  Aerobic\nGCF_000021065.1    Anaerobic\nGCF_000021085.1  Facultative\nGCF_000090965.1    Facultative\nGCF_000174075.1    Aerobic\nGCF_000183225.1    Aerobic\nGCF_000183245.1    Facultative\nGCF_000183285.1    Facultative\nGCF_000183305.1    Anaerobic\nGCF_000217635.1  Aerobic\nGCF_000225445.1    Aerobic\nGCF_000225465.1    Anaerobic\nGCF_000521525.1  Anaerobic\nGCF_000521545.1  Aerobic\nGCF_000521565.1    Aerobic\nGCF_000521585.1    Facultative\nGCF_001280225.1    Anaerobic\nGCF_001648115.1  Facultative",
+        # "description": "trial description in terminal",
+        # "phenotypeclass": "Respiration",
+        # "training_set_out": "ForHandelTesting",
+        # "workspace" : "sagoyal:narrative_1534292322496"
+        # }
+
+        # self.getImpl().upload_trainingset(self.getContext(), params)
         pass
 
