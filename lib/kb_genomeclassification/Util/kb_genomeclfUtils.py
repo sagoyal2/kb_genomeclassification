@@ -425,6 +425,7 @@ class kb_genomeclfUtils(object):
 
 		#after_classifier = pickle.loads(codecs.decode(base64str.encode(), "base64"))
 		pickle_in = open(clf_file_path, "rb")
+		print("Getting here 1.5")
 		after_classifier = pickle.load(pickle_in)
 
 		print("Getting to here 2")

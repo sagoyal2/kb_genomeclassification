@@ -4,6 +4,8 @@ import os  # noqa: F401
 import json  # noqa: F401
 import time
 import requests
+import uuid
+import pickle
 
 from os import environ
 
@@ -22,6 +24,7 @@ from kb_genomeclassification.kb_genomeclassificationServer import MethodContext
 from kb_genomeclassification.authclient import KBaseAuth as _KBaseAuth
 
 from AssemblyUtil.AssemblyUtilClient import AssemblyUtil
+from DataFileUtil.DataFileUtilClient import DataFileUtil
 
 class kb_genomeclassificationTest(unittest.TestCase):
 
@@ -116,18 +119,19 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # "workspace" : "sagoyal:narrative_1536939130038"
         # }
         # self.getImpl().predict_phenotype(self.getContext(), params)
-        
-        params = {
-        "classifier_name": "ForHandelTestingCLF2",
-        "description": "trial",
-        "attribute": "functional_roles",
-        "phenotypeclass": "trial",
-        "list_name": "Genome_ID\nGCF_000216435.1\nGCF_000611305.1\nGCF_000216515.1\nGCF_000216495.1\nGCF_000216475.1",
-        "Annotated": 1,
-        "Upload_File": "",
-        "workspace" : "sagoyal:narrative_1534292322496"
-        }
-        self.getImpl().predict_phenotype(self.getContext(), params)
+
+        # params = {
+        # "classifier_name": "ForHandelTestingCLF2",
+        # "description": "trial",
+        # "attribute": "functional_roles",
+        # "phenotypeclass": "trial",
+        # "list_name": "Genome_ID\nGCF_000216435.1\nGCF_000611305.1\nGCF_000216515.1\nGCF_000216495.1\nGCF_000216475.1",
+        # "Annotated": 1,
+        # "Upload_File": "",
+        # "workspace" : "sagoyal:narrative_1534292322496"
+        # }
+        # self.getImpl().predict_phenotype(self.getContext(), params)
+        pass
 
     def test_build_classifier(self):
     
@@ -348,3 +352,22 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # self.getImpl().upload_trainingset(self.getContext(), params)
         pass
 
+    def test_test(self):
+        self.dfu = DataFileUtil(self.callback_url)
+        handle_id = 'KBH_93785'
+
+        print("here now 1")
+        dir_path = os.path.join(self.scratch, str(uuid.uuid4()))
+        os.mkdir(dir_path)
+
+        file_path = self.dfu.shock_to_file({'handle_id': handle_id,
+                                            'file_path': dir_path})['file_path']
+        print("file_path: {}".format(file_path))
+
+        print("here now 2")
+        with open(file_path, "rb") as f:
+            first_line = f.readline()
+            print (first_line)
+
+        pickle_in = open(file_path, "rb")
+        after_classifier = pickle.load(pickle_in)
