@@ -120,18 +120,18 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # }
         # self.getImpl().predict_phenotype(self.getContext(), params)
 
-        # params = {
-        # "classifier_name": "ForHandelTestingCLF2",
-        # "description": "trial",
-        # "attribute": "functional_roles",
-        # "phenotypeclass": "trial",
-        # "list_name": "Genome_ID\nGCF_000216435.1\nGCF_000611305.1\nGCF_000216515.1\nGCF_000216495.1\nGCF_000216475.1",
-        # "Annotated": 1,
-        # "Upload_File": "",
-        # "workspace" : "sagoyal:narrative_1534292322496"
-        # }
-        # self.getImpl().predict_phenotype(self.getContext(), params)
-        pass
+        params = {
+        "classifier_name": "FridayMeetingCLF",
+        "description": "trial",
+        "attribute": "functional_roles",
+        "phenotypeclass": "trial",
+        "list_name": "Genome_ID\nGCF_000216435.1\nGCF_000611305.1\nGCF_000216515.1\nGCF_000216495.1\nGCF_000216475.1",
+        "Annotated": 1,
+        "Upload_File": "",
+        "workspace" : "sagoyal:narrative_1534292322496"
+        }
+        self.getImpl().predict_phenotype(self.getContext(), params)
+    
 
     def test_build_classifier(self):
     
@@ -273,7 +273,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # params = {
         # "save_ts": 1,
         # "description": "mywaydescription",
-        # "trainingset_name": "ForHandelTesting",
+        # "trainingset_name": "FridayMeeting",
         # "phenotypeclass": "myway",
         # "classifier": "KNeighborsClassifier",
         # "attribute": "functional_roles",
@@ -284,12 +284,11 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # "support_vector_machine": None,
         # "neural_network": None,
         # "ensemble_model": None,
-        # "classifier_out": "ForHandelTestingCLF2",
+        # "classifier_out": "FridayMeetingCLF",
         # "workspace" : "sagoyal:narrative_1534292322496"
         # }
         # self.getImpl().build_classifier(self.getContext(), params)
         pass
-        
 
     def test_upload_trainingset(self):
         
@@ -343,31 +342,30 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # "Annotated": 1,
         # "Upload_File": "",
         # "list_name": "Genome_ID Classification\nGCF_000010525.1    Facultative\nGCF_000007365.1    Aerobic\nGCF_000007725.1    Anaerobic\nGCF_000009605.1  Aerobic\nGCF_000021065.1    Anaerobic\nGCF_000021085.1  Facultative\nGCF_000090965.1    Facultative\nGCF_000174075.1    Aerobic\nGCF_000183225.1    Aerobic\nGCF_000183245.1    Facultative\nGCF_000183285.1    Facultative\nGCF_000183305.1    Anaerobic\nGCF_000217635.1  Aerobic\nGCF_000225445.1    Aerobic\nGCF_000225465.1    Anaerobic\nGCF_000521525.1  Anaerobic\nGCF_000521545.1  Aerobic\nGCF_000521565.1    Aerobic\nGCF_000521585.1    Facultative\nGCF_001280225.1    Anaerobic\nGCF_001648115.1  Facultative",
-        # "description": "trial description in terminal",
+        # "description": "talk with tian",
         # "phenotypeclass": "Respiration",
-        # "training_set_out": "ForHandelTesting",
+        # "training_set_out": "FridayMeeting",
         # "workspace" : "sagoyal:narrative_1534292322496"
         # }
 
         # self.getImpl().upload_trainingset(self.getContext(), params)
-        pass
 
-    def test_test(self):
-        self.dfu = DataFileUtil(self.callback_url)
-        handle_id = 'KBH_93785'
+    # def test_test(self):
+    #     self.dfu = DataFileUtil(self.callback_url)
+    #     handle_id = 'KBH_93785'
 
-        print("here now 1")
-        dir_path = os.path.join(self.scratch, str(uuid.uuid4()))
-        os.mkdir(dir_path)
+    #     print("here now 1")
+    #     dir_path = os.path.join(self.scratch, str(uuid.uuid4()))
+    #     os.mkdir(dir_path)
 
-        file_path = self.dfu.shock_to_file({'handle_id': handle_id,
-                                            'file_path': dir_path})['file_path']
-        print("file_path: {}".format(file_path))
+    #     file_path = self.dfu.shock_to_file({'handle_id': handle_id,
+    #                                         'file_path': dir_path})['file_path']
+    #     print("file_path: {}".format(file_path))
 
-        print("here now 2")
-        with open(file_path, "rb") as f:
-            first_line = f.readline()
-            print (first_line)
+    #     print("here now 2")
+    #     with open(file_path, "rb") as f:
+    #         first_line = f.readline()
+    #         print (first_line)
 
-        pickle_in = open(file_path, "rb")
-        after_classifier = pickle.load(pickle_in)
+    #     pickle_in = open(file_path, "rb")
+    #     after_classifier = pickle.load(pickle_in)
