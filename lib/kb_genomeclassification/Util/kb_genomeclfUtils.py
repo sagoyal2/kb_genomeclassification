@@ -477,7 +477,7 @@ class kb_genomeclfUtils(object):
 
 		print("Getting to here 4")
 		for current_result in after_classifier_result:
-			after_classifier_result_forDF.append(my_mapping.keys()[my_mapping.values().index(current_result)])
+			after_classifier_result_forDF.append(list(my_mapping.keys())[list(my_mapping.values()).index(current_result)])
 
 
 		#after_classifier_df = pd.DataFrame(after_classifier_result_forDF, index=all_attributes.index, columns=[target])
@@ -1003,7 +1003,8 @@ class kb_genomeclfUtils(object):
 		for index in working_str:
 			#print(index, file=tem_file)
 			#print index
-			print >>tem_file, index
+			#print >>tem_file, index
+			print(index, file=tem_file)
 
 		print ("before closing")
 

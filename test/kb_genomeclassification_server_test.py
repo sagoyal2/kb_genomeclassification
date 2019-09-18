@@ -131,7 +131,17 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # "workspace" : "sagoyal:narrative_1534292322496"
         # }
         # self.getImpl().predict_phenotype(self.getContext(), params)
-        pass
+        params = {
+        "classifier_name": "fridayCLF2",
+        "description": "slkdf",
+        "attribute": "functional_roles",
+        "phenotypeclass": "respir",
+        "list_name": "Genome_ID\n211586.1\n94122.5\n60480.16\n584.1\n615.1\n523791.4\n498211.3\n484022.4",
+        "Annotated": 1,
+        "Upload_File": "",
+        "workspace" : "sagoyal:narrative_1536939130038"
+        }
+        self.getImpl().predict_phenotype(self.getContext(), params)
 
     def test_build_classifier(self):
     
@@ -251,24 +261,24 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # "workspace" : "sagoyal:narrative_1536939130038"
         # }
 
-        params = {
-        "save_ts": 1,
-        "description": "mywaydescription",
-        "trainingset_name": "friday",
-        "phenotypeclass": "fridayCLF2",
-        "classifier": "KNeighborsClassifier",
-        "attribute": "functional_roles",
-        "k_nearest_neighbors": None,
-        "gaussian_nb": None,
-        "logistic_regression": None,
-        "decision_tree_classifier": None,
-        "support_vector_machine": None,
-        "neural_network": None,
-        "ensemble_model": None,
-        "classifier_out": "fridayCLF2",
-        "workspace" : "sagoyal:narrative_1536939130038"
-        }
-        self.getImpl().build_classifier(self.getContext(), params)
+        # params = {
+        # "save_ts": 1,
+        # "description": "mywaydescription",
+        # "trainingset_name": "friday",
+        # "phenotypeclass": "fridayCLF2",
+        # "classifier": "KNeighborsClassifier",
+        # "attribute": "functional_roles",
+        # "k_nearest_neighbors": None,
+        # "gaussian_nb": None,
+        # "logistic_regression": None,
+        # "decision_tree_classifier": None,
+        # "support_vector_machine": None,
+        # "neural_network": None,
+        # "ensemble_model": None,
+        # "classifier_out": "fridayCLF2",
+        # "workspace" : "sagoyal:narrative_1536939130038"
+        # }
+        # self.getImpl().build_classifier(self.getContext(), params)
 
         # params = {
         # "save_ts": 1,
