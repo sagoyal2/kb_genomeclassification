@@ -1,4 +1,4 @@
-FROM kbase/sdkbase2:latest
+FROM kbase/sdkbase2:python
 # FROM kbase/sdkbase2:python #try this again
 
 # FROM kbase/kb_sdk_docs:latest
@@ -29,7 +29,6 @@ RUN pip install xlsxwriter
 
 RUN apt-get install python-tk -y
 ENV DISPLAY :0
-
 
 # -----------------------------------------
 

@@ -14,7 +14,10 @@ import json
 import random
 import codecs
 import graphviz
-import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 import xlsxwriter
 
 import pickle
@@ -25,7 +28,6 @@ import seaborn as sns
 from io import open
 
 import itertools
-from itertools import izip
 
 #classifier models
 from sklearn import svm
@@ -259,7 +261,7 @@ class kb_genomeclfUtils(object):
 			listRunAll = ['KNeighborsClassifier', 'GaussianNB', 'LogisticRegression', 'DecisionTreeClassifier', 'SVM', 'NeuralNetwork']
 			all_advanced = ["k_nearest_neighbors", "gaussian_nb", "logistic_regression", "decision_tree_classifier", "support_vector_machine", "neural_network"]
 
-			for run, advanced in izip(listRunAll, all_advanced):
+			for run, advanced in zip(listRunAll, all_advanced):
 				#classifierTest_params['classifier'] = self.whichClassifier(run)
 				classifier_info_list_mapping = {}
 
@@ -497,7 +499,7 @@ class kb_genomeclfUtils(object):
 
 		predictions_mapping = {}
 
-		for genome_name, phenotype, prediction_accuracy in izip(all_attributes.index, after_classifier_result_forDF, maxEZ):
+		for genome_name, phenotype, prediction_accuracy in zip(all_attributes.index, after_classifier_result_forDF, maxEZ):
 			genome_ref = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': genome_name }])[0]['refs'][0])
 			
 			innerStruct = {}
@@ -587,7 +589,7 @@ class kb_genomeclfUtils(object):
 		
 		#vigorous string matching izip(self.list_name, self.list_statistics)
 		listGNames = list(map(str, listintGNames))
-		for string, index in izip(listGNames, range(len(listGNames))):
+		for string, index in zip(listGNames, range(len(listGNames))):
 			listGNames[index] = string.replace(" ", "")
 
 		print("we are printing just_DF")
@@ -1198,7 +1200,7 @@ class kb_genomeclfUtils(object):
 
 		#vigorous string matching izip(self.list_name, self.list_statistics)
 		listGNames = list(map(str, listintGNames))
-		for string, index in izip(listGNames, range(len(listGNames))):
+		for string, index in zip(listGNames, range(len(listGNames))):
 			listGNames[index] = string.replace(" ", "")
 
 		
@@ -1506,13 +1508,13 @@ class kb_genomeclfUtils(object):
 		my_all_classifications = just_DF
 
 		#print my_all_classifications
-		print my_all_classifications.columns.values.tolist()
+		print (my_all_classifications.columns.values.tolist())
 
 		my_all_classifications.set_index('Genome_ID', inplace=True)
 		#my_all_classifications.reset_index()
 		#my_all_classifications.set_index(list(my_all_classifications.index),inplace=True)
 
-		print "Below is my_all_classifications"
+		print ("Below is my_all_classifications")
 
 		#print my_all_classifications
 
@@ -1537,7 +1539,7 @@ class kb_genomeclfUtils(object):
 		---returns the dataframe which contains all_attributes (this is the X matrix for ML)
 		"""
 
-		print current_ws
+		print (current_ws)
 
 		if not for_predict:
 			master_Role = [] #make this master_Role
@@ -1563,7 +1565,7 @@ class kb_genomeclfUtils(object):
 		print("here are refs")
 		print(refs)
 		
-		for current_ref, current_gName in izip(refs, listOfNames):
+		for current_ref, current_gName in zip(refs, listOfNames):
 			listOfFunctionalRoles = []
 			functionList = None
 			try:
@@ -1633,7 +1635,7 @@ class kb_genomeclfUtils(object):
 
 			name_and_roles[current_gName] = listOfFunctionalRoles
 
-			print "I have arrived inside the desired for loop!!"
+			print("I have arrived inside the desired for loop!!")
 			print(len(listOfFunctionalRoles))
 			print(current_gName)
 
@@ -2005,7 +2007,7 @@ class kb_genomeclfUtils(object):
 		description = classifierTest_params['description']
 
 		if print_cfm:
-			print classifier_name
+			print (classifier_name)
 			self.list_name.extend([classifier_name])
 		
 		train_score = np.zeros(splits)
@@ -2033,7 +2035,7 @@ class kb_genomeclfUtils(object):
 
 		if print_cfm:
 			print("I'm inside this print_cfm")
-			pickle_out = open(os.path.join(self.scratch, 'forHTML', 'forDATA', unicode(classifier_name) + u".pickle"), u"wb")
+			pickle_out = open(os.path.join(self.scratch, 'forHTML', 'forDATA', str(classifier_name) + u".pickle"), u"wb")
 
 			#pickle_out = open("/kb/module/work/tmp/" + str(self.classifier_name) + ".pickle", "wb")
 
@@ -2054,8 +2056,12 @@ class kb_genomeclfUtils(object):
 			"""
 			
 			print("trying to save shock stuff")
-			shock_id, handle_id = self._upload_to_shock(os.path.join(self.scratch, 'forHTML', 'forDATA', unicode(classifier_name) + u".pickle"))
+			shock_id, handle_id = self._upload_to_shock(os.path.join(self.scratch, 'forHTML', 'forDATA', str(classifier_name) + u".pickle"))
 			
+			print("this is your handle_id")
+			print(handle_id)
+			print("this is your shock_id")
+			print(shock_id)
 
 			#handle_id = 'will fix later'
 			
@@ -2065,11 +2071,9 @@ class kb_genomeclfUtils(object):
 
 			pickled = "this is what the pickled string would be"
 
-			print ""
-			print "This is printing out the classifier_object that needs to be saved down dump"
-			print ""
+			print ("This is printing out the classifier_object that needs to be saved down dump")
 
-			print "your training_set_ref is below"
+			print ("your training_set_ref is below")
 			print(training_set_ref)
 
 			
@@ -2097,20 +2101,17 @@ class kb_genomeclfUtils(object):
 	
 			obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
 														  'objects':[{
-														  'type': 'KBaseClassifier.GenomeCategorizer-2.0',
+														  'type': 'KBaseClassifier.GenomeCategorizer',
 														  'data': classifier_object,
 														  'name': classifier_name,  
 														  'provenance': ctx.get('provenance')  # ctx should be passed into this func.
 														  }]
 														})[0]
 
-			print "I'm print out the obj_save_ref"
-			print ""
-			print ""
-			print ""
+			print ("I'm print out the obj_save_ref")
 
-			print obj_save_ref
-			print "done"        
+			print (obj_save_ref)
+			print ("done")        
 
 		phenotype_class_info_list = None
 		avgf1 = None
@@ -2179,25 +2180,25 @@ class kb_genomeclfUtils(object):
 		"""
 
 		if print_cfm:
-			print classifier
-			print
-			print u"Confusion matrix"
-			for i in xrange(len(cnf_matrix)):
-				print class_list[i],; sys.stdout.write(u"  \t")
-				for j in xrange(len(cnf_matrix[i])):
-					print cnf_matrix[i][j] / splits,; sys.stdout.write(u"\t")
-				print
-			print
-			for i in xrange(len(cnf_matrix_f)):
-				print class_list[i],; sys.stdout.write(u"  \t")
-				for j in xrange(len(cnf_matrix_f[i])):
-					print u"%6.1f" % ((cnf_matrix_f[i][j] / splits) * 100.0),; sys.stdout.write(u"\t")
-				print
-			print
-			print u"01", cnf_matrix[0][1]
+			print (classifier)
+			print("")
+			print(u"Confusion matrix")
+			for i in range(len(cnf_matrix)):
+				print(class_list[i])#,; sys.stdout.write(u"  \t"))
+				for j in range(len(cnf_matrix[i])):
+					print(cnf_matrix[i][j] / splits)#,; sys.stdout.write(u"\t"))
+				print("")
+			print("")
+			for i in range(len(cnf_matrix_f)):
+				print(class_list[i])#,; sys.stdout.write(u"  \t")
+				for j in range(len(cnf_matrix_f[i])):
+					print( u"%6.1f" % ((cnf_matrix_f[i][j] / splits) * 100.0))#,; sys.stdout.write(u"\t")
+				print("")
+			print("")
+			print( u"01", cnf_matrix[0][1])
 
-		print u"%6.3f\t%6.3f\t%6.3f\t%6.3f" % (
-		np.average(train_score), np.std(train_score), np.average(validate_score), np.std(validate_score))
+		print( u"%6.3f\t%6.3f\t%6.3f\t%6.3f" % (
+		np.average(train_score), np.std(train_score), np.average(validate_score), np.std(validate_score)))
 
 		return (np.average(train_score), np.std(train_score), np.average(validate_score), np.std(validate_score)), phenotype_class_info_list, avgf1
 
@@ -2311,7 +2312,11 @@ class kb_genomeclfUtils(object):
 		Recall = (TP / (TP + FN))
 		Precision = (TP / (TP + FP))
 
+
+		old_settings = np.seterr()
+		np.seterr(invalid='ignore')
 		list_return=[((TP + TN) / Total), (Precision), (Recall), (2 * ((Precision * Recall) / (Precision + Recall)))]
+		np.seterr(**old_settings)
 		return list_return
 
 	def plot_confusion_matrix(self,cm, classes, title, htmlfolder, classifier_name, classifier_type):
@@ -2327,15 +2332,15 @@ class kb_genomeclfUtils(object):
 		---N/A but instead creates an .png file in tmp
 		"""
 		plt.rcParams.update({u'font.size': 18})
-		fig = plt.figure()
-		ax = fig.add_subplot(figsize=(4.5,4.5))
+		fig = plt.figure(figsize=(4.5,4.5))
+		ax = fig.add_subplot()
 		#fig, ax = plt.subplots(figsize=(4.5,4.5))
 		sns.set(font_scale=1.2)
-		sns_plot = sns.heatmap(cm, annot=True, ax = ax, cmap=u"Blues", fmt='g'); #annot=True to annotate cells
+		sns_plot = sns.heatmap(cm, annot=True, ax = ax, cmap=u"Blues", fmt='g') #annot=True to annotate cells
 		ax = sns_plot
-		ax.set_xlabel(u'Predicted labels'); ax.set_ylabel(u'True labels');
+		ax.set_xlabel(u'Predicted labels'); ax.set_ylabel(u'True labels')
 		ax.set_title(title);
-		ax.xaxis.set_ticklabels(classes); ax.yaxis.set_ticklabels(classes);
+		ax.xaxis.set_ticklabels(classes); ax.yaxis.set_ticklabels(classes)
 		#ax.xaxis.set_horizontalalignment('center'), ax.yaxis.set_verticalalignment('center')
 		#ax.savefig(classifier_name+".png", format='png')
 
@@ -2370,7 +2375,7 @@ class kb_genomeclfUtils(object):
 			ensemble_index = [self.list_name[en_index]]
 			ensembleStatistic_index = [self.list_statistics[en_index]]
 			
-			for i, j in izip(ensemble_index, ensembleStatistic_index):
+			for i, j in zip(ensemble_index, ensembleStatistic_index):
 				statistics_dict[i] = j
 
 			data = statistics_dict
@@ -2400,14 +2405,14 @@ class kb_genomeclfUtils(object):
 
 		if not additional:
 
-			print u"I am inside not additional"
+			print(u"I am inside not additional")
 
 			statistics_dict = {}
 
 			#print(self.list_name)
 			#print(self.list_statistics)
 
-			for i, j in izip(self.list_name, self.list_statistics):
+			for i, j in zip(self.list_name, self.list_statistics):
 				statistics_dict[i] = j
 
 			data = statistics_dict
@@ -2456,7 +2461,7 @@ class kb_genomeclfUtils(object):
 		if additional:
 			statistics_dict = {}
 
-			for name, name_index in izip(self.list_name, range(self.list_name.__len__())):
+			for name, name_index in zip(self.list_name, range(self.list_name.__len__())):
 				if classifier_name + "_DecisionTreeClassifier" == name:
 					DTClf_index = name_index
 				if known == name:
@@ -2478,7 +2483,7 @@ class kb_genomeclfUtils(object):
 			sub_list_name = [self.list_name[i] for i in neededIndex]
 			sub_list_statistics = [self.list_statistics[i] for i in neededIndex]
 
-			for i, j in izip(sub_list_name, sub_list_statistics):
+			for i, j in zip(sub_list_name, sub_list_statistics):
 				statistics_dict[i] = j
 
 			data = statistics_dict
@@ -2563,7 +2568,7 @@ class kb_genomeclfUtils(object):
 		test_std = np.zeros(12)
 		val_av = np.zeros(12)
 		val_std = np.zeros(12)
-		for d in xrange(1, 12):
+		for d in range(1, 12):
 			classifierTest_params['classifier'] = DecisionTreeClassifier(random_state=0, max_depth=d)
 			val[d] = d
 			(test_av[d], test_std[d], val_av[d], val_std[d]), val1, val2 = self.classifierTest(classifierTest_params)
@@ -2581,7 +2586,7 @@ class kb_genomeclfUtils(object):
 		plt.savefig(os.path.join(self.scratch, 'forHTML', 'html2folder', classifierTest_paramsInput['classifier_name'] +u"_gini_depth-met.png"))
 
 		gini_best_index = np.argmax(val_av)
-		print gini_best_index
+		print(gini_best_index)
 		gini_best = np.amax(val_av)
 
 		#below code is for entropy-criterion
@@ -2594,7 +2599,7 @@ class kb_genomeclfUtils(object):
 		test_std = np.zeros(12)
 		val_av = np.zeros(12)
 		val_std = np.zeros(12)
-		for d in xrange(1, 12):
+		for d in range(1, 12):
 			classifierTest_params['classifier'] = DecisionTreeClassifier(random_state=0, max_depth=d, criterion=u'entropy')
 			val[d] = d
 			(test_av[d], test_std[d], val_av[d], val_std[d]), val1, val2 = self.classifierTest(classifierTest_params)
@@ -2611,7 +2616,7 @@ class kb_genomeclfUtils(object):
 		plt.savefig(os.path.join(self.scratch, 'forHTML', 'html2folder', classifierTest_paramsInput['classifier_name'] +u"_entropy_depth-met.png"))
 
 		entropy_best_index = np.argmax(val_av)
-		print entropy_best_index
+		print(entropy_best_index)
 		entropy_best = np.amax(val_av)
 
 
@@ -2677,29 +2682,29 @@ class kb_genomeclfUtils(object):
 		features = [feature_names[i] for i in tree.tree_.feature]
 		value = tree.tree_.value
 
-		def recurse(left, right, threshold, features, node, depth):
-			spacer = spacer_base * depth
-			if (threshold[node] != -2):
-				print spacer + u"if ( " + features[node] + u" <= " + \
-					  unicode(threshold[node]) + u" ) {"
-				if left[node] != -1:
-					recurse(left, right, threshold, features,
-								 left[node], depth + 1)
-				print spacer + u"}\n" + spacer + u"else {"
-				if right[node] != -1:
-					recurse(left, right, threshold, features,
-								 right[node], depth + 1)
-				print spacer + u"}"
-			else:
-				target = value[node]
-				for i, v in izip(np.nonzero(target)[1],
-								target[np.nonzero(target)]):
-					target_name = target_names[i]
-					target_count = int(v)
-					print spacer + u"return " + unicode(target_name) + \
-						  u" ( " + unicode(target_count) + u" examples )"
+		# def recurse(left, right, threshold, features, node, depth):
+		# 	spacer = spacer_base * depth
+		# 	if (threshold[node] != -2):
+		# 		print spacer + u"if ( " + features[node] + u" <= " + \
+		# 			  unicode(threshold[node]) + u" ) {"
+		# 		if left[node] != -1:
+		# 			recurse(left, right, threshold, features,
+		# 						 left[node], depth + 1)
+		# 		print spacer + u"}\n" + spacer + u"else {"
+		# 		if right[node] != -1:
+		# 			recurse(left, right, threshold, features,
+		# 						 right[node], depth + 1)
+		# 		print spacer + u"}"
+		# 	else:
+		# 		target = value[node]
+		# 		for i, v in izip(np.nonzero(target)[1],
+		# 						target[np.nonzero(target)]):
+		# 			target_name = target_names[i]
+		# 			target_count = int(v)
+		# 			print spacer + u"return " + unicode(target_name) + \
+		# 				  u" ( " + unicode(target_count) + u" examples )"
 
-		recurse(left, right, threshold, features, 0, 0)
+		# recurse(left, right, threshold, features, 0, 0)
 
 		return self.printTree(tree, u"NAMEmyTreeLATER", master_Role, class_list)
 
@@ -2747,19 +2752,18 @@ class kb_genomeclfUtils(object):
 		f.close()
 		new_allStr = allStr.replace(u'\\n', u'')
 
-		first_fix = re.sub(ur'(\w\s\[label="[\w\s.,:\'\/()-]+)<=([\w\s.\[\]=,]+)("] ;)',
-						   ur'\1 (Absent)" , color="0.650 0.200 1.000"] ;', new_allStr)
-		second_fix = re.sub(ur'(\w\s\[label=")(.+?class\s=\s)', ur'\1', first_fix)
+		first_fix = re.sub(r'(\w\s\[label="[\w\s.,:\'\/()-]+)<=([\w\s.\[\]=,]+)("] ;)', r'\1 (Absent)" , color="0.650 0.200 1.000"] ;', new_allStr)
+		second_fix = re.sub(r'(\w\s\[label=")(.+?class\s=\s)', r'\1', first_fix)
 
 		# nominal fixes like color and shape
-		third_fix = re.sub(ur'shape=box] ;', ur'shape=Mrecord] ; node [style=filled];', second_fix)
+		third_fix = re.sub(r'shape=box] ;', r'shape=Mrecord] ; node [style=filled];', second_fix)
 
 		color_set = []
 		for class_current in range(len(class_list)):
 			color_set.extend(['%.4f'%random.uniform(0, 1) + " " + '%.4f'%random.uniform(0, 1) + " " + '0.900'])
 
-		for class_current, my_color in izip(range(len(class_list)),color_set):
-			third_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[class_current], ur'\1, color = "%s"' % my_color, third_fix)
+		for class_current, my_color in zip(range(len(class_list)),color_set):
+			third_fix = re.sub(r'(\w\s\[label="%s")' % class_list[class_current], r'\1, color = "%s"' % my_color, third_fix)
 
 		f = open(os.path.join(self.scratch, 'dotFolder', 'niceTree.dot'), u"w")
 		f.write(third_fix)
@@ -2829,7 +2833,7 @@ class kb_genomeclfUtils(object):
 
 		attribute_list = []
 
-		for list_top_value, list_top_weight_value in izip(list_top20, list_top20_weight):
+		for list_top_value, list_top_weight_value in zip(list_top20, list_top20_weight):
 			attribute_struct = {}
 			attribute_struct['attribute'] = list_top_value
 			attribute_struct['weight'] = list_top_weight_value
@@ -3127,7 +3131,7 @@ class kb_genomeclfUtils(object):
 			next_str = u"""
 			<br>
 
-			<p style="text-align:center; font-size:100%;">  The best model (based on the highest average F1 score) is: """ + unicode(best_classifier_str) + """ </p>
+			<p style="text-align:center; font-size:100%;">  The best model (based on the highest average F1 score) is: """ + str(best_classifier_str) + """ </p>
 			"""
 
 			file.write(next_str)
