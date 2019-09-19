@@ -16,7 +16,7 @@ RUN apt-get update
 RUN pip install pandas
 RUN pip install -U scikit-learn
 RUN pip install seaborn
-RUN python -mpip install matplotlib
+RUN python -mpip install matplotlib==3.0.3
 RUN pip install graphviz
 
 RUN pip install xlrd

@@ -4,6 +4,7 @@
 
 from __future__ import division
 
+import io
 import os
 import re
 import sys
@@ -14,20 +15,12 @@ import json
 import random
 import codecs
 import graphviz
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+import itertools
 import xlsxwriter
-
 import pickle
 import numpy as np
 import pandas as pd
 import seaborn as sns
-
-from io import open
-
-import itertools
 
 #classifier models
 from sklearn import svm
@@ -53,7 +46,6 @@ from KBaseReport.KBaseReportClient import KBaseReport
 from DataFileUtil.DataFileUtilClient import DataFileUtil
 from RAST_SDK.RAST_SDKClient import RAST_SDK
 from biokbase.workspace.client import Workspace as workspaceService
-
 
 
 class kb_genomeclfUtils(object):
@@ -2287,37 +2279,25 @@ class kb_genomeclfUtils(object):
 	def cf_stats(self, TN, TP, FP, FN):
 		"""
 		args:
-		---TN int for True Negative
-		---TP int for True Positive
-		---FP int for False Positive
-		---FN int for False Negative
+		---True Negative, True Positive, False Positive, False Negative
 		does:
 		---calculates statistics as a way to measure and evaluate the performance of the classifiers
 		return:
 		---list_return=[((TP + TN) / Total), (Precision), (Recall), (2 * ((Precision * Recall) / (Precision + Recall)))]
-			---((TP + TN) / Total)) == Accuracy
-			--- Precision
-			--- Recall
-			---(2 * ((Precision * Recall) / (Precision + Recall))) == F1 Score
-
-		---
-		"""
-
-		"""
-		AN = TN + FP
-		AP = TN + FN
-		PN = TN + FN
-		PP = TP + FP
+			---Accuracy, Precision, Recall, F1 Score
 		"""
 		Total = TN + TP + FP + FN
 		Recall = (TP / (TP + FN))
 		Precision = (TP / (TP + FP))
 
-
+		#this will raise invalid error when you get NaN values
 		old_settings = np.seterr()
 		np.seterr(invalid='ignore')
+
 		list_return=[((TP + TN) / Total), (Precision), (Recall), (2 * ((Precision * Recall) / (Precision + Recall)))]
+
 		np.seterr(**old_settings)
+
 		return list_return
 
 	def plot_confusion_matrix(self,cm, classes, title, htmlfolder, classifier_name, classifier_type):
@@ -2332,20 +2312,26 @@ class kb_genomeclfUtils(object):
 		return:
 		---N/A but instead creates an .png file in tmp
 		"""
-		plt.rcParams.update({u'font.size': 18})
-		fig = plt.figure(figsize=(4.5,4.5))
-		ax = fig.add_subplot()
-		#fig, ax = plt.subplots(figsize=(4.5,4.5))
-		sns.set(font_scale=1.2)
-		sns_plot = sns.heatmap(cm, annot=True, ax = ax, cmap=u"Blues", fmt='g') #annot=True to annotate cells
+		#plt.rcParams.update({u'font.size': 18})
+		#fig = plt.figure()
+		#ax = fig.subplot(figsize=(4.5,4.5))
+		fig, ax = plt.subplots(figsize=(4.5,4.5))
+		#sns.set(font_scale=1.0)
+		sns_plot = sns.heatmap(cm, annot=True, ax = ax, cmap=u"Blues", fmt=".1f", square=True) #annot=True to annotate cells
 		ax = sns_plot
+		#im = ax.imshow(cm, interpolation='nearest', cmap=u"Blues")
+		#ax.figure.colorbar(im, ax=ax)
 		ax.set_xlabel(u'Predicted labels'); ax.set_ylabel(u'True labels')
-		ax.set_title(title);
+		# ax.set_ylim(len(cm)-0.25, 0.5)
+		ax.set_title(title)
 		ax.xaxis.set_ticklabels(classes); ax.yaxis.set_ticklabels(classes)
 		#ax.xaxis.set_horizontalalignment('center'), ax.yaxis.set_verticalalignment('center')
 		#ax.savefig(classifier_name+".png", format='png')
+		plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+		plt.tight_layout()
 
 		fig = sns_plot.get_figure()
+		#fig = ax.get_figure()
 		#fig.savefig(u"./pics/" + classifier_name +u".png", format=u'png')
 		fig.savefig(os.path.join(self.scratch, 'forHTML', htmlfolder, classifier_name +u".png"), format=u'png')
 
@@ -2361,9 +2347,6 @@ class kb_genomeclfUtils(object):
 		return:
 		---N/A but instead creates an html file in tmp
 		"""
-
-
-		#self.counter = self.counter + 1
 
 		if for_ensemble:
 			statistics_dict = {}
@@ -2478,9 +2461,6 @@ class kb_genomeclfUtils(object):
 			except:
 				neededIndex = [0, self.list_name.__len__() - 2, self.list_name.__len__() -1]
 
-
-
-
 			sub_list_name = [self.list_name[i] for i in neededIndex]
 			sub_list_statistics = [self.list_statistics[i] for i in neededIndex]
 
@@ -2582,6 +2562,7 @@ class kb_genomeclfUtils(object):
 		plt.xlabel(u'Tree depth', fontsize=12)
 		plt.ylabel(u'Accuracy', fontsize=12)
 		plt.legend(loc=u'lower left')
+		ax.grid(which='major', linestyle=':', linewidth='0.5', color='black')
 		#plt.savefig(u"./pics/"+ global_target +u"_gini_depth-met.png")
 		#fig.savefig(u"/kb/module/work/tmp/pics/" + classifier_name +u".png", format=u'png')
 		plt.savefig(os.path.join(self.scratch, 'forHTML', 'html2folder', classifierTest_paramsInput['classifier_name'] +u"_gini_depth-met.png"))
@@ -2613,6 +2594,7 @@ class kb_genomeclfUtils(object):
 		plt.xlabel(u'Tree depth', fontsize=12)
 		plt.ylabel(u'Accuracy', fontsize=12)
 		plt.legend(loc=u'lower left')
+		ax.grid(which='major', linestyle=':', linewidth='0.5', color='black')
 		#plt.savefig(u"./pics/"+ global_target +u"_entropy_depth-met.png")
 		plt.savefig(os.path.join(self.scratch, 'forHTML', 'html2folder', classifierTest_paramsInput['classifier_name'] +u"_entropy_depth-met.png"))
 
@@ -2723,7 +2705,7 @@ class kb_genomeclfUtils(object):
 		---N/A just makes an "ugly" dot file.
 		"""
 
-		not_dotfile = StringIO.StringIO()
+		not_dotfile = io.StringIO()
 		export_graphviz(tree, out_file=not_dotfile, feature_names=master_Role,
 						class_names=class_list)
 
