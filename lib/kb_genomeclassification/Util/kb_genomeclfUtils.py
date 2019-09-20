@@ -615,28 +615,6 @@ class kb_genomeclfUtils(object):
 
 		print(output)
 
-		# params_RAST =  {
-		# "workspace": "sagoyal:narrative_1536939130038",#"sagoyal:narrative_1534292322496",
-		# "input_genomes": ["36230/305/3", "36230/304/3"], #[]
-		# "genome_text": "",#my_genome_text,
-		# "call_features_rRNA_SEED": 0,
-		# "call_features_tRNA_trnascan": 0,
-		# "call_selenoproteins": 0,
-		# "call_pyrrolysoproteins": 0,
-		# "call_features_repeat_region_SEED": 0,
-		# "call_features_insertion_sequences": 0,
-		# "call_features_strep_suis_repeat": 0,
-		# "call_features_strep_pneumo_repeat": 0,
-		# "call_features_crispr": 0,
-		# "call_features_CDS_glimmer3": 0,
-		# "call_features_CDS_prodigal": 0,
-		# "annotate_proteins_kmer_v2": 1,
-		# "kmer_v1_parameters": 1,
-		# "annotate_proteins_similarity": 1,
-		# "retain_old_anno_for_hypotheticals": 0,
-		# "resolve_overlapping_features": 0,
-		# "call_features_prophage_phispy": 0
-		# }
 
 
 	def makeHtmlReport(self, htmloutput_name, current_ws, which_report, description, for_predict = False):
@@ -1013,165 +991,6 @@ class kb_genomeclfUtils(object):
 
 		return my_workPD
 
-	# def createGenomeClassifierTrainingSet(self, current_ws, description, trainingset_object_Name, just_DF):
-	# 	"""
-	# 	args:
-	# 	---current_ws is same as before
-	# 	---trainingset_object_Name is the training set defined/input by the user
-	# 	---just_DF is a dataframe that is given by the user in the form of an excel file or pasted in a text box, however converted in a data frame
-	# 	does:
-	# 	---takes the dataframe and pulls the Genome_ID and Classification and creates a trainingset_object (list of GenomeClass which holds Genome_ID and Classification
-	# 	return:
-	# 	---N/A just creates a trainingset_object in the workspace
-	# 	"""
-	# 	ctx = self.ctx
-
-	# 	listintGNames = just_DF['Genome_ID']
-		
-	# 	#vigorous string matching izip(self.list_name, self.list_statistics)
-	# 	listGNames = list(map(str, listintGNames))
-	# 	for string, index in izip(listGNames, range(len(listGNames))):
-	# 		listGNames[index] = string.replace(" ", "")
-
-	# 	listClassification = just_DF['Classification']
-
-	# 	list_GenomeClass = []
-	# 	list_allGenomesinWS = []
-
-	# 	missingGenomes = []
-
-	# 	back = self.ws_client.list_objects({'workspaces':[current_ws],'type':'KBaseGenomes.Genome'})
-
-	# 	print(back)
-
-	# 	for item in back:
-	# 		list_allGenomesinWS.append(item[1])
-
-	# 	print(list_allGenomesinWS)
-
-	# 	all_genome_ID = []
-	# 	loaded_Narrative = []
-	# 	all_Genome_Classification = []
-	# 	add_trainingSet = []
-
-	# 	for index in range(len(listGNames)):
-
-	# 		try:
-	# 			position = list_allGenomesinWS.index(listGNames[index])
-
-	# 			print('printing positions')
-	# 			print(position)
-
-	# 			params_RAST =	{
-	# 			"workspace": current_ws,#"sagoyal:narrative_1536939130038",
-	# 			"input_genome": listGNames[index],
-	# 			"output_genome": listGNames[index]+".RAST",
-	# 			"call_features_rRNA_SEED": 0,
-	# 			"call_features_tRNA_trnascan": 0,
-	# 			"call_selenoproteins": 0,
-	# 			"call_pyrrolysoproteins": 0,
-	# 			"call_features_repeat_region_SEED": 0,
-	# 			"call_features_strep_suis_repeat": 0,
-	# 			"call_features_strep_pneumo_repeat": 0,
-	# 			"call_features_crispr": 0,
-	# 			"call_features_CDS_glimmer3": 0,
-	# 			"call_features_CDS_prodigal": 0,
-	# 			"annotate_proteins_kmer_v2": 1,
-	# 			"kmer_v1_parameters": 1,
-	# 			"annotate_proteins_similarity": 1,
-	# 			"retain_old_anno_for_hypotheticals": 0,
-	# 			"resolve_overlapping_features": 0,
-	# 			"call_features_prophage_phispy": 0
-	# 			}
-
-	# 			output = self.rast.annotate_genome(params_RAST)
-
-	# 			list_allGenomesinWSupdated = []
-
-	# 			newBack = self.ws_client.list_objects({'workspaces':[current_ws],'type':'KBaseGenomes.Genome'})
-
-	# 			for item in newBack:
-	# 				list_allGenomesinWSupdated.append(item[1])
-
-	# 			position = list_allGenomesinWSupdated.index(listGNames[index]+".RAST")
-
-	# 			list_GenomeClass.append({'genome_ref': str(newBack[position][6]) + '/' + str(newBack[position][0]) + '/' + str(newBack[position][4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
-	# 										'genome_classification': listClassification[index],
-	# 										'genome_name': listGNames[index]+".RAST",
-	# 										'genome_id': 'my_genome_id',
-	# 										'references': ['some','list'],
-	# 										'evidence_types': ['another','some','list'],
-	# 										})
-
-
-	# 			# output = self.rast.annotate_genome(params_RAST)
-
-	# 			# list_GenomeClass.append({'genome_ref': str(output[6]) + '/' + str(output[0]) + '/' + str(output[4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
-	# 			# 			'genome_classification': listClassification[index],
-	# 			# 			'genome_name': listGNames[index]+".RAST",
-	# 			# 			'genome_id': 'my_genome_id',
-	# 			# 			'references': ['some','list'],
-	# 			# 			'evidence_types': ['another','some','list'],
-	# 			# 			})
-
-	# 			# list_GenomeClass.append({'genome_ref': str(back[position][6]) + '/' + str(back[position][0]) + '/' + str(back[position][4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
-	# 			# 							'genome_classification': listClassification[index],
-	# 			# 							'genome_name': listGNames[index],
-	# 			# 							'genome_id': 'my_genome_id',
-	# 			# 							'references': ['some','list'],
-	# 			# 							'evidence_types': ['another','some','list'],
-	# 			# 							})
-
-	# 			all_genome_ID.append(listGNames[index])
-	# 			loaded_Narrative.append(["Yes"])
-	# 			all_Genome_Classification.append(listClassification[index])
-	# 			add_trainingSet.append(["Yes"])
-	# 		except:
-	# 			print (listGNames[index])
-	# 			print ('The above Genome does not exist in workspace')
-	# 			missingGenomes.append(listGNames[index])
-
-	# 			all_genome_ID.append(listGNames[index])
-	# 			loaded_Narrative.append(["No"])
-	# 			all_Genome_Classification.append(["None"])
-	# 			add_trainingSet.append(["No"])
-		
-	# 	four_columns = pd.DataFrame.from_dict({'Genome Id': all_genome_ID, 'Loaded in the Narrative': loaded_Narrative, 'Classification' : all_Genome_Classification, 'Added to Training Set' : add_trainingSet})
-	# 	four_columns = four_columns[['Genome Id', 'Loaded in the Narrative', 'Classification', 'Added to Training Set']]
-
-	# 	old_width = pd.get_option('display.max_colwidth')
-	# 	pd.set_option('display.max_colwidth', -1)
-	# 	four_columns.to_html(os.path.join(self.scratch, 'forZeroHTML', 'four_columns.html'), index=False, justify='center')
-	# 	pd.set_option('display.max_colwidth', old_width)
-
-	# 	trainingset_object = {
-	# 	'name': trainingset_object_Name,#'my_name',
-	# 	'description': description,
-	# 	'classification_type': 'my_classification_type',
-	# 	'number_of_genomes': len(listGNames),
-	# 	'number_of_classes': len(list(set(listClassification))),
-	# 	'classes': list(set(listClassification)),
-	# 	'classification_data': list_GenomeClass
-	# 	}
-
-	# 	obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
-	# 												  'objects':[{
-	# 												  'type': 'KBaseClassifier.GenomeClassifierTrainingSet',
-	# 												  'data': trainingset_object,
-	# 												  'name': trainingset_object_Name,  
-	# 												  'provenance': ctx.get('provenance')  # ctx should be passed into this func.
-	# 												  }]
-	# 												})[0]
-
-	# 	print "I'm print out the obj_save_ref"
-	# 	print ""
-	# 	print ""
-	# 	print ""
-
-	# 	print obj_save_ref
-	# 	print "done"
-
-	# 	return missingGenomes
 
 	def createGenomeClassifierTrainingSet(self, current_ws, Annotated, just_DF, for_predict = False):
 		"""
@@ -1559,36 +1378,30 @@ class kb_genomeclfUtils(object):
 		print(refs)
 		
 		for current_ref, current_gName in zip(refs, listOfNames):
-			listOfFunctionalRoles = []
+			listOfFunctionalRoles = set()
 			functionList = None
-			try:
-				#functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['cdss']
-				#functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['non_coding_features']
-				functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['non_coding_features']
-				print("Didn't fail 1")
-			except:
-				try:
-					functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['non_coding_features']
-					print("Didn't fail 2")
-				except:
-					try:
-						functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['features']
-						#['data'][0]['data']['features']
-						#functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['features']
-						# functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['non_coding_features']
-						print("Didn't fail 3")
+			# try:
+			# 	functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['non_coding_features']
+			# 	print("Didn't fail 1")
+			# except:
+			# 	try:
+			# 		functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['features']
+			# 		print("Didn't fail 2")
+				
+			# 	except:
+			# 		functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['cdss']
+			# 		print("Didn't fail 3")
 
-						# print("here is functionList")
-						# print(functionList)
-					except:
-						#functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['features']
-						#['data'][0]['data']['features']
-						functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['features']
-						# functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':current_gName}])[0]['data']['non_coding_features']
-						print("Didn't fail 4")
+			functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['non_coding_features']
+			if(len(functionList) == 0):
+				functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['features']
+			if(len(functionList) == 0):
+				functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['cdss']
 
-						# print("here is functionList")
-						# print(functionList)
+			if(len(functionList) == 0):
+				print(current_gName)
+				print("FunctionList should not be 0 for any gnome")
+				os._exit(0)
 
 			for function in range(len (functionList)):
 				# print(current_gName)
@@ -1599,14 +1412,14 @@ class kb_genomeclfUtils(object):
 						#print(str(functionList[function]['functions'][0]).find(" @ " ))
 						#if (str(functionList[function]['functions'][0]).find(" @ " ) > 0):
 						if " @ " in str(functionList[function][search]):
-							listOfFunctionalRoles.extend(str(functionList[function][search]).split(" @ "))
+							listOfFunctionalRoles.add(str(functionList[function][search]).split(" @ "))
 							print("I went inside the if statement #2")
 						elif " / " in str(functionList[function][search]):
-							listOfFunctionalRoles.extend(str(functionList[function][search]).split(" / "))
+							listOfFunctionalRoles.add(str(functionList[function][search]).split(" / "))
 						elif "; " in str(functionList[function][search]):
-							listOfFunctionalRoles.extend(str(functionList[function][search]).split("; "))
+							listOfFunctionalRoles.add(str(functionList[function][search]).split("; "))
 						else:
-							listOfFunctionalRoles.append(str(functionList[function][search]))
+							listOfFunctionalRoles.add(str(functionList[function][search]))
 				except:
 					search = 'functions'
 					try:
@@ -1614,28 +1427,32 @@ class kb_genomeclfUtils(object):
 							#print(str(functionList[function]['functions'][0]).find(" @ " ))
 							#if (str(functionList[function]['functions'][0]).find(" @ " ) > 0):
 							if " @ " in str(functionList[function][search]):
-								listOfFunctionalRoles.extend(str(functionList[function][search]).split(" @ "))
+								listOfFunctionalRoles.add(str(functionList[function][search]).split(" @ "))
 								print("I went inside the if statement #2")
 							elif " / " in str(functionList[function][search]):
-								listOfFunctionalRoles.extend(str(functionList[function][search]).split(" / "))
+								listOfFunctionalRoles.add(str(functionList[function][search]).split(" / "))
 							elif "; " in str(functionList[function][search]):
-								listOfFunctionalRoles.extend(str(functionList[function][search]).split("; "))
+								listOfFunctionalRoles.add(str(functionList[function][search]).split("; "))
 							else:
-								listOfFunctionalRoles.append(str(functionList[function][search]))
+								listOfFunctionalRoles.add(str(functionList[function][search]))
 					except:
 						#apparently some function list just don't have functions...
 						pass
 
 			name_and_roles[current_gName] = listOfFunctionalRoles
 
-			print("I have arrived inside the desired for loop!!")
-			print(len(listOfFunctionalRoles))
-			print(current_gName)
+			#print("I have arrived inside the desired for loop!!")
+			#print(len(listOfFunctionalRoles))
+			#print(listOfFunctionalRoles)
+			#print(current_gName)
+
+			# os._exit(0)
 
 
 		if not for_predict:
-			master_pre_Role = list(itertools.chain(*name_and_roles.values()))
-			master_Role = list(set(master_pre_Role))
+			#master_pre_Role = list(itertools.chain(*name_and_roles.values()))
+			#master_Role = list(set(master_pre_Role))
+			master_Role = list(set(itertools.chain(*name_and_roles.values())))
 		
 
 		print("this is my master_Role")
@@ -1660,11 +1477,12 @@ class kb_genomeclfUtils(object):
 
 			current_Roles = name_and_roles[current_gName]
 
-			for individual_role in master_Role:
-				if individual_role in current_Roles:
-					arrayofONEZERO.append(1)
-				else:
-					arrayofONEZERO.append(0)
+			# for individual_role in master_Role:
+			# 	if individual_role in current_Roles:
+			# 		arrayofONEZERO.append(1)
+			# 	else:
+			# 		arrayofONEZERO.append(0)
+			arrayofONEZERO = [1 if individual_role in current_Roles else 0 for individual_role in master_Role]
 
 			data_dict[current_gName] = arrayofONEZERO
 

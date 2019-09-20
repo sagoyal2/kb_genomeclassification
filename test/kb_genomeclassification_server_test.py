@@ -267,7 +267,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "description": "mywaydescription",
         "trainingset_name": "friday",
         "phenotypeclass": "fridayCLF3",
-        "classifier": "DecisionTreeClassifier",
+        "classifier": "run_all",
         "attribute": "functional_roles",
         "k_nearest_neighbors": None,
         "gaussian_nb": None,
