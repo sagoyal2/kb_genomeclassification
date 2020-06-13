@@ -35,8 +35,8 @@
           "target_property": "phenotypeclass"
         },
         {
-          "input_parameter": "attribute",
-          "target_property": "attribute"
+          "input_parameter": "genome_attribute",
+          "target_property": "genome_attribute"
         },
         {
           "input_parameter": "logistic_regression",
@@ -389,7 +389,7 @@
         ]
       },
       "field_type": "dropdown",
-      "id": "attribute",
+      "id": "genome_attribute",
       "optional": false
     },
     {

@@ -7,16 +7,16 @@
     "service-mapping": {
       "input_mapping": [
         {
-          "input_parameter": "Annotated",
-          "target_property": "Annotated"
+          "input_parameter": "annotated",
+          "target_property": "annotated"
         },
         {
-          "input_parameter": "Upload_File",
-          "target_property": "Upload_File"
+          "input_parameter": "user_file",
+          "target_property": "user_file"
         },
         {
-          "input_parameter": "list_name",
-          "target_property": "list_name"
+          "input_parameter": "user_list",
+          "target_property": "user_list"
         },
         {
           "narrative_system_variable": "workspace",
@@ -82,14 +82,14 @@
         "0"
       ],
       "field_type": "checkbox",
-      "id": "Annotated",
+      "id": "annotated",
       "optional": true,
       "text_options": {
         "valid_ws_types": []
       }
     },
     {
-      "id" : "Upload_File",
+      "id" : "user_file",
       "optional" : true,
       "advanced" : false,
       "allow_multiple" : false,
@@ -106,7 +106,7 @@
         ""
       ],
       "field_type": "textarea",
-      "id": "list_name",
+      "id": "user_list",
       "optional": true,
       "textarea_options": {
         "n_rows": 15

@@ -42,11 +42,11 @@ parameters :
             Save the training set data
         short-hint : |
             Save the training set data and link it to the classifier
-    attribute :
+    genome_attribute :
         ui-name : |
-            Select the attribute
+            Select the genome attribute
         short-hint : |
-            Select the attribute that classifier be built
+            Select the genome attribute for the classifier
     classifier_out :
         ui-name : |
             Classifier Name

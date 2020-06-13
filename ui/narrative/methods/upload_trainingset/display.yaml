@@ -27,12 +27,12 @@ suggestions:
 # Configure the display and description of parameters
 #
 parameters :
-    Upload_File :
+    user_file :
         ui-name : |
             File Path
         short-hint : |
             File Path that is found by uploading via the staging area
-    Annotated :
+    annotated :
         ui-name : |
             Genomes RAST Annotated
         short-hint : |
@@ -44,7 +44,7 @@ parameters :
             Describe Purpose or Contents of Training Set
         placeholder: |
             Enter Description
-    list_name :
+    user_list :
         ui-name : |
             Classifier Training Set
         short-hint : |

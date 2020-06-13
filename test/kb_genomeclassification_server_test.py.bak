@@ -11,7 +11,7 @@ from os import environ
 
 
 try:
-    from configparser import ConfigParser  # py2 
+    from ConfigParser import ConfigParser  # py2 
 except:
     from configparser import ConfigParser  # py3
 

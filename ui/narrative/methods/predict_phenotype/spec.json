@@ -11,12 +11,12 @@
           "target_property": "Annotated"
         },
         {
-          "input_parameter": "Upload_File",
-          "target_property": "Upload_File"
+          "input_parameter": "user_file",
+          "target_property": "user_file"
         },
         {
-          "input_parameter": "list_name",
-          "target_property": "list_name"
+          "input_parameter": "user_list",
+          "target_property": "user_list"
         },
         {
           "input_parameter": "attribute",
@@ -88,7 +88,7 @@
       }
     },
     {
-      "id" : "Upload_File",
+      "id" : "user_file",
       "optional" : true,
       "advanced" : false,
       "allow_multiple" : false,
@@ -105,7 +105,7 @@
         ""
       ],
       "field_type": "textarea",
-      "id": "list_name",
+      "id": "user_list",
       "optional": false,
       "textarea_options": {
         "n_rows": 15

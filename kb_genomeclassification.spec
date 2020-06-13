@@ -119,7 +119,7 @@ module kb_genomeclassification {
 
     typedef structure {
         string phenotypeclass;
-        string attribute;
+        string genome_attribute;
         string workspace;
         string trainingset_name;
         mapping <string genome_id,ClassifierTrainingSet> classifier_training_set;
@@ -184,8 +184,8 @@ module kb_genomeclassification {
         string classifier_name;
         string description;
         string phenotypeclass;
-        string Upload_File;
-        string list_name;
+        string user_file;
+        string user_list;
         int Annotated;
     } ClassifierPredictionInput;
 
@@ -214,9 +214,9 @@ module kb_genomeclassification {
         mapping <string genome_id,ClassifierTrainingSet> classifier_training_set;
         string training_set_out;
         string target;
-        string Upload_File;
-        int Annotated;
-        string list_name;
+        string user_file;
+        int annotated;
+        string user_list;
     }UploadTrainingSetInput;
 
     typedef structure {

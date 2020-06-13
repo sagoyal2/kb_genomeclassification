@@ -27,7 +27,7 @@ suggestions:
 # Configure the display and description of parameters
 #
 parameters :
-    Upload_File :
+    user_file :
         ui-name : |
             File Path
         short-hint : |
@@ -42,7 +42,7 @@ parameters :
             Select the attribute
         short-hint : |
             Select the attribute that classifier be built
-    list_name :
+    user_list :
         ui-name : |
             Genomes to Predict
         short-hint : |
