@@ -51,45 +51,53 @@ This module build a classifier and predict phenotypes based on the classifier An
         self.config['callback_url'] = self.callback_url
 
         #END_CONSTRUCTOR
-        pass
 
+    def upload_trainingset(self, ctx, params):
+        """
+        :param
+        :returns
+        """
+        # ctx is the context object
+        # return variables are: output
+        #BEGIN upload_trainingset
+
+        self.config['ctx'] = ctx
+        upload_Runner = kb_genomeclfUtils(self.config)
+        upload_Runner.fullUpload(params, params.get('workspace'))
+
+        # self.config['ctx'] = ctx
+        # upload_Runner = kb_genomeclfUtils(self.config)
+        # location_of_report, classifier_training_set_mapping = upload_Runner.fullUpload(params, params.get('workspace'))
+        # report_output = upload_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'upload_Runner', params.get('description'), for_predict = True)
+        # output = {'report_name': report_output['name'], 'report_ref': report_output['ref'], 'classifier_training_set': classifier_training_set_mapping}
+
+        #END upload_trainingset
+
+        # At some point might do deeper type checking...
+        if not isinstance(output, dict):
+            raise ValueError('Method upload_trainingset return value ' +
+                             'output is not type dict as required.')
+        # return the results
+        # return [output]
+        return
 
     def build_classifier(self, ctx, params):
         """
         build_classifier: build_classifier
         requried params:
-        :param params: instance of type "BuildClassifierInput" -> structure:
-           parameter "phenotypeclass" of String, parameter "attribute" of
-           String, parameter "workspace" of String, parameter
-           "trainingset_name" of String, parameter "classifier_training_set"
-           of mapping from String to type "ClassifierTrainingSet" (typedef
-           string genome_id; typedef string phenotype;) -> structure:
-           parameter "phenotype" of String, parameter "genome_name" of
-           String, parameter "classifier_out" of String, parameter "target"
-           of String, parameter "classifier" of String, parameter "shock_id"
-           of String, parameter "list_name" of String, parameter "save_ts" of
-           Long
-        :returns: instance of type "ClassifierOut" -> structure: parameter
-           "report_name" of String, parameter "report_ref" of String
+        :param 
+        :returns
         """
         # ctx is the context object
         # return variables are: output
         #BEGIN build_classifier
 
-        print(params)
+        # self.config['ctx'] = ctx
+        # clf_Runner = kb_genomeclfUtils(self.config)
 
-        self.config['ctx'] = ctx
-        clf_Runner = kb_genomeclfUtils(self.config)
-
-        #clf_Runner.fullClassify(params, params.get('workspace'))
-        #output = {'random':'random','dict':'dict'}
-
-        location_of_report, classifier_info_list, attribute_weights_list = clf_Runner.fullClassify(params, params.get('workspace'))
-        print(("here is classifier_info_list" + str(classifier_info_list)))
-        print(("here is attribute_weights_list" + str(attribute_weights_list)))
-
-        report_output = clf_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'clf_Runner', params.get('description'))
-        output = {'report_name': report_output['name'], 'report_ref': report_output['ref'], 'classifier_info': classifier_info_list, 'attribute_weights': attribute_weights_list }
+        # location_of_report, classifier_info_list, attribute_weights_list = clf_Runner.fullClassify(params, params.get('workspace'))
+        # report_output = clf_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'clf_Runner', params.get('description'))
+        # output = {'report_name': report_output['name'], 'report_ref': report_output['ref'], 'classifier_info': classifier_info_list, 'attribute_weights': attribute_weights_list }
 
         #END build_classifier
 
@@ -98,32 +106,22 @@ This module build a classifier and predict phenotypes based on the classifier An
             raise ValueError('Method build_classifier return value ' +
                              'output is not type dict as required.')
         # return the results
-        return [output]
+        # return [output]
+        return
 
     def predict_phenotype(self, ctx, params):
         """
-        :param params: instance of type "ClassifierPredictionInput" ->
-           structure: parameter "workspace" of String, parameter
-           "classifier_name" of String, parameter "phenotypeclass" of String,
-           parameter "shock_id" of String, parameter "list_name" of String
-        :returns: instance of type "ClassifierPredictionOutput" -> structure:
-           parameter "prediction_accuracy" of Double, parameter "predictions"
-           of mapping from String to String
+        :param
+        :returns
         """
         # ctx is the context object
         # return variables are: output
         #BEGIN predict_phenotype
-
-        print(params)
-
-        self.config['ctx'] = ctx
-        pred_Runner = kb_genomeclfUtils(self.config)
-
-        location_of_report, predictions_mapping = pred_Runner.fullPredict(params, params.get('workspace'))
-        print(predictions_mapping)
-
-        report_output = pred_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'pred_Runner', params.get('description'), for_predict = True)
-        output = {'report_name': report_output['name'], 'report_ref': report_output['ref'], 'predictions': predictions_mapping}
+        # self.config['ctx'] = ctx
+        # pred_Runner = kb_genomeclfUtils(self.config)
+        # location_of_report, predictions_mapping = pred_Runner.fullPredict(params, params.get('workspace'))
+        # report_output = pred_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'pred_Runner', params.get('description'), for_predict = True)
+        # output = {'report_name': report_output['name'], 'report_ref': report_output['ref'], 'predictions': predictions_mapping}
 
         #END predict_phenotype
 
@@ -132,55 +130,9 @@ This module build a classifier and predict phenotypes based on the classifier An
             raise ValueError('Method predict_phenotype return value ' +
                              'output is not type dict as required.')
         # return the results
-        return [output]
+        # return [output]
+        return
 
-    def upload_trainingset(self, ctx, params):
-        """
-        :param params: instance of type "UploadTrainingSetInput" ->
-           structure: parameter "phenotypeclass" of String, parameter
-           "workspace" of String, parameter "classifier_training_set" of
-           mapping from String to type "ClassifierTrainingSet" (typedef
-           string genome_id; typedef string phenotype;) -> structure:
-           parameter "phenotype" of String, parameter "genome_name" of
-           String, parameter "training_set_out" of String, parameter "target"
-           of String, parameter "shock_id" of String, parameter "list_name"
-           of String
-        :returns: instance of type "UploadTrainingSetOut" -> structure:
-           parameter "report_name" of String, parameter "report_ref" of String
-        """
-        # ctx is the context object
-        # return variables are: output
-        #BEGIN upload_trainingset
-        
-        print(params)
-
-        self.config['ctx'] = ctx
-        upload_Runner = kb_genomeclfUtils(self.config)
-
-        location_of_report, classifier_training_set_mapping = upload_Runner.fullUpload(params, params.get('workspace'))
-
-        print(classifier_training_set_mapping)
-
-        report_output = upload_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'upload_Runner', params.get('description'), for_predict = True)
-        output = {'report_name': report_output['name'], 'report_ref': report_output['ref'], 'classifier_training_set': classifier_training_set_mapping}
-
-        """
-        mylist = self.ws_client.get_objects([{'workspace':params.get('workspace'), 'name':'forMRole'}])
-
-        with open(os.path.join(self.scratch, "another.txt"), "w") as f:
-            f.write(str(mylist[0]['data']['attribute_data']))
-
-
-        output = {'random':'random','dict':'dict'}
-        """
-        #END upload_trainingset
-
-        # At some point might do deeper type checking...
-        if not isinstance(output, dict):
-            raise ValueError('Method upload_trainingset return value ' +
-                             'output is not type dict as required.')
-        # return the results
-        return [output]
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK",

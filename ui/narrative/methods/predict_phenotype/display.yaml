@@ -1,9 +1,9 @@
 #
 # define display information
 #
-name: Predict Phenotype
+name: Upload Training Set Data
 tooltip: |
-    This module predict phenotypes for genomes based on a selected classifier
+    This module upload training set data save in KBase
 screenshots: []
 
 icon: null
@@ -27,26 +27,21 @@ suggestions:
 # Configure the display and description of parameters
 #
 parameters :
-    user_file :
+    categorizer_name :
+        ui-name : |
+            Genome Categorizer
+        short-hint : |
+            Select the classifier
+    file_path :
         ui-name : |
             File Path
         short-hint : |
-            File Path that is found by uploading via the staging area
-    Annotated :
+            File Path that is found by uploading via the staging area (only accepts excel, csv, tsv). Predict phenothpes for Genome Names / Genome Refs in file.
+    annotate :
         ui-name : |
-            Genomes RAST Annotated
+            Annotate Genomes as RAST
         short-hint : |
-            Check box if Genomes are already RAST Annotated, if not module will first annotate and then create trainingset
-    attribute :
-        ui-name : |
-            Select the attribute
-        short-hint : |
-            Select the attribute that classifier be built
-    user_list :
-        ui-name : |
-            Genomes to Predict
-        short-hint : |
-            Paste a list of Genomes that you want predictions on
+            If checked genomes will be RAST annotated and then placed into Training Set Object, otherwise genomes will be used as is (assuming they are already RAST annotated)
     description:
         ui-name : |
             Description
@@ -54,15 +49,5 @@ parameters :
             Describe Purpose or Contents of Training Set
         placeholder: |
             Enter Description
-    classifier_name :
-        ui-name : |
-            Categorizer
-        short-hint : |
-            Select the classifier
-    phenotypeclass:
-        ui-name : |
-            Phenotype or Condition [e.g.; Gram type, Respiration]
-        short-hint : |
-            Select the phenotype to be predicted
 description : |
-    <p>This module predict phenotypes for genomes based on a selected classifier.</p>
+   <p>Description soon to follow</p>

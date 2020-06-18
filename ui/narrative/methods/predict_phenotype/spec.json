@@ -7,20 +7,16 @@
     "service-mapping": {
       "input_mapping": [
         {
-          "input_parameter": "Annotated",
-          "target_property": "Annotated"
+          "input_parameter": "categorizer_name",
+          "target_property": "categorizer_name"
         },
         {
-          "input_parameter": "user_file",
-          "target_property": "user_file"
+          "input_parameter": "annotate",
+          "target_property": "annotate"
         },
         {
-          "input_parameter": "user_list",
-          "target_property": "user_list"
-        },
-        {
-          "input_parameter": "attribute",
-          "target_property": "attribute"
+          "input_parameter": "file_path",
+          "target_property": "file_path"
         },
         {
           "narrative_system_variable": "workspace",
@@ -29,19 +25,15 @@
         {
           "input_parameter": "description",
           "target_property": "description"
-        },
-        {
-          "input_parameter": "classifier_name",
-          "target_property": "classifier_name"
-        },
-        {
-          "input_parameter": "phenotypeclass",
-          "target_property": "phenotypeclass"
         }
       ],
-      "method": "predict_phenotype",
+      "method": "upload_trainingset",
       "name": "kb_genomeclassification",
       "output_mapping": [
+        {
+          "constant_value": "KBaseClassifier.GenomeClassifierTrainingSet",
+          "target_property": "type"
+        },
         {
           "service_method_output_path": [
             0,
@@ -65,12 +57,30 @@
     }
   },
   "categories": [
-    "active"
+    "active",
+    "upload"
   ],
   "contact": "https://kbase.us/contact-us/",
   "job_id_output_field": "docker",
   "parameters": [
     {
+      "id": "categorizer_name",
+      "optional": false,
+      "advanced": false,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "text_options": {
+        "valid_ws_types": [
+          "KBaseClassifier.GenomeCategorizer"
+        ]
+      }
+    },
+    {
+      "id": "annotate",
+      "optional": false,
       "advanced": false,
       "allow_multiple": false,
       "checkbox_options": {
@@ -78,18 +88,16 @@
         "unchecked_value": 0
       },
       "default_values": [
-        "0"
+        "1"
       ],
       "field_type": "checkbox",
-      "id": "Annotated",
-      "optional": true,
       "text_options": {
         "valid_ws_types": []
       }
     },
     {
-      "id" : "user_file",
-      "optional" : true,
+      "id" : "file_path",
+      "optional" : false,
       "advanced" : false,
       "allow_multiple" : false,
       "default_values" : [ "" ],
@@ -99,95 +107,16 @@
       }
     },
     {
-      "advanced": false,
-      "allow_multiple": false,
-      "default_values": [
-        ""
-      ],
-      "field_type": "textarea",
-      "id": "user_list",
-      "optional": false,
-      "textarea_options": {
-        "n_rows": 15
-      }
-    },
-    {
-      "advanced": false,
-      "allow_multiple": false,
-      "default_values": [
-        ""
-      ],
-      "field_type": "text",
       "id": "description",
       "optional": false,
+      "advanced": false,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
       "text_options": {
         "is_output_name": false
-      }
-    },
-    {
-      "advanced": false,
-      "allow_multiple": false,
-      "default_values": [
-        ""
-      ],
-      "field_type": "text",
-      "id": "classifier_name",
-      "optional": false,
-      "text_options": {
-        "valid_ws_types": [
-          "KBaseClassifier.GenomeCategorizer"
-        ]
-      }
-    },
-    {
-      "advanced": false,
-      "allow_multiple": false,
-      "default_values": [
-        "Functional annotations"
-      ],
-      "dropdown_options": {
-        "options": [
-          {
-            "display": "Functional annotations",
-            "id": "functional_roles",
-            "ui_name": "Functional annotations",
-            "value": "functional_roles"
-          },
-          {
-            "display": "Protein sequences",
-            "id": "prot_seq",
-            "ui_name": "Protein sequences",
-            "value": "prot_seq"
-          },
-          {
-            "display": "DNA K-mers 18mer",
-            "id": "dnakmer",
-            "ui_name": "DNA K-mers 18mer",
-            "value": "dnakmer"
-          },
-          {
-            "display": "Protein K-mers 18mer",
-            "id": "protkmer",
-            "ui_name": "Protein K-mers 18mer",
-            "value": "protkmer"
-          }
-        ]
-      },
-      "field_type": "dropdown",
-      "id": "attribute",
-      "optional": false
-    },
-    {
-      "advanced": false,
-      "allow_multiple": false,
-      "default_values": [
-        ""
-      ],
-      "field_type": "text",
-      "id": "phenotypeclass",
-      "optional": false,
-      "text_options": {
-        "valid_ws_types": []
       }
     }
   ],

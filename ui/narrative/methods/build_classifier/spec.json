@@ -319,9 +319,9 @@
             "value": "KNeighborsClassifier"
           },
           {
-            "display": "Gaussian Naive Base",
+            "display": "Gaussian Naive Bayes",
             "id": "GaussianNB",
-            "ui_name": "Gaussian Naive Base",
+            "ui_name": "Gaussian Naive Bayes",
             "value": "GaussianNB"
           },
           {

@@ -56,7 +56,7 @@ parameters :
         ui-name : |
             Select the Classification algorithm
         short-hint : |
-            Select the Classifier algorithm, by deafult all classifier algorithms will run
+            Select the Classifier algorithm (all from sklearn library), by deafult all classifier algorithms will run. (Note Neural Network is based off of sklearn library Multi-layer Perceptron)
     description:
         ui-name : |
             Description
@@ -494,11 +494,11 @@ parameter-groups :
         ui-name: |
             Neural Network
         short-hint : |
-            Additional user adjustable parameters for Neural Network
+            Additional user adjustable parameters for Neural Network. (Note this is based off of sklearn Multi-layer Perceptron)
     ensemble_model :
         ui-name: |
             Ensemble Model  
         short-hint : |
             Additional user adjustable parameters for Ensemble Model. Note Ensemble Model will only get created if "Run All Classifier" is selected. (ie. you can cannot create an Ensemble by itself nor can you combine it with one other classification)
 description : |
-    <p>This method allows the user to split a Reads Library into a randomly subsampled Reads Libraries, organized into a ReadsSet.</p>"""
+    <p>Description soon to follow</p>

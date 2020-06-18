@@ -1,7 +1,7 @@
 #
 # define display information
 #
-name: Upload training set data
+name: Upload Training Set Data
 tooltip: |
     This module upload training set data save in KBase
 screenshots: []
@@ -27,16 +27,16 @@ suggestions:
 # Configure the display and description of parameters
 #
 parameters :
-    user_file :
+    file_path :
         ui-name : |
             File Path
         short-hint : |
-            File Path that is found by uploading via the staging area
-    annotated :
+            File Path that is found by uploading via the staging area (only accepts excel, csv, tsv)
+    annotate :
         ui-name : |
-            Genomes RAST Annotated
+            Annotate Genomes as RAST
         short-hint : |
-            Check box if Genomes are already annotated in a consistent format, if not module will first RAST Annotate all genomes and then create trainingset
+            If checked genomes will be RAST annotated and then placed into Training Set Object, otherwise genomes will be used as is (assuming they are already RAST annotated)
     description:
         ui-name : |
             Description
@@ -44,20 +44,15 @@ parameters :
             Describe Purpose or Contents of Training Set
         placeholder: |
             Enter Description
-    user_list :
+    phenotype:
         ui-name : |
-            Classifier Training Set
+            Phenotype
         short-hint : |
-            Paste the list of traning set data
-    training_set_out:
+            Select the phenotype or condition to be predicted
+    training_set_name:
         ui-name : |
-            Name for the training set
+            Training Set Name
         short-hint : |
             Provide a name for the training set data
-    phenotypeclass:
-        ui-name : |
-            Phenotype or Condition [e.g.; Gram type, Respiration]
-        short-hint : |
-            Select the phenotype to be predicted
 description : |
-   <p><b>This method upload training set data save it as an object in KBase. </b></p> <p> Training set data contains the genomes and classifications (e.g.; Gram type or respiration) where  it uses associated functional roles of individual genomes as attributes to build classifiers.</p> <p> Then using the build_classifier method we use six machine learning algorithms from ‘sklearn’ (http://scikit-learn.org/stable/#)  python library; K-Nearest Neighbors, Logistic Regression, Naive Gaussian Bayes Classifier, Support Vector Machine, Neural Network (black-box algorithms) and Decision Tree Classifier (white box algorithm) in building classifier objects that another KBase app ‘predict_phenotype’ could use these classifier objects and predict phenotypes for uncharacterized/unknown genomes.</p> <p>The paper associated with this method is in preparation.</p>
+   <p>Description soon to follow</p>

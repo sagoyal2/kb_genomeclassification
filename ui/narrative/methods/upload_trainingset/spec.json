@@ -7,16 +7,12 @@
     "service-mapping": {
       "input_mapping": [
         {
-          "input_parameter": "annotated",
-          "target_property": "annotated"
+          "input_parameter": "annotate",
+          "target_property": "annotate"
         },
         {
-          "input_parameter": "user_file",
-          "target_property": "user_file"
-        },
-        {
-          "input_parameter": "user_list",
-          "target_property": "user_list"
+          "input_parameter": "file_path",
+          "target_property": "file_path"
         },
         {
           "narrative_system_variable": "workspace",
@@ -27,12 +23,12 @@
           "target_property": "description"
         },
         {
-          "input_parameter": "training_set_out",
-          "target_property": "training_set_out"
+          "input_parameter": "training_set_name",
+          "target_property": "training_set_name"
         },
         {
-          "input_parameter": "phenotypeclass",
-          "target_property": "phenotypeclass"
+          "input_parameter": "phenotype",
+          "target_property": "phenotype"
         }
       ],
       "method": "upload_trainingset",
@@ -72,6 +68,8 @@
   "job_id_output_field": "docker",
   "parameters": [
     {
+      "id": "annotate",
+      "optional": false,
       "advanced": false,
       "allow_multiple": false,
       "checkbox_options": {
@@ -79,18 +77,16 @@
         "unchecked_value": 0
       },
       "default_values": [
-        "0"
+        "1"
       ],
       "field_type": "checkbox",
-      "id": "annotated",
-      "optional": true,
       "text_options": {
         "valid_ws_types": []
       }
     },
     {
-      "id" : "user_file",
-      "optional" : true,
+      "id" : "file_path",
+      "optional" : false,
       "advanced" : false,
       "allow_multiple" : false,
       "default_values" : [ "" ],
@@ -100,53 +96,40 @@
       }
     },
     {
-      "advanced": false,
-      "allow_multiple": false,
-      "default_values": [
-        ""
-      ],
-      "field_type": "textarea",
-      "id": "user_list",
-      "optional": true,
-      "textarea_options": {
-        "n_rows": 15
-      }
-    },
-    {
+      "id": "description",
+      "optional": false,
       "advanced": false,
       "allow_multiple": false,
       "default_values": [
         ""
       ],
       "field_type": "text",
-      "id": "description",
-      "optional": false,
       "text_options": {
         "is_output_name": false
       }
     },
     {
+      "id": "phenotype",
+      "optional": false,
       "advanced": false,
       "allow_multiple": false,
       "default_values": [
         ""
       ],
       "field_type": "text",
-      "id": "phenotypeclass",
-      "optional": false,
       "text_options": {
         "valid_ws_types": []
       }
     },
     {
+      "id": "training_set_name",
+      "optional": false,
       "advanced": false,
       "allow_multiple": false,
       "default_values": [
         ""
       ],
       "field_type": "text",
-      "id": "training_set_out",
-      "optional": false,
       "text_options": {
         "is_output_name": true,
         "valid_ws_types": [
