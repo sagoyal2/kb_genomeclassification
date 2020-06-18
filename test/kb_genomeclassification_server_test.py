@@ -83,7 +83,16 @@ class kb_genomeclassificationTest(unittest.TestCase):
         return self.__class__.ctx
 
     def test_predict_phenotype(self):
-        pass
+        params = {
+        "annotate": 1,
+        "file_path": "full_genomeid_classification.xlsx",
+        "description": "my description",
+        "phenotype": "my phenotype",
+        "training_set_name": "tsn",
+        "workspace" : "sagoyal:narrative_1534259992668"
+        }
+
+        self.getImpl().upload_trainingset(self.getContext(), params)
 
     def test_build_classifier(self):
         pass

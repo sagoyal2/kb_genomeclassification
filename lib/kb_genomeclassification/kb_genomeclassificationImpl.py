@@ -63,6 +63,7 @@ This module build a classifier and predict phenotypes based on the classifier An
 
         self.config['ctx'] = ctx
         upload_Runner = kb_genomeclfUtils(self.config)
+        print("in here")
         upload_Runner.fullUpload(params, params.get('workspace'))
 
         # self.config['ctx'] = ctx
@@ -73,12 +74,11 @@ This module build a classifier and predict phenotypes based on the classifier An
 
         #END upload_trainingset
 
-        # At some point might do deeper type checking...
-        if not isinstance(output, dict):
-            raise ValueError('Method upload_trainingset return value ' +
-                             'output is not type dict as required.')
+        # # At some point might do deeper type checking...
+        # if not isinstance(output, dict):
+        #     raise ValueError('Method upload_trainingset return value ' +
+        #                      'output is not type dict as required.')
         # return the results
-        # return [output]
         return
 
     def build_classifier(self, ctx, params):
