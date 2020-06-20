@@ -190,14 +190,14 @@ module kb_genomeclassification {
 
 
     typedef structure {
-        float prediction_accuracy;
+        float prediction_probabilities;
         string phenotype;
         string genome_name;
         string genome_ref;
     } PredictedPhenotypeOut;
 
    typedef structure {
-        mapping<string genome_id, PredictedPhenotypeOut> predictions;
+        mapping<string genome_id, PredictedPhenotypeOut> prediction_set;
         string report_name;
         string report_ref;
    }ClassifierPredictionOutput;
@@ -219,8 +219,8 @@ module kb_genomeclassification {
         string phenotype;
         string genome_name;
         string genome_ref;
-        int load_status;
-        int RAST_annotation_status;
+        list<string> references;
+        list<string> evidence_types;
     } ClassifierTrainingSetOut;
 
 
