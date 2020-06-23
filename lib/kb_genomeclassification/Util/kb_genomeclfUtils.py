@@ -26,95 +26,138 @@ class kb_genomeclfUtils(object):
 
 	#### MAIN Methods below are called from KBASE apps ###
 
-	#return htmloutput_name, classifier_training_set_mapping
+	#return html_output_name, classifier_training_set_mapping
 	def fullUpload(self, params, current_ws):
-	
-		uploaded_df = getUploadedFileAsDF(params["file_path"])
-		(report_table, classifier_training_set) = createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
+		#create folder
+		# folder_name = "forUpload"
+		# os.makedirs(os.path.join(self.scratch, folder_name))
 
-		#self.html_report_0(missingGenomes, params['phenotypeclass'])
-		#htmloutput_name = self.html_nodual("forZeroHTML")
-		#handle making report in html
+		params["file_path"] = "/kb/module/data/RealData/GramDataEdit5.xlsx"
+		uploaded_df = self.getUploadedFileAsDF(params["file_path"])
+		(upload_table, classifier_training_set, missing_genomes, genome_label) = self.createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
 
-		return htmloutput_name, classifier_training_set
+		self.uploadHTMLContent(params['training_set_name'], params["file_path"], missing_genomes, genome_label, params['phenotype'], upload_table)
+		html_output_name = self.viewerHTMLContent("forUpload", status_view = True)
+		
+		return html_output_name, classifier_training_set
 
-	#return htmloutput_name, classifier_info_list, weight_list
+	#return html_output_name, classifier_info_list, weight_list
 	def fullClassify(self, params, current_ws):
 		pass
 
-	#return htmloutput_name, predictions_mapping
+		"""
+		should figure out ahead of time how many views to show
+			ie. overview.html, dtt.html, ensemble
+		"""
+
+	#return html_output_name, predictions_mapping
 	def fullPredict(self, params, current_ws):
 
-		#Load Information from Categorizer 
-		categorizer_object = ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name':params['categorizer_name']}]})
+		# #Load Information from Categorizer 
+		# categorizer_object = ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name':params['categorizer_name']}]})
 
-		categorizer_handle_ref = categorizer_object[0]['data']['classifier_handle_ref']
-		categorizer_file_path = self._download_shock(categorizer_handle_ref)
+		# categorizer_handle_ref = categorizer_object[0]['data']['classifier_handle_ref']
+		# categorizer_file_path = self._download_shock(categorizer_handle_ref)
 
-		master_feature_list = categorizer_object[0]['data']['attribute_data']
-		class_to_index_mapping = categorizer_object[0]['data']['class_list_mapping']
+		# master_feature_list = categorizer_object[0]['data']['attribute_data']
+		# class_to_index_mapping = categorizer_object[0]['data']['class_list_mapping']
 
-		current_categorizer = pickle.load(open(categorizer_file_path, "rb"))
-
-
-		#Load Information from UploadedFile
-		uploaded_df = getUploadedFileAsDF(params["file_path"])
-		(missing_genomes, genome_label, _genome_df, _in_workspace, _list_genome_name, _list_genome_ref) = createListsForPredictionSet(current_ws, params, uploaded_df)
-		feature_matrix = self.getFeatureMatrix(stuff goes here)
+		# current_categorizer = pickle.load(open(categorizer_file_path, "rb"))
 
 
-		#Make Predictions on uploaded file
-		predictions_numerical = current_categorizer.predict(feature_matrix)
-		predictions_phenotype = #map numerical to phenotype
-		prediction_probabilities = current_categorizer.predict_proba(feature_matrix)
+		# #Load Information from UploadedFile
+		# uploaded_df = getUploadedFileAsDF(params["file_path"])
+		# (missing_genomes, genome_label, _genome_df, _in_workspace, _list_genome_name, _list_genome_ref) = createListsForPredictionSet(current_ws, params, uploaded_df)
+		# feature_matrix = self.getFeatureMatrix(stuff goes here)
 
 
-		#Lists to use for report
-		_prediction_phenotype = []
-		_prediction_probabilities = []
-		index = 0
-
-		#all lists for callback structure and training set object
-		_list_prediction_phenotype = []
-		_list_prediction_probabilities = []
-
-		for genome in _genome_df:
-			if(genome not in missing_genomes):
-				_prediction_phenotype.append(predictions_phenotype[index])
-				_prediction_probabilities.append(prediction_probabilities[index])
-				index +=1
-
-				_list_prediction_phenotype.append(predictions_phenotype[index])
-				_list_prediction_probabilities.append(prediction_probabilities[index])
-
-			else:
-				_prediction_phenotype.append("N/A")
-				_prediction_probabilities.append("N/A")
+		# #Make Predictions on uploaded file
+		# predictions_numerical = current_categorizer.predict(feature_matrix)
+		# predictions_phenotype = #map numerical to phenotype
+		# prediction_probabilities = current_categorizer.predict_proba(feature_matrix)
 
 
-		#construct classifier_training_set mapping
-		prediction_set = {}
+		# #Lists to use for report
+		# _prediction_phenotype = []
+		# _prediction_probabilities = []
+		# index = 0
+
+		# #all lists for callback structure and training set object
+		# _list_prediction_phenotype = []
+		# _list_prediction_probabilities = []
+
+		# for genome in _genome_df:
+		# 	if(genome not in missing_genomes):
+		# 		_prediction_phenotype.append(predictions_phenotype[index])
+		# 		_prediction_probabilities.append(prediction_probabilities[index])
+		# 		index +=1
+
+		# 		_list_prediction_phenotype.append(predictions_phenotype[index])
+		# 		_list_prediction_probabilities.append(prediction_probabilities[index])
+
+		# 	else:
+		# 		_prediction_phenotype.append("N/A")
+		# 		_prediction_probabilities.append("N/A")
+
+
+		# #construct classifier_training_set mapping
+		# prediction_set = {}
 		
-		for index, curr_genome_ref in enumerate(_list_genome_ref):
-			prediction_set[curr_genome_ref] = { 'genome_name': _list_genome_name[index],
-												'genome_ref': curr_genome_ref,
-												'phenotype': _list_prediction_phenotype[index],
-												'prediction_probabilities': _list_prediction_probabilities[index]
-												}
+		# for index, curr_genome_ref in enumerate(_list_genome_ref):
+		# 	prediction_set[curr_genome_ref] = { 'genome_name': _list_genome_name[index],
+		# 										'genome_ref': curr_genome_ref,
+		# 										'phenotype': _list_prediction_phenotype[index],
+		# 										'prediction_probabilities': _list_prediction_probabilities[index]
+		# 										}
 
-		report_table = pd.DataFrame.from_dict({	genome_label: _genome_df,
-												"In Workspace": _in_workspace,
-												"Phenotype": _prediction_phenotype,
-												"Probability": _prediction_probabilities
-											 	})
+		# report_table = pd.DataFrame.from_dict({	genome_label: _genome_df,
+		# 										"In Workspace": _in_workspace,
+		# 										"Phenotype": _prediction_phenotype,
+		# 										"Probability": _prediction_probabilities
+		# 									 	})
 
 
 
 		# self.html_report_3(missingGenomes, params['phenotypeclass'])
-		# htmloutput_name = self.html_nodual("forSecHTML")
+		# html_output_name = self.html_nodual("forSecHTML")
 		#handle making a report in html
 
-		return htmloutput_name, predictions_mapping
+		return html_output_name, predictions_mapping
+
+
+	def generateHTMLReport(self, current_ws, folder_name, single_html_name, description, for_build_classifier = False):
+
+		#folder_name = forUpload forBuild forPredict
+
+		report_shock_id = self.dfu.file_to_shock({'file_path': os.path.join(self.scratch, folder_name),'pack': 'zip'})['shock_id']
+
+		html_output = {
+		'name' : single_html_name, #always viewer.html
+		'shock_id': report_shock_id
+		}
+
+		report_params = {'message': '',
+			 'workspace_name': current_ws,
+			 'html_links': [html_output],
+			 'direct_html_link_index': 0,
+			 'html_window_height': 500,
+			 'report_object_name': 'kb_classifier_report_' + str(uuid.uuid4())
+			 }
+
+		if for_build_classifier:
+			output_file_links = []
+
+			for file in os.listdir(os.path.join(self.scratch, 'forBuild', 'data')):
+				output_file_links.append({	'path' : os.path.join(self.scratch, 'forBuild', 'data', file),
+											'name' : file
+											})
+
+			report_params['file_links'] = output_file_links
+
+		kbase_report_client = KBaseReport(self.callback_url, token=self.ctx['token'])
+		report_output = kbase_report_client.create_extended_report(report_params)
+
+		return report_output		
 
 	### Helper Methods ###
 
@@ -135,15 +178,15 @@ class kb_genomeclfUtils(object):
 	def getUploadedFileAsDF(self, file_path):
 
 		if file_path.endswith('.xlsx'):
-			uploaded_df = pd.read_excel(os.path.join(os.path.sep,"staging",file_path))
+			uploaded_df = pd.read_excel(os.path.join(os.path.sep,"staging",file_path), dtype=str)
 		elif file_path.endswith('.csv'):
-			uploaded_df = pd.read_csv(os.path.join(os.path.sep,"staging",file_path), header=0)
+			uploaded_df = pd.read_csv(os.path.join(os.path.sep,"staging",file_path), header=0, dtype=str)
 		elif file_path.endswith('.tsv'):
-			uploaded_df = pd.read_csv(os.path.join(os.path.sep,"staging",file_path), sep='\t', header=0)
+			uploaded_df = pd.read_csv(os.path.join(os.path.sep,"staging",file_path), sep='\t', header=0, dtype=str)
 		else:
 			raise ValueError('The following file type is not accepted, must be .xlsx, .csv, .tsv')
 
-		checkValidFile(uploaded_df)
+		self.checkValidFile(uploaded_df)
 		return uploaded_df
 
 	def checkValidFile(self, uploaded_df):
@@ -156,7 +199,7 @@ class kb_genomeclfUtils(object):
 
 	def createAndUseListsForTrainingSet(self, current_ws, params, uploaded_df):
 		
-		(genome_label, all_df_genome, missing_genomes) = findMissingGenomes( current_ws, uploaded_df)
+		(genome_label, all_df_genome, missing_genomes) = self.findMissingGenomes( current_ws, uploaded_df)
 
 		# all lists needed for report
 		_genome_df = []
@@ -164,6 +207,7 @@ class kb_genomeclfUtils(object):
 		_phenotype = []
 		_in_training_set = []
 
+		uploaded_df_columns = uploaded_df.columns
 		_references = []
 		has_references = True if "References" in uploaded_df_columns else False
 		_evidence_types = []
@@ -194,7 +238,7 @@ class kb_genomeclfUtils(object):
 				#indicates that users wants us to RAST annotate the Genomes
 				if(params["annotate"]):
 					rast_genome_name = genome_name + ".RAST"
-					RASTAnnotateGenome(self, current_ws, genome_name, rast_genome_name)
+					self.RASTAnnotateGenome(current_ws, genome_name, rast_genome_name)
 					_genome_df.append(rast_genome_name)
 
 					RAST_meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': rast_genome_name}]})['data'][0]['info']
@@ -213,40 +257,40 @@ class kb_genomeclfUtils(object):
 
 				#lists for report
 				_in_workspace.append("True")
-				_phenotype.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["Phenotype"][0])
+				_phenotype.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["Phenotype"].values[0])
 				_in_training_set.append("True")
 
 				#lists for callback structure and training set object
-				_list_phenotype.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["Phenotype"][0])
+				_list_phenotype.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["Phenotype"].values[0])
 				_list_genome_id.append("") #setting this to "" just for now
 
 				#non-missing genomes add references
 				if(has_references):
-					_list_references.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["References"][0].split(";"))
+					_list_references.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["References"].values[0].split(";"))
 				else:
 					_list_references.append([]) #add empty list
 
 				#non-missing genomes add evidence list
 				if(has_evidence_types):
-					_list_evidence_types.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["Evidence Types"][0].split(";"))
+					_list_evidence_types.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["Evidence Types"].values[0].split(";"))
 				else:
 					_list_evidence_types.append([]) #add empty list
 
 			else:
 				_genome_df.append(genome)
 				_in_workspace.append("False")
-				_phenotype.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["Phenotype"][0])
+				_phenotype.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["Phenotype"].values[0])
 				_in_training_set.append("False")
 
 			#add references
 			if(has_references):
-				_references.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["References"][0].split(";"))
+				_references.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["References"].values[0].split(";"))
 			else:
 				_references.append("")
 
 			#add evidence list
 			if(has_evidence_types):
-				_evidence_types.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["Evidence Types"][0].split(";"))
+				_evidence_types.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["Evidence Types"].values[0].split(";"))
 			else:
 				_evidence_types.append("")
 
@@ -266,10 +310,10 @@ class kb_genomeclfUtils(object):
 												"In Workspace": _in_workspace,
 												"Phenotype": _phenotype,
 												"In Training Set": _in_training_set
-											 	})
+												})
 
-		createTrainingSetObject(current_ws, params, _list_genome_name, _list_genome_ref, _list_phenotype, _list_genome_id, _list_references, _list_evidence_types)
-		return (report_table, classifier_training_set)
+		self.createTrainingSetObject(current_ws, params, _list_genome_name, _list_genome_ref, _list_phenotype, _list_genome_id, _list_references, _list_evidence_types)
+		return (report_table, classifier_training_set, missing_genomes, genome_label)
 
 	def createTrainingSetObject(self, current_ws, params, _list_genome_name, _list_genome_ref, _list_phenotype, _list_genome_id, _list_references, _list_evidence_types):
 
@@ -300,18 +344,18 @@ class kb_genomeclfUtils(object):
 																  'data': training_set_object,
 																  'name': params['training_set_name'],  
 																  'provenance': self.ctx.get('provenance')
-													  			}]
+																}]
 													})[0]
 
-		print("A Training Set Object named " + str(params['training_set_name']) + " with reference: " + str(training_set_ref) " was just made.")
+		print("A Training Set Object named " + str(params['training_set_name']) + " with reference: " + str(training_set_ref) + " was just made.")
 
 
 	def checkUniqueColumn(self, uploaded_df, genome_label):
 
 		if(uploaded_df[genome_label].is_unique):
-				pass
-			else:
-				raise ValueError(str(genome_label) + "column is not unique")
+			pass
+		else:
+			raise ValueError(str(genome_label) + "column is not unique")
 
 	def findMissingGenomes(self, current_ws, uploaded_df):
 
@@ -321,7 +365,7 @@ class kb_genomeclfUtils(object):
 		#figure out if matching on Reference or Name and then find missing genomes
 		if "Genome Reference" in uploaded_df_columns:
 			genome_label = "Genome Reference"
-			checkUniqueColumn(uploaded_df, genome_label)
+			self.checkUniqueColumn(uploaded_df, genome_label)
 
 			all_df_genome = uploaded_df[genome_label]
 			all_refs2_workspace = [str(genome[0]) + "/" + str(genome[4]) for genome in all_genomes_workspace]
@@ -334,7 +378,7 @@ class kb_genomeclfUtils(object):
 
 		else:
 			genome_label = "Genome Name"
-			checkUniqueColumn(uploaded_df, genome_label)
+			self.checkUniqueColumn(uploaded_df, genome_label)
 
 			all_df_genome = uploaded_df[genome_label]
 			all_names_workspace = [str(genome[1]) for genome in all_genomes_workspace]
@@ -402,7 +446,7 @@ class kb_genomeclfUtils(object):
 				#indicates that users wants us to RAST annotate the Genomes
 				if(params["annotate"]):
 					rast_genome_name = genome_name + ".RAST"
-					RASTAnnotateGenome(self, current_ws, genome_name, rast_genome_name)
+					self.RASTAnnotateGenome(current_ws, genome_name, rast_genome_name)
 					_genome_df.append(rast_genome_name)
 
 					RAST_meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': rast_genome_name}]})['data'][0]['info']
@@ -427,4 +471,280 @@ class kb_genomeclfUtils(object):
 				_in_workspace.append("False")
 
 		return (missing_genomes, genome_label, _genome_df, _in_workspace, _list_genome_name, _list_genome_ref)
+
+
+	def viewerHTMLContent(self, folder_name, status_view = False, main_report_view = False, decision_tree_view = False, ensemble_view = False):
+		file = open(os.path.join(self.scratch, folder_name, 'viewer.html'), u"w")
+
+		header = u"""
+			<!DOCTYPE html>
+			<html>
+			<head>
+			<style>
+			body {font-family: "Lato", sans-serif;}
+			/* Style the tab */
+			div.tab {
+				overflow: hidden;
+				border: 1px solid #ccc;
+				background-color: #f1f1f1;
+			}
+			/* Style the buttons inside the tab */
+			div.tab button {
+				background-color: inherit;
+				float: left;
+				border: none;
+				outline: none;
+				cursor: pointer;
+				padding: 14px 16px;
+				transition: 0.3s;
+				font-size: 17px;
+			}
+			/* Change background color of buttons on hover */
+			div.tab button:hover {
+				background-color: #ddd;
+			}
+			/* Create an active/current tablink class */
+			div.tab button.active {
+				background-color: #ccc;
+			}
+			/* Style the tab content */
+			.tabcontent {
+				display: none;
+				padding: 6px 12px;
+				border: 1px solid #ccc;
+				-webkit-animation: fadeEffect 1s;
+				animation: fadeEffect 1s;
+				border-top: none;
+			}
+			/* Fade in tabs */
+			@-webkit-keyframes fadeEffect {
+				from {opacity: 0;}
+				to {opacity: 1;}
+			}
+			@keyframes fadeEffect {
+				from {opacity: 0;}
+				to {opacity: 1;}
+			}
+			table {
+				font-family: arial, sans-serif;
+				border-collapse: collapse;
+				width: 100%;
+			}
+			td, th {
+				border: 1px solid #dddddd;
+				text-align: left;
+				padding: 8px;
+			}
+			tr:nth-child(odd) {
+				background-color: #dddddd;
+			}
+			div.gallery {
+				margin: 5px;
+				border: 1px solid #ccc;
+				float: left;
+				width: 180px;
+			}
+			div.gallery:hover {
+				border: 1px solid #777;
+			}
+			div.gallery img {
+				width: 100%;
+				height: auto;
+			}
+			div.desc {
+				padding: 15px;
+				text-align: center;
+			}
+			</style>
+			</head>
+			<body>
+
+			<div class="tab">
+			""" 
+		file.write(header)
+
+		if(status_view):
+			str_button = u"""
+			<button class="tablinks" onclick="openTab(event, 'Status')" id="defaultOpen">Status</button>
+			"""
+			file.write(str_button)
+
+		if(main_report_view):
+			str_button = u"""
+			<button class="tablinks" onclick="openTab(event, 'Main Report')" id="defaultOpen">Main Report</button>
+			"""
+			file.write(str_button)
+
+		if(decision_tree_view):
+			str_button = u"""
+			<button class="tablinks" onclick="openTab(event, 'Decision Tree Tuning')">Decision Tree Tuning</button>
+			"""
+			file.write(str_button)
+			
+		if(ensemble_view):
+			str_button = u"""
+			<button class="tablinks" onclick="openTab(event, 'Ensemble Model')">Ensemble Model</button>
+			"""
+			file.write(str_button)
+
+		remainder = u"""
+		</div>
+		<div id="Status" class="tabcontent">
+		  <iframe src="status.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
+		</div>
+
+		<div id="Main Report" class="tabcontent">
+		  <iframe src="main_report.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
+		</div>
+
+		<div id="Decision Tree Tuning" class="tabcontent">
+		  <iframe src="dtt.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
+		</div>
+
+		<div id="Ensemble Model" class="tabcontent">
+		  <iframe src="ensemble.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
+		</div>
+
+		<script>
+		function openTab(evt, tabName) {
+			var i, tabcontent, tablinks;
+			tabcontent = document.getElementsByClassName("tabcontent");
+			for (i = 0; i < tabcontent.length; i++) {
+				tabcontent[i].style.display = "none";
+			}
+			tablinks = document.getElementsByClassName("tablinks");
+			for (i = 0; i < tablinks.length; i++) {
+				tablinks[i].className = tablinks[i].className.replace(" active", "");
+			}
+			document.getElementById(tabName).style.display = "block";
+			evt.currentTarget.className += " active";
+		}
+		document.getElementById("defaultOpen").click();
+		</script>
+		</body>
+		</html>
+		"""
+		file.write(remainder)
+		file.close()
+
+		return "viewer.html"
+
+	def uploadHTMLContent(self, training_set_name, selected_file_name, missing_genomes, genome_label, phenotype, upload_table):
+		
+		os.makedirs(os.path.join(self.scratch, 'forUpload'), exist_ok=True)
+		file = open(os.path.join(self.scratch, 'forUpload', 'status.html'), "w")
+		header = u"""
+			<!DOCTYPE html>
+			<html>
+			<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
+			<body>
+
+			<h2 style="text-align:center;"> Report: Upload Training Set Data </h2>
+			<p>
+			"""
+		file.write(header)
+
+		first_paragraph = u"""A Genome Classifier Training Set Object named """ + str(training_set_name) \
+							+ """ was created and added to the workspace. Missing genomes (those that were \
+							present in the selected file: """ + str(selected_file_name) + """, but not present in the staging area) \
+							were the following: """ + str(missing_genomes)+ """ . """ + str(training_set_name) + """ was created \
+							excluding the missing genomes.</p><p>"""
+		file.write(first_paragraph)
+
+		second_paragraph = u"""Below is a detailed table which shows """ + str(genome_label) + """ , whether it \
+						was loaded into the workspace, its """ + str(phenotype)+ """, and if it is in training_set_name, its References, \
+						its Evidence List. </p>"""
+		file.write(second_paragraph)
+
+		upload_table_html = upload_table.to_html(index=False, table_id="upload_table", justify='center')
+		file.write(upload_table_html)
+
+		scripts = u"""</body>
+
+			<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+			<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+			<script type="text/javascript">
+			$(document).ready(function() {
+				$('#upload_table').DataTable( {
+					"scrollY":        "500px",
+					"scrollCollapse": true,
+					"paging":         false
+				} );
+			} );
+			</script>
+			</html>"""
+		file.write(scripts)
+		file.close()
+
+
+
+	def predictHTMLContent(self, categorizer_name, phenotype, selection_attribute, selected_file_name, missing_genomes, genome_label, predict_table):
+		
+		file = open(os.path.join(self.scratch, 'forPredict', 'status.html'), u"w")
+		header = u"""
+			<!DOCTYPE html>
+			<html>
+			<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
+			<body>
+
+			<h2 style="text-align:center;"> Report: Predict Phenotype </h2>
+			<p>
+			"""
+		file.write(header)
+
+		first_paragraph = u"""The Genome Categorizer named """ + str(categorizer_name) \
+							+ """ is being used to make predictions for  """ + str(phenotype)+ """ based on \
+							""" + str(selection_attribute) + """. Missing genomes (those that were \
+							present in the selected file: """ + str(selected_file_name) + """, but not present in the staging area) \
+							were the following: """ + str(missing_genomes)+ """ ."""
+		file.write(first_paragraph)
+
+		second_paragraph = u"""Below is a detailed table which shows """ + str(genome_label) + """ , whether it \
+						was loaded into the workspace, its """ + str(phenotype)+ """, and the probabiltiy of that \
+						prediction </p>"""
+		file.write(second_paragraph)
+
+		predict_table_html = predict_table.to_html(index=False, table_id="predict_table", justify='center')
+		file.write(predict_table_html)
+
+		scripts = u"""</body>
+
+			<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+			<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+			<script type="text/javascript">
+			$(document).ready(function() {
+				$('#predict_table').DataTable( {
+					"scrollY":        "500px",
+					"scrollCollapse": true,
+					"paging":         false
+				} );
+			} );
+			</script>
+			</html>"""
+		file.write(scripts)
+		file.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

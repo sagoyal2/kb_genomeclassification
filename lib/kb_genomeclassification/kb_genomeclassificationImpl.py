@@ -65,12 +65,10 @@ This module build a classifier and predict phenotypes based on the classifier An
         upload_Runner = kb_genomeclfUtils(self.config)
         print("in here")
         upload_Runner.fullUpload(params, params.get('workspace'))
+        html_output_name, classifier_training_set = upload_Runner.fullUpload(params, params['workspace'])
 
-        # self.config['ctx'] = ctx
-        # upload_Runner = kb_genomeclfUtils(self.config)
-        # location_of_report, classifier_training_set_mapping = upload_Runner.fullUpload(params, params.get('workspace'))
-        # report_output = upload_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'upload_Runner', params.get('description'), for_predict = True)
-        # output = {'report_name': report_output['name'], 'report_ref': report_output['ref'], 'classifier_training_set': classifier_training_set_mapping}
+        report_output = upload_Runner.generateHTMLReport(params['workspace'], "forUpload", html_output_name, params['description'])
+        output = {'report_name': report_output['name'], 'report_ref': report_output['ref'], 'classifier_training_set': classifier_training_set}
 
         #END upload_trainingset
 
@@ -79,7 +77,7 @@ This module build a classifier and predict phenotypes based on the classifier An
         #     raise ValueError('Method upload_trainingset return value ' +
         #                      'output is not type dict as required.')
         # return the results
-        return
+        return [output]
 
     def build_classifier(self, ctx, params):
         """
