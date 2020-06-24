@@ -242,7 +242,7 @@ class kb_genomeclfUtils(object):
 			#RAST Annotate the Genome
 			output_genome_set_name = params['training_set_name'] + "_RAST_Genome_SET"
 			self.RASTAnnotateGenome(current_ws, input_genome_references, output_genome_set_name)
-						
+
 			#We know a head of time that all names are just old names with .RAST appended to them
 			RAST_genome_names = [genome_name + ".RAST" for genome_name in input_genome_names]
 			_list_genome_name = RAST_genome_names
@@ -306,125 +306,6 @@ class kb_genomeclfUtils(object):
 
 		self.createTrainingSetObject(current_ws, params, _list_genome_name, _list_genome_ref, _list_phenotype, _list_references, _list_evidence_types)
 		return (report_table, classifier_training_set, missing_genomes, genome_label)
-
-
-	# def createAndUseListsForTrainingSet(self, current_ws, params, uploaded_df):
-		
-	# 	(genome_label, all_df_genome, missing_genomes) = self.findMissingGenomes( current_ws, uploaded_df)
-
-	# 	# all lists needed for report
-	# 	_genome_df = []
-	# 	_in_workspace = []
-	# 	_phenotype = []
-	# 	_in_training_set = []
-
-	# 	uploaded_df_columns = uploaded_df.columns
-	# 	_references = []
-	# 	has_references = True if "References" in uploaded_df_columns else False
-	# 	_evidence_types = []
-	# 	has_evidence_types = True if "Evidence Types" in uploaded_df_columns else False
-
-
-	# 	#all lists for callback structure and training set object
-	# 	_list_genome_name = []
-	# 	_list_genome_ref = []
-	# 	_list_phenotype = []
-	# 	_list_genome_id = [] #for now always ""
-	# 	_list_references = []
-	# 	_list_evidence_types = []
-
-	# 	for genome in all_df_genome:	
-	# 		#genome is present in workspace
-	# 		if(genome not in missing_genomes):
-
-	# 			#figure out genome_name and genome_ref
-	# 			genome_name = genome if genome_label == "Genome Name" else str(self.ws_client.get_objects2({'objects' : [{'ref':genome}]})['data'][0]['info'][1])	
-	# 			if(genome_label == "Genome Reference"):
-	# 				genome_ref = genome
-	# 			else:
-	# 				meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': genome}]})['data'][0]['info']
-	# 				genome_ref = str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
-
-
-	# 			#indicates that users wants us to RAST annotate the Genomes
-	# 			if(params["annotate"]):
-	# 				rast_genome_name = genome_name + ".RAST"
-	# 				self.RASTAnnotateGenome(current_ws, genome_name, rast_genome_name)
-	# 				_genome_df.append(rast_genome_name)
-
-	# 				RAST_meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': rast_genome_name}]})['data'][0]['info']
-	# 				rast_genome_ref = str(RAST_meta_data[6]) + "/" + str(RAST_meta_data[0]) + "/" + str(RAST_meta_data[4])
-					
-	# 				#in the training set, set the genome_name and genome_ref with rast
-	# 				_list_genome_name.append(rast_genome_name)
-	# 				_list_genome_ref.append(rast_genome_ref)
-
-	# 			else:
-	# 				_genome_df.append(genome)
-					
-	# 				#in the training set, set the genome_name and genome_ref exactly what the user passed in
-	# 				_list_genome_name.append(genome_name)
-	# 				_list_genome_ref.append(genome_ref)
-
-	# 			#lists for report
-	# 			_in_workspace.append("True")
-	# 			_phenotype.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["Phenotype"].values[0])
-	# 			_in_training_set.append("True")
-
-	# 			#lists for callback structure and training set object
-	# 			_list_phenotype.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["Phenotype"].values[0])
-	# 			_list_genome_id.append("") #setting this to "" just for now
-
-	# 			#non-missing genomes add references
-	# 			if(has_references):
-	# 				_list_references.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["References"].values[0].split(";"))
-	# 			else:
-	# 				_list_references.append([]) #add empty list
-
-	# 			#non-missing genomes add evidence list
-	# 			if(has_evidence_types):
-	# 				_list_evidence_types.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["Evidence Types"].values[0].split(";"))
-	# 			else:
-	# 				_list_evidence_types.append([]) #add empty list
-
-	# 		else:
-	# 			_genome_df.append(genome)
-	# 			_in_workspace.append("False")
-	# 			_phenotype.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["Phenotype"].values[0])
-	# 			_in_training_set.append("False")
-
-	# 		#add references
-	# 		if(has_references):
-	# 			_references.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["References"].values[0].split(";"))
-	# 		else:
-	# 			_references.append("")
-
-	# 		#add evidence list
-	# 		if(has_evidence_types):
-	# 			_evidence_types.append(uploaded_df.loc[uploaded_df[genome_label] == genome]["Evidence Types"].values[0].split(";"))
-	# 		else:
-	# 			_evidence_types.append("")
-
-
-	# 	#construct classifier_training_set mapping
-	# 	classifier_training_set = {}
-		
-	# 	for index, curr_genome_ref in enumerate(_list_genome_ref):
-	# 		classifier_training_set[curr_genome_ref] = { 	'genome_name': _list_genome_name[index],
-	# 														'genome_ref': curr_genome_ref,
-	# 														'phenotype': _list_phenotype[index],
-	# 														'references': _list_references[index],
-	# 														'evidence_types': _list_evidence_types[index]
-	# 													}
-		
-	# 	report_table = pd.DataFrame.from_dict({	genome_label: _genome_df,
-	# 											"In Workspace": _in_workspace,
-	# 											"Phenotype": _phenotype,
-	# 											"In Training Set": _in_training_set
-	# 											})
-
-	# 	self.createTrainingSetObject(current_ws, params, _list_genome_name, _list_genome_ref, _list_phenotype, _list_genome_id, _list_references, _list_evidence_types)
-	# 	return (report_table, classifier_training_set, missing_genomes, genome_label)
 
 	def createTrainingSetObject(self, current_ws, params, _list_genome_name, _list_genome_ref, _list_phenotype, _list_references, _list_evidence_types):
 
@@ -496,39 +377,6 @@ class kb_genomeclfUtils(object):
 			missing_genomes = list(set(all_df_genome).difference(set(all_names_workspace)))
 
 		return (genome_label, all_df_genome, missing_genomes)
-
-	# def RASTAnnotateGenome(self, current_ws, genome_name, rast_genome_name):
-
-	# 	params_RAST =	{
-	# 	"workspace": current_ws,
-	# 	"input_genome": genome_name,
-	# 	"output_genome": rast_genome_name,
-	# 	"call_features_rRNA_SEED": 0,
-	# 	"call_features_tRNA_trnascan": 0,
-	# 	"call_selenoproteins": 0,
-	# 	"call_pyrrolysoproteins": 0,
-	# 	"call_features_repeat_region_SEED": 0,
-	# 	"call_features_strep_suis_repeat": 0,
-	# 	"call_features_strep_pneumo_repeat": 0,
-	# 	"call_features_crispr": 0,
-	# 	"call_features_CDS_glimmer3": 0,
-	# 	"call_features_CDS_prodigal": 0,
-	# 	"annotate_proteins_kmer_v2": 1,
-	# 	"kmer_v1_parameters": 1,
-	# 	"annotate_proteins_similarity": 1,
-	# 	"retain_old_anno_for_hypotheticals": 0,
-	# 	"resolve_overlapping_features": 0,
-	# 	"call_features_prophage_phispy": 0
-	# 	}
-
-	# 	#we don't do anything with the output but you can if you want to
-	# 	output = self.rast.annotate_genome(params_RAST)
-
-	# 	if(output):
-	# 		pass
-	# 	else:
-	# 		print("output is: " + str(output))
-	# 		raise ValueError("for some reason unable to RAST Annotate Genome")
 
 	def RASTAnnotateGenome(self, current_ws, input_genomes, output_genome_set_name):
 
