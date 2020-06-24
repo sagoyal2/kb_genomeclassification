@@ -402,7 +402,9 @@ class kb_genomeclfUtils(object):
         "resolve_overlapping_features": 0,
         "retain_old_anno_for_hypotheticals": 0
         }
+		
 		#we don't do anything with the output but you can if you want to
+		print(params_RAST)
 		output = self.rast.annotate_genomes(params_RAST)
 
 		if(output):
