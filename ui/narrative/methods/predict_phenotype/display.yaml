@@ -1,7 +1,7 @@
 #
 # define display information
 #
-name: Upload Training Set Data
+name: Predict Phenotype
 tooltip: |
     This module upload training set data save in KBase
 screenshots: []
