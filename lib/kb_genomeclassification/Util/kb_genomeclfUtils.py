@@ -403,7 +403,7 @@ class kb_genomeclfUtils(object):
         "retain_old_anno_for_hypotheticals": 0
         }
 		#we don't do anything with the output but you can if you want to
-		output = self.rast.reannotate_microbial_genomes(params_RAST)
+		output = self.rast.annotate_genomes(params_RAST)
 
 		if(output):
 			pass
