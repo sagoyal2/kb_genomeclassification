@@ -381,7 +381,7 @@ class kb_genomeclfUtils(object):
 	def RASTAnnotateGenome(self, current_ws, input_genomes, output_genomes, output_genome_set_name):
 
 		input_genomes_list = []
-		for index, element in enumerate(input_genomes):
+		for index, element in enumerate(output_genomes):
 			input_genomes_list.append({"input_genome": element,
 										"output_genome": element+".RAST"})
 
