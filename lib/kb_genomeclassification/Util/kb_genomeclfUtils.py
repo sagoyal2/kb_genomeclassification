@@ -3,6 +3,7 @@ import uuid
 import numpy as np
 import pandas as pd
 
+from sklearn.model_selection import StratifiedKFold
 
 from KBaseReport.KBaseReportClient import KBaseReport
 from DataFileUtil.DataFileUtilClient import DataFileUtil
@@ -29,28 +30,389 @@ class kb_genomeclfUtils(object):
 	#return html_output_name, classifier_training_set_mapping
 	def fullUpload(self, params, current_ws):
 		#create folder
-		# folder_name = "forUpload"
-		# os.makedirs(os.path.join(self.scratch, folder_name))
+		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
 
 		params["file_path"] = "/kb/module/data/RealData/GramDataEdit5.xlsx"
 		uploaded_df = self.getUploadedFileAsDF(params["file_path"])
 		(upload_table, classifier_training_set, missing_genomes, genome_label) = self.createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
 
 		self.uploadHTMLContent(params['training_set_name'], params["file_path"], missing_genomes, genome_label, params['phenotype'], upload_table)
-		html_output_name = self.viewerHTMLContent("forUpload", status_view = True)
+		html_output_name = self.viewerHTMLContent(folder_name, status_view = True)
 		
 		return html_output_name, classifier_training_set
 
 	#return html_output_name, classifier_info_list, weight_list
 	def fullClassify(self, params, current_ws):
-		pass
 
-		"""
-		should figure out ahead of time how many views to show
-			ie. overview.html, dtt.html, ensemble
-		"""
+		#double check that Ensemble is only called as specifid in the document
+		if((params["ensemble_model"]!=None) and (classifier_to_run != "run_all")):
+			raise ValueError("Ensemble Model will only be generated if Run All Classifiers is selected")
 
-	#return html_output_name, predictions_mapping
+
+		#create folder for images and data
+		folder_name = "forBuild"
+		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
+		os.makedirs(os.path.join(self.scratch, folder_name, "images"), exist_ok=True)
+		os.makedirs(os.path.join(self.scratch, folder_name, "data"), exist_ok=True)
+
+		#unload the training_set_object
+		#uploaded_df is four columns: Genome Name | Genome Reference | Phenotype | Phenotype Enumeration
+		(phenotype, class_enumeration, uploaded_df, training_set_object_reference) = self.unloadTrainingSet(params['training_set_name'])
+
+		#get functional_roles and make indicator matrix
+		(indicator_matrix, master_role_list) = createIndicatorMatrix(uploaded_df, params["genome_attribute"])
+
+		#split up training data
+		splits = 2 #5
+		(list_train_index, list_test_index) = getKSplits(splits, indicator_matrix, master_role_list, uploaded_df)
+
+
+		#figure out which classifier is getting made
+		common_classifier_information = {
+				'class_list_mapping' : class_enumeration,
+				'attribute_data' : master_role_list,
+				'splits': splits,
+				'list_train_index' : list_train_index,
+				'list_test_index' : list_test_index,
+				'indicator_matrix' : indicator_matrix,
+				'all_classifications' : all_classifications,
+				'training_set_ref' : training_set_ref,
+				'description' : params["description"]
+				}
+
+		classifier_to_run = params["classifier_to_run"]
+		if(classifier_to_run == "run_all"):
+
+			list_classifier_types = ["k_nearest_neighbors", "gaussian_nb", "logistic_regression", "decision_tree_classifier", "support_vector_machine", "neural_network"]
+			for classifier_type in list_classifier_types:
+				current_classifier_object = {	"classifier_to_execute": getCurrentClassifierObject(classifier_type),
+												"classifier_type": classifier_type,
+												"classifier_name": params["classifier_object_name"] + "_" + classifier_type
+											}
+
+				self.executeClassifier(current_ws, common_classifier_information, current_classifier_object)
+
+
+			#handle case for ensemble
+		else:
+			current_classifier_object = {	"classifier_to_execute": getCurrentClassifierObject(classifier_to_run),
+											"classifier_type": classifier_to_run,
+											"classifier_name": params["classifier_object_name"] + "_" + classifier_to_run
+										}
+
+			self.executeClassifier(current_ws, common_classifier_information, current_classifier_object)
+
+			if(classifier_to_run == "decision_tree_classifier"):
+				#run extra stuff
+
+				#create folder for Decision Tree
+			else:
+				#create folder only for Main
+
+
+		#make the storage folders
+		#overview.html, dtt.html, ensemble.html
+
+		#create cross validation breaks
+
+		#case work for what could be selected:
+
+
+		#return html_output_name, predictions_mapping
+
+		else:
+			ensemble_params["flatten_transform"] = self.str_to_bool(ensemble_params["flatten_transform"])
+
+		return ensemble_params
+
+	def executeClassifier(self, current_ws, common_classifier_information, current_classifier_object):
+		
+		train_score = np.zeros(splits)
+		validate_score = np.zeros(splits)
+		matrix_size = class_list.__len__()
+
+		cnf_matrix = np.zeros(shape=(matrix_size, matrix_size))
+		cnf_matrix_f = np.zeros(shape=(matrix_size, matrix_size))
+		
+		for c in range(splits):
+			X_train = all_attributes[train_index[c]]
+			y_train = all_classifications[train_index[c]]
+			X_test = all_attributes[test_index[c]]
+			y_test = all_classifications[test_index[c]]
+			classifier.fit(X_train, y_train)
+			train_score[c] = classifier.score(X_train, y_train)
+			validate_score[c] = classifier.score(X_test, y_test)
+			y_pred = classifier.predict(X_test)
+			cnf = confusion_matrix(y_test, y_pred)
+			cnf_f = cnf.astype('float') / cnf.sum(axis=1)[:, np.newaxis]
+			for i in range(len(cnf)):
+				for j in range(len(cnf)):
+					cnf_matrix[i][j] += cnf[i][j]
+					cnf_matrix_f[i][j] += cnf_f[i][j]
+
+		if print_cfm:
+			print("I'm inside this print_cfm")
+			pickle_out = open(os.path.join(self.scratch, 'forHTML', 'forDATA', str(classifier_name) + u".pickle"), u"wb")
+
+			#pickle_out = open("/kb/module/work/tmp/" + str(self.classifier_name) + ".pickle", "wb")
+
+
+			pickle.dump(classifier.fit(all_attributes, all_classifications), pickle_out, protocol = 2)
+			pickle_out.close()
+			print("I've dumped and saved the pickle file")
+
+			#just temporary trial thing
+			"""
+			Pickle_folder = os.path.join('savingPickle')
+			os.mkdir(Pickle_folder)
+			pickle_out = open(os.path.join(Pickle_folder, unicode(classifier_name) + u".pickle"), u"wb")
+			pickle.dump(classifier.fit(all_attributes, all_classifications), pickle_out, protocol = 2)
+			pickle_out.close()
+			"""
+			
+			print("trying to save shock stuff")
+			shock_id, handle_id = self._upload_to_shock(os.path.join(self.scratch, 'forHTML', 'forDATA', str(classifier_name) + u".pickle"))
+			
+			print("this is your handle_id")
+			print(handle_id)
+			print("this is your shock_id")
+			print(shock_id)
+
+			#handle_id = 'will fix later'
+			
+			#base64
+			#current_pickle = pickle.dumps(classifier.fit(all_attributes, all_classifications), protocol=0)
+			#pickled = codecs.encode(current_pickle, "base64").decode()
+
+			pickled = "this is what the pickled string would be"
+
+			print ("This is printing out the classifier_object that needs to be saved down dump")
+
+			print ("your training_set_ref is below")
+			print(training_set_ref)
+
+			
+			classifier_object = {
+			'classifier_id' : '',
+			'classifier_type' : classifier_type, # Neural network
+			'classifier_name' : classifier_name,
+			'classifier_data' : pickled,
+			'classifier_handle_ref' : handle_id,
+			'classifier_description' : description,
+			'lib_name' : 'sklearn',
+			'attribute_type' : 'functional_roles',
+			'number_of_attributes' : all_attributes.shape[1],#class_list.__len__(),
+			'attribute_data' : master_Role,#["this is where master_role would go", "just a list"],#master_Role, #master_Role,
+			'class_list_mapping' : my_mapping, #{} my_mapping, #my_mapping,
+			'number_of_genomes' : class_list.__len__()#, #all_attributes.shape[1],
+			#'training_set_ref' : training_set_ref #self.dfu.get_objects({'object_refs': [training_set_ref]}) #training_set_ref
+			}
+
+			if training_set_ref != 'User Denied':
+				classifier_object['training_set_ref'] = training_set_ref
+			#print classifier_object
+
+			#Saving the Classifier object
+	
+			obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
+														  'objects':[{
+														  'type': 'KBaseClassifier.GenomeCategorizer',
+														  'data': classifier_object,
+														  'name': classifier_name,  
+														  'provenance': ctx.get('provenance')  # ctx should be passed into this func.
+														  }]
+														})[0]
+
+			print ("I'm print out the obj_save_ref")
+
+			print (obj_save_ref)
+			print ("done")        
+
+		phenotype_class_info_list = None
+		avgf1 = None
+
+		if print_cfm:
+
+			cnf_av = cnf_matrix/splits
+			phenotype_class_info_list, avgf1 = self.NClasses(class_list, cnf_av)
+
+			self.plot_confusion_matrix(np.round(cnf_matrix_f/splits*100.0,1),class_list,u'Confusion Matrix', htmlfolder, classifier_name, classifier_type)
+
+		if print_cfm:
+			print (classifier)
+			print("")
+			print(u"Confusion matrix")
+			for i in range(len(cnf_matrix)):
+				print(class_list[i])#,; sys.stdout.write(u"  \t"))
+				for j in range(len(cnf_matrix[i])):
+					print(cnf_matrix[i][j] / splits)#,; sys.stdout.write(u"\t"))
+				print("")
+			print("")
+			for i in range(len(cnf_matrix_f)):
+				print(class_list[i])#,; sys.stdout.write(u"  \t")
+				for j in range(len(cnf_matrix_f[i])):
+					print( u"%6.1f" % ((cnf_matrix_f[i][j] / splits) * 100.0))#,; sys.stdout.write(u"\t")
+				print("")
+			print("")
+			print( u"01", cnf_matrix[0][1])
+
+		print( u"%6.3f\t%6.3f\t%6.3f\t%6.3f" % (
+		np.average(train_score), np.std(train_score), np.average(validate_score), np.std(validate_score)))
+
+		return (np.average(train_score), np.std(train_score), np.average(validate_score), np.std(validate_score)), phenotype_class_info_list, avgf1
+
+
+	def plot_confusion_matrix(self,cm, classes, title, htmlfolder, classifier_name, classifier_type):
+		"""
+		args:
+		---cm is the "cnf_matrix" which is a np array of numerical values for the confusion matrix
+		---classes is the class_list which is a list of the classes ie. [N,P] or [Aerobic, Anaerobic, Facultative]
+		---title is a "heading" that appears on the image
+		---classifier_name is the classifier name and is what the saved .png file name will be
+		does:
+		---creates a confusion matrix .png file and saves it
+		return:
+		---N/A but instead creates an .png file in tmp
+		"""
+		#plt.rcParams.update({u'font.size': 18})
+		#fig = plt.figure()
+		#ax = fig.subplot(figsize=(4.5,4.5))
+		fig, ax = plt.subplots(figsize=(4.5,4.5))
+		#sns.set(font_scale=1.0)
+		sns_plot = sns.heatmap(cm, annot=True, ax = ax, cmap=u"Blues", fmt=".1f", square=True) #annot=True to annotate cells
+		ax = sns_plot
+		#im = ax.imshow(cm, interpolation='nearest', cmap=u"Blues")
+		#ax.figure.colorbar(im, ax=ax)
+		ax.set_xlabel(u'Predicted labels'); ax.set_ylabel(u'True labels')
+		# ax.set_ylim(len(cm)-0.25, 0.5)
+		ax.set_title(title)
+		ax.xaxis.set_ticklabels(classes); ax.yaxis.set_ticklabels(classes)
+		#ax.xaxis.set_horizontalalignment('center'), ax.yaxis.set_verticalalignment('center')
+		#ax.savefig(classifier_name+".png", format='png')
+		plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+		plt.tight_layout()
+
+		fig = sns_plot.get_figure()
+		#fig = ax.get_figure()
+		#fig.savefig(u"./pics/" + classifier_name +u".png", format=u'png')
+		fig.savefig(os.path.join(self.scratch, 'forHTML', htmlfolder, classifier_name +u".png"), format=u'png')
+
+		if classifier_type == "DecisionTreeClassifier":
+			fig.savefig(os.path.join(self.scratch, 'forHTML','html2folder', classifier_name +u".png"), format=u'png')
+
+	def unloadTrainingSet(self, current_ws, training_set_name):
+
+		training_set_object = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': training_set_name}]})
+		phenotype = training_set_object["classification_type"]
+		classes_sorted = training_set_object["classes"]
+
+		class_enumeration = {}
+		for index, _class in enumerate(classes_sorted):
+			class_enumeration[_class] = index
+
+		training_set_object_data = training_set_object[0]['data']['classification_data']
+		training_set_object_reference = training_set_object[0]['path'][0]
+
+		_names = []
+		_references = []
+		_phenotypes = []
+		_phenotype_enumeration = []
+
+		for genome in training_set_object_data:
+			_names.append(genome["genome_name"])
+			_references.append(genome["genome_ref"])
+			_phenotypes.append(genome["genome_classification"])
+			
+			_enumeration = class_enumeration[genome["genome_classification"]]
+			_phenotype_enumeration.append(_enumeration)
+
+		uploaded_data = {	"Genome Name": _names,
+						"Geomne Reference": _references,
+						"Phenotype": _phenotypes,
+						"Phenotype Enumeration": _enumeration}
+
+		uploaded_df = pd.DataFrame(data=upload_data)
+
+		return(phenotype, class_enumeration, uploaded_df, training_set_object_reference)
+
+	def createIndicatorMatrix(self, uploaded_df, genome_attribute):
+		genome_references = uploaded_df["Genome Reference"].to_list()
+
+		if "functional_roles" == genome_attribute:
+			
+			ref_to_role = {}
+			master_role_set = {}
+
+			for genome_ref in genome_references:
+				genome_object_data = self.ws_client.get_objects2({'objects':[{'ref': 'genome_ref'}]})['data'][0]['data']
+
+				#figure out where functional roles are kept
+				keys_location = genome_object_data.keys()
+				if ("features" in keys_location):
+					location_of_functional_roles = genome_object_data["features"]
+
+				elif ("non_coding_features" in keys_location):
+					location_of_functional_roles = genome_object_data["non_coding_features"]
+
+				elif ("cdss" in keys_location):
+					location_of_functional_roles = genome_object_data["cdss"]
+
+				else:
+					raise ValueError("The functional roles are not under features, non_coding_features, or cdss...")
+
+				#either the functional roles are under function or functions (really stupid...)
+				keys_function = location_of_functional_roles[0].keys()
+				function_str = "function" if "function" in keys_function else "functions"
+
+				list_functional_roles = []
+				for functional_role in location_of_functional_roles:
+					try:
+						list_functional_roles.append(functional_role[function_str])
+					else:
+						#apparently some function list just don't have functions...
+						pass
+
+				#create a mapping from genome_ref to all of its functional roles
+				ref_to_role[genome_ref] = list_functional_roles
+
+				#keep updateing a set of all functional roles seen so far
+				master_role_set.union(set(list_functional_roles))
+
+			#we are done looping over all genomes
+			master_role_list = sorted(list(master_role_set))
+			master_role_enumeration = enumerate(master_role_set)
+			ref_to_indication = {}
+
+			#make indicator rows for each 
+			for genome_ref in genome_references:
+				set_functional_roles = set(ref_to_role[genome_ref])
+				matching_index = [i for i, role in master_role_enumeration if role in set_functional_roles] 
+
+				indicators = np.zeros(len(master_role_list))
+				indicators[np.array(matching_index)] = 1
+
+				ref_to_indication[genome_ref] = indicators.astype(int)
+
+
+			indicator_matrix = pd.DataFrame(data = ref_to_indication, orient='index', columns = master_role_list).reset_index().rename(columns={"index":"Genome Reference"})
+		
+			return (indicator_matrix, master_role_list)
+		else:
+			raise ValueError("Only classifiers based on functional roles have been impliemented please check back later")
+
+
+
+	def getKSplits(self, splits, indicator_matrix, master_role_list, uploaded_df):
+
+		#This cross-validation object is a variation of KFold that returns stratified folds. The folds are made by preserving the percentage of samples for each class.
+		skf = StratifiedKFold(n_splits=splits, random_state=0, shuffle=True)
+		X = indicator_matrix[master_role_list].values
+		Y = uploaded_df["Phenotype Enumeration"].values
+
+		for train_idx, test_idx in skf.split(indicator_matrix, all_classifications):
+			list_train_index.append(train_idx)
+			list_test_index.append(test_idx)
+
 	def fullPredict(self, params, current_ws):
 
 		# #Load Information from Categorizer 
@@ -631,7 +993,6 @@ class kb_genomeclfUtils(object):
 
 	def uploadHTMLContent(self, training_set_name, selected_file_name, missing_genomes, genome_label, phenotype, upload_table):
 		
-		os.makedirs(os.path.join(self.scratch, 'forUpload'), exist_ok=True)
 		file = open(os.path.join(self.scratch, 'forUpload', 'status.html'), "w")
 		header = u"""
 			<!DOCTYPE html>

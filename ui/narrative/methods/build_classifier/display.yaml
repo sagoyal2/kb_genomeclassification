@@ -27,32 +27,22 @@ suggestions:
 # Configure the display and description of parameters
 #
 parameters :
-    trainingset_name :
+    training_set_name :
         ui-name : |
             Training Set Name
         short-hint : |
             Training Set Name
-    phenotypeclass :
-        ui-name : |
-            Phenotype or Condition [e.g.; Gram type, Respiration]
-        short-hint : |
-            Phenotype or Condition you want to build the classifier for
-    save_ts :
-        ui-name : |
-            Save the training set data
-        short-hint : |
-            Save the training set data and link it to the classifier
     genome_attribute :
         ui-name : |
             Select the genome attribute
         short-hint : |
             Select the genome attribute for the classifier
-    classifier_out :
+    classifier_object_name :
         ui-name : |
             Classifier Name
         short-hint : |
             Name the classifier object
-    classifier :
+    classifier_to_run :
         ui-name : |
             Select the Classification algorithm
         short-hint : |

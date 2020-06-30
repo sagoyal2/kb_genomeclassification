@@ -63,8 +63,6 @@ This module build a classifier and predict phenotypes based on the classifier An
 
         self.config['ctx'] = ctx
         upload_Runner = kb_genomeclfUtils(self.config)
-        print("in here")
-        upload_Runner.fullUpload(params, params.get('workspace'))
         html_output_name, classifier_training_set = upload_Runner.fullUpload(params, params['workspace'])
 
         report_output = upload_Runner.generateHTMLReport(params['workspace'], "forUpload", html_output_name, params['description'])
@@ -81,8 +79,6 @@ This module build a classifier and predict phenotypes based on the classifier An
 
     def build_classifier(self, ctx, params):
         """
-        build_classifier: build_classifier
-        requried params:
         :param 
         :returns
         """
@@ -90,13 +86,14 @@ This module build a classifier and predict phenotypes based on the classifier An
         # return variables are: output
         #BEGIN build_classifier
 
-        # self.config['ctx'] = ctx
-        # clf_Runner = kb_genomeclfUtils(self.config)
+        self.config['ctx'] = ctx
+        clf_Runner = kb_genomeclfUtils(self.config)
 
+        clf_Runner.fullClassify(params, params.get('workspace'))
         # location_of_report, classifier_info_list, attribute_weights_list = clf_Runner.fullClassify(params, params.get('workspace'))
         # report_output = clf_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'clf_Runner', params.get('description'))
         # output = {'report_name': report_output['name'], 'report_ref': report_output['ref'], 'classifier_info': classifier_info_list, 'attribute_weights': attribute_weights_list }
-
+        output = {}
         #END build_classifier
 
         # At some point might do deeper type checking...
@@ -104,8 +101,7 @@ This module build a classifier and predict phenotypes based on the classifier An
             raise ValueError('Method build_classifier return value ' +
                              'output is not type dict as required.')
         # return the results
-        # return [output]
-        return
+        return [output]
 
     def predict_phenotype(self, ctx, params):
         """

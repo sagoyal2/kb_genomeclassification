@@ -11,28 +11,20 @@
           "target_property": "workspace"
         },
         {
-          "input_parameter": "save_ts",
-          "target_property": "save_ts"
-        },
-        {
           "input_parameter": "description",
           "target_property": "description"
         },
         {
-          "input_parameter": "trainingset_name",
-          "target_property": "trainingset_name"
+          "input_parameter": "training_set_name",
+          "target_property": "training_set_name"
         },
         {
-          "input_parameter": "classifier_out",
-          "target_property": "classifier_out"
+          "input_parameter": "classifier_object_name",
+          "target_property": "classifier_object_name"
         },
         {
-          "input_parameter": "classifier",
-          "target_property": "classifier"
-        },
-        {
-          "input_parameter": "phenotypeclass",
-          "target_property": "phenotypeclass"
+          "input_parameter": "classifier_to_run",
+          "target_property": "classifier_to_run"
         },
         {
           "input_parameter": "genome_attribute",
@@ -244,23 +236,6 @@
   ],
   "parameters": [
     {
-      "advanced": true,
-      "allow_multiple": false,
-      "checkbox_options": {
-        "checked_value": 1,
-        "unchecked_value": 0
-      },
-      "default_values": [
-        "1"
-      ],
-      "field_type": "checkbox",
-      "id": "save_ts",
-      "optional": true,
-      "text_options": {
-        "valid_ws_types": []
-      }
-    },
-    {
       "advanced": false,
       "allow_multiple": false,
       "default_values": [
@@ -280,23 +255,13 @@
         ""
       ],
       "field_type": "text",
-      "id": "trainingset_name",
+      "id": "training_set_name",
       "optional": false,
       "text_options": {
         "valid_ws_types": [
           "KBaseClassifier.GenomeClassifierTrainingSet"
         ]
       }
-    },
-    {
-      "advanced": false,
-      "allow_multiple": false,
-      "default_values": [
-        ""
-      ],
-      "field_type": "text",
-      "id": "phenotypeclass",
-      "optional": false
     },
     {
       "advanced": false,
@@ -314,44 +279,44 @@
           },
           {
             "display": "K Neighbors Classifier",
-            "id": "KNeighborsClassifier",
+            "id": "k_nearest_neighbors",
             "ui_name": "K Neighbors Classifier",
-            "value": "KNeighborsClassifier"
+            "value": "k_nearest_neighbors"
           },
           {
             "display": "Gaussian Naive Bayes",
-            "id": "GaussianNB",
+            "id": "gaussian_nb",
             "ui_name": "Gaussian Naive Bayes",
-            "value": "GaussianNB"
+            "value": "gaussian_nb"
           },
           {
             "display": "Neural Network",
-            "id": "NeuralNetwork",
+            "id": "neural_network",
             "ui_name": "Neural Network",
-            "value": "NeuralNetwork"
+            "value": "neural_network"
           },
           {
             "display": "Support Vector Machine",
-            "id": "SVM",
+            "id": "support_vector_machine",
             "ui_name": "Support Vector Machine",
-            "value": "SVM"
+            "value": "support_vector_machine"
           },
           {
             "display": "Decision Tree Classifier",
-            "id": "DecisionTreeClassifier",
+            "id": "decision_tree_classifier",
             "ui_name": "Decision Tree Classifier",
-            "value": "DecisionTreeClassifier"
+            "value": "decision_tree_classifier"
           },
           {
             "display": "Logistic Regression",
-            "id": "LogisticRegression",
+            "id": "logistic_regression",
             "ui_name": "Logistic Regression",
-            "value": "LogisticRegression"
+            "value": "logistic_regression"
           }
         ]
       },
       "field_type": "dropdown",
-      "id": "classifier",
+      "id": "classifier_to_run",
       "optional": false
     },
     {
@@ -1963,7 +1928,7 @@
         ""
       ],
       "field_type": "text",
-      "id": "classifier_out",
+      "id": "classifier_object_name",
       "optional": false,
       "text_options": {
         "is_output_name": true,
