@@ -3,6 +3,8 @@ import uuid
 import numpy as np
 import pandas as pd
 
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
 from sklearn.model_selection import StratifiedKFold
 
 from KBaseReport.KBaseReportClient import KBaseReport
@@ -64,21 +66,25 @@ class kb_genomeclfUtils(object):
 
 		#split up training data
 		splits = 2 #5
-		(list_train_index, list_test_index) = getKSplits(splits, indicator_matrix, master_role_list, uploaded_df)
-
+		whole_X = indicator_matrix[master_role_list].values
+		whole_Y = uploaded_df["Phenotype Enumeration"].values
+		(list_train_index, list_test_index) = getKSplits(splits, whole_X, whole_Y)
 
 		#figure out which classifier is getting made
 		common_classifier_information = {
 				'class_list_mapping' : class_enumeration,
 				'attribute_data' : master_role_list,
+				'attribute_type': params["genome_attribute"],
 				'splits': splits,
 				'list_train_index' : list_train_index,
 				'list_test_index' : list_test_index,
-				'indicator_matrix' : indicator_matrix,
-				'all_classifications' : all_classifications,
+				'whole_X' : whole_X,
+				'whole_Y' : whole_Y,
 				'training_set_ref' : training_set_ref,
 				'description' : params["description"]
 				}
+
+		dict_classification_report_dict = {}
 
 		classifier_to_run = params["classifier_to_run"]
 		if(classifier_to_run == "run_all"):
@@ -90,7 +96,9 @@ class kb_genomeclfUtils(object):
 												"classifier_name": params["classifier_object_name"] + "_" + classifier_type
 											}
 
-				self.executeClassifier(current_ws, common_classifier_information, current_classifier_object)
+				#this is a dictionary containing 'class 0': {'precision': 0.5, 'recall': 1.0, 'f1-score': 0.2}, 'accuracy'
+				classification_report_dict = self.executeClassifier(current_ws, common_classifier_information, current_classifier_object, folder_name)
+				dict_classification_report_dict[classifier_type] = classification_report_dict
 
 
 			#handle case for ensemble
@@ -100,7 +108,8 @@ class kb_genomeclfUtils(object):
 											"classifier_name": params["classifier_object_name"] + "_" + classifier_to_run
 										}
 
-			self.executeClassifier(current_ws, common_classifier_information, current_classifier_object)
+			classification_report_dict = self.executeClassifier(current_ws, common_classifier_information, current_classifier_object)
+			dict_classification_report_dict[classifier_to_run] = classification_report_dict
 
 			if(classifier_to_run == "decision_tree_classifier"):
 				#run extra stuff
@@ -113,10 +122,7 @@ class kb_genomeclfUtils(object):
 		#make the storage folders
 		#overview.html, dtt.html, ensemble.html
 
-		#create cross validation breaks
-
-		#case work for what could be selected:
-
+		#generate table from dict_classification_report_dict
 
 		#return html_output_name, predictions_mapping
 
@@ -125,180 +131,102 @@ class kb_genomeclfUtils(object):
 
 		return ensemble_params
 
-	def executeClassifier(self, current_ws, common_classifier_information, current_classifier_object):
+	def executeClassifier(self, current_ws, common_classifier_information, current_classifier_object, folder_name):
 		
-		train_score = np.zeros(splits)
-		validate_score = np.zeros(splits)
-		matrix_size = class_list.__len__()
-
-		cnf_matrix = np.zeros(shape=(matrix_size, matrix_size))
-		cnf_matrix_f = np.zeros(shape=(matrix_size, matrix_size))
+		matrix_size = len(common_classifier_information["class_enumeration"])
+		cnf_matrix_proportion = np.zeros(shape=(matrix_size, matrix_size))
 		
 		for c in range(splits):
-			X_train = all_attributes[train_index[c]]
-			y_train = all_classifications[train_index[c]]
-			X_test = all_attributes[test_index[c]]
-			y_test = all_classifications[test_index[c]]
+			X_train = common_classifier_information["whole_X"][common_classifier_information["list_train_index"][c]]
+			y_train = common_classifier_information["whole_Y"][common_classifier_information["list_train_index"][c]]
+			X_test = common_classifier_information["whole_X"][common_classifier_information["list_test_index"][c]]
+			y_test = common_classifier_information["whole_Y"][common_classifier_information["list_test_index"][c]]
+
 			classifier.fit(X_train, y_train)
-			train_score[c] = classifier.score(X_train, y_train)
-			validate_score[c] = classifier.score(X_test, y_test)
 			y_pred = classifier.predict(X_test)
-			cnf = confusion_matrix(y_test, y_pred)
+
+			cnf = confusion_matrix(y_test, y_pred, lables=list(common_classifier_information["class_enumeration"].values()))
 			cnf_f = cnf.astype('float') / cnf.sum(axis=1)[:, np.newaxis]
 			for i in range(len(cnf)):
 				for j in range(len(cnf)):
-					cnf_matrix[i][j] += cnf[i][j]
-					cnf_matrix_f[i][j] += cnf_f[i][j]
+					cnf_matrix_proportion[i][j] += cnf_f[i][j]
 
-		if print_cfm:
-			print("I'm inside this print_cfm")
-			pickle_out = open(os.path.join(self.scratch, 'forHTML', 'forDATA', str(classifier_name) + u".pickle"), u"wb")
+		#get statistics for the last case made
+		#diagonal entries of cm are the accuracies of each class
+		target_names = list(common_classifier_information["class_enumeration"].keys())
+		classification_report_dict = classification_report(y_test, y_pred, target_names=target_names, output_dict = True)
 
-			#pickle_out = open("/kb/module/work/tmp/" + str(self.classifier_name) + ".pickle", "wb")
+		#save down classifier object in pickle format
+		pickle_out = open(os.path.join(self.scratch, folder_name, "data", current_classifier_object["classifier_name"] + ".pickle"), "w")
+		main_clf = classifier.fit(common_classifier_information["whole_X"], common_classifier_information["whole_Y"])
+		pickle.dump(main_clf, pickle_out, protocol = 2)
+		pickle_out.close()
 
+		shock_id, handle_id = self._upload_to_shock(os.path.join(self.scratch, folder_name, "data", current_classifier_object["classifier_name"] + ".pickle"))
 
-			pickle.dump(classifier.fit(all_attributes, all_classifications), pickle_out, protocol = 2)
-			pickle_out.close()
-			print("I've dumped and saved the pickle file")
+		classifier_object = {
+		'classifier_id' : '',
+		'classifier_type' : current_classifier_object["classifier_type"],
+		'classifier_name' : current_classifier_object["classifier_name"],
+		'classifier_data' : '', #saved in shock
+		'classifier_handle_ref' : handle_id,
+		'classifier_description' : common_classifier_information["description"],
+		'lib_name' : 'sklearn',
+		'attribute_type' : common_classifier_information["attribute_type"],
+		'number_of_attributes' : len(common_classifier_information["attribute_data"]), #size of master_role_list
+		'attribute_data' : common_classifier_information["attribute_data"],
+		'class_list_mapping' : common_classifier_information["class_list_mapping"],
+		'number_of_genomes' : len(common_classifier_information["whole_Y"]),
+		'training_set_ref' : common_classifier_information["training_set_ref"]
+		}
 
-			#just temporary trial thing
-			"""
-			Pickle_folder = os.path.join('savingPickle')
-			os.mkdir(Pickle_folder)
-			pickle_out = open(os.path.join(Pickle_folder, unicode(classifier_name) + u".pickle"), u"wb")
-			pickle.dump(classifier.fit(all_attributes, all_classifications), pickle_out, protocol = 2)
-			pickle_out.close()
-			"""
-			
-			print("trying to save shock stuff")
-			shock_id, handle_id = self._upload_to_shock(os.path.join(self.scratch, 'forHTML', 'forDATA', str(classifier_name) + u".pickle"))
-			
-			print("this is your handle_id")
-			print(handle_id)
-			print("this is your shock_id")
-			print(shock_id)
-
-			#handle_id = 'will fix later'
-			
-			#base64
-			#current_pickle = pickle.dumps(classifier.fit(all_attributes, all_classifications), protocol=0)
-			#pickled = codecs.encode(current_pickle, "base64").decode()
-
-			pickled = "this is what the pickled string would be"
-
-			print ("This is printing out the classifier_object that needs to be saved down dump")
-
-			print ("your training_set_ref is below")
-			print(training_set_ref)
-
-			
-			classifier_object = {
-			'classifier_id' : '',
-			'classifier_type' : classifier_type, # Neural network
-			'classifier_name' : classifier_name,
-			'classifier_data' : pickled,
-			'classifier_handle_ref' : handle_id,
-			'classifier_description' : description,
-			'lib_name' : 'sklearn',
-			'attribute_type' : 'functional_roles',
-			'number_of_attributes' : all_attributes.shape[1],#class_list.__len__(),
-			'attribute_data' : master_Role,#["this is where master_role would go", "just a list"],#master_Role, #master_Role,
-			'class_list_mapping' : my_mapping, #{} my_mapping, #my_mapping,
-			'number_of_genomes' : class_list.__len__()#, #all_attributes.shape[1],
-			#'training_set_ref' : training_set_ref #self.dfu.get_objects({'object_refs': [training_set_ref]}) #training_set_ref
-			}
-
-			if training_set_ref != 'User Denied':
-				classifier_object['training_set_ref'] = training_set_ref
-			#print classifier_object
-
-			#Saving the Classifier object
 	
-			obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
-														  'objects':[{
-														  'type': 'KBaseClassifier.GenomeCategorizer',
-														  'data': classifier_object,
-														  'name': classifier_name,  
-														  'provenance': ctx.get('provenance')  # ctx should be passed into this func.
-														  }]
-														})[0]
+		obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
+													  'objects':[{
+													  'type': 'KBaseClassifier.GenomeCategorizer',
+													  'data': classifier_object,
+													  'name': current_classifier_object["classifier_name"],  
+													  'provenance': self.ctx['provenance']
+													  }]
+													})[0]
+     
+		cm = np.round(cnf_matrix_proportion/splits*100.0,1)
+		title = "CM: " + current_classifier_object["classifier_type"]
+		#classes = list(common_classifier_information["class_enumeration"].keys())
+     	self.plot_confusion_matrix(cm, title, current_classifier_object["classifier_name"], list(common_classifier_information["class_enumeration"].keys()), folder_name)
 
-			print ("I'm print out the obj_save_ref")
+     	return classification_report_dict
 
-			print (obj_save_ref)
-			print ("done")        
+	def _upload_to_shock(self, file_path):
 
-		phenotype_class_info_list = None
-		avgf1 = None
+		f2shock_out = self.dfu.file_to_shock({'file_path': file_path,
+											  'make_handle': True})
 
-		if print_cfm:
+		shock_id = f2shock_out.get('shock_id')
+		handle_id = f2shock_out.get('handle').get('hid')
 
-			cnf_av = cnf_matrix/splits
-			phenotype_class_info_list, avgf1 = self.NClasses(class_list, cnf_av)
+		return shock_id, handle_id
 
-			self.plot_confusion_matrix(np.round(cnf_matrix_f/splits*100.0,1),class_list,u'Confusion Matrix', htmlfolder, classifier_name, classifier_type)
+	def plot_confusion_matrix(self, cm, title, classifier_name, classes, folder_name):
 
-		if print_cfm:
-			print (classifier)
-			print("")
-			print(u"Confusion matrix")
-			for i in range(len(cnf_matrix)):
-				print(class_list[i])#,; sys.stdout.write(u"  \t"))
-				for j in range(len(cnf_matrix[i])):
-					print(cnf_matrix[i][j] / splits)#,; sys.stdout.write(u"\t"))
-				print("")
-			print("")
-			for i in range(len(cnf_matrix_f)):
-				print(class_list[i])#,; sys.stdout.write(u"  \t")
-				for j in range(len(cnf_matrix_f[i])):
-					print( u"%6.1f" % ((cnf_matrix_f[i][j] / splits) * 100.0))#,; sys.stdout.write(u"\t")
-				print("")
-			print("")
-			print( u"01", cnf_matrix[0][1])
-
-		print( u"%6.3f\t%6.3f\t%6.3f\t%6.3f" % (
-		np.average(train_score), np.std(train_score), np.average(validate_score), np.std(validate_score)))
-
-		return (np.average(train_score), np.std(train_score), np.average(validate_score), np.std(validate_score)), phenotype_class_info_list, avgf1
-
-
-	def plot_confusion_matrix(self,cm, classes, title, htmlfolder, classifier_name, classifier_type):
-		"""
-		args:
-		---cm is the "cnf_matrix" which is a np array of numerical values for the confusion matrix
-		---classes is the class_list which is a list of the classes ie. [N,P] or [Aerobic, Anaerobic, Facultative]
-		---title is a "heading" that appears on the image
-		---classifier_name is the classifier name and is what the saved .png file name will be
-		does:
-		---creates a confusion matrix .png file and saves it
-		return:
-		---N/A but instead creates an .png file in tmp
-		"""
-		#plt.rcParams.update({u'font.size': 18})
-		#fig = plt.figure()
-		#ax = fig.subplot(figsize=(4.5,4.5))
 		fig, ax = plt.subplots(figsize=(4.5,4.5))
-		#sns.set(font_scale=1.0)
-		sns_plot = sns.heatmap(cm, annot=True, ax = ax, cmap=u"Blues", fmt=".1f", square=True) #annot=True to annotate cells
+
+		sns_plot = sns.heatmap(cm, annot=True, ax = ax, cmap=u"Blues", fmt=".1f", square=True)
 		ax = sns_plot
-		#im = ax.imshow(cm, interpolation='nearest', cmap=u"Blues")
-		#ax.figure.colorbar(im, ax=ax)
-		ax.set_xlabel(u'Predicted labels'); ax.set_ylabel(u'True labels')
-		# ax.set_ylim(len(cm)-0.25, 0.5)
+
+		ax.set_xlabel(u'Predicted Labels') 
+		ax.set_ylabel(u'True Labels')
+
 		ax.set_title(title)
-		ax.xaxis.set_ticklabels(classes); ax.yaxis.set_ticklabels(classes)
-		#ax.xaxis.set_horizontalalignment('center'), ax.yaxis.set_verticalalignment('center')
-		#ax.savefig(classifier_name+".png", format='png')
+		ax.xaxis.set_ticklabels(classes)
+		ax.yaxis.set_ticklabels(classes)
+
 		plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
 		plt.tight_layout()
 
 		fig = sns_plot.get_figure()
-		#fig = ax.get_figure()
-		#fig.savefig(u"./pics/" + classifier_name +u".png", format=u'png')
-		fig.savefig(os.path.join(self.scratch, 'forHTML', htmlfolder, classifier_name +u".png"), format=u'png')
+		fig.savefig(os.path.join(self.scratch, folder_name, "images", classifier_name +".png"), format=u'png')
 
-		if classifier_type == "DecisionTreeClassifier":
-			fig.savefig(os.path.join(self.scratch, 'forHTML','html2folder', classifier_name +u".png"), format=u'png')
 
 	def unloadTrainingSet(self, current_ws, training_set_name):
 
@@ -402,16 +330,15 @@ class kb_genomeclfUtils(object):
 
 
 
-	def getKSplits(self, splits, indicator_matrix, master_role_list, uploaded_df):
+	def getKSplits(self, splits, whole_X, whole_Y):
 
 		#This cross-validation object is a variation of KFold that returns stratified folds. The folds are made by preserving the percentage of samples for each class.
 		skf = StratifiedKFold(n_splits=splits, random_state=0, shuffle=True)
-		X = indicator_matrix[master_role_list].values
-		Y = uploaded_df["Phenotype Enumeration"].values
-
-		for train_idx, test_idx in skf.split(indicator_matrix, all_classifications):
+		for train_idx, test_idx in skf.split(whole_X, whole_Y):
 			list_train_index.append(train_idx)
 			list_test_index.append(test_idx)
+
+		return (list_train_index, list_test_index)
 
 	def fullPredict(self, params, current_ws):
 
@@ -697,7 +624,7 @@ class kb_genomeclfUtils(object):
 																  'type': 'KBaseClassifier.GenomeClassifierTrainingSet',
 																  'data': training_set_object,
 																  'name': params['training_set_name'],  
-																  'provenance': self.ctx.get('provenance')
+																  'provenance': self.ctx['provenance']
 																}]
 													})[0]
 
