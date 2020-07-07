@@ -101,6 +101,11 @@ class kb_genomeclfUtils(object):
 				dict_classification_report_dict[classifier_type] = classification_report_dict
 
 
+				#handle Decision Tree Case
+				(ddt_dict_classification_report_dict, top_20) = self.tuneDecisionTree(current_ws, common_classifier_information, params["classifier_object_name"], folder_name)
+				dict_classification_report_dict["decision_tree_classifier_gini"] = ddt_dict_classification_report_dict["decision_tree_classifier_gini"]
+				dict_classification_report_dict["decision_tree_classifier_entropy"] = ddt_dict_classification_report_dict["decision_tree_classifier_entropy"]
+			
 			#handle case for ensemble
 		else:
 			current_classifier_object = {	"classifier_to_execute": getCurrentClassifierObject(classifier_to_run),
@@ -112,9 +117,10 @@ class kb_genomeclfUtils(object):
 			dict_classification_report_dict[classifier_to_run] = classification_report_dict
 
 			if(classifier_to_run == "decision_tree_classifier"):
-				#run extra stuff
+				(ddt_dict_classification_report_dict, top_20) = self.tuneDecisionTree(current_ws, common_classifier_information, params["classifier_object_name"], folder_name)
+				dict_classification_report_dict["decision_tree_classifier_gini"] = ddt_dict_classification_report_dict["decision_tree_classifier_gini"]
+				dict_classification_report_dict["decision_tree_classifier_entropy"] = ddt_dict_classification_report_dict["decision_tree_classifier_entropy"]
 
-				#create folder for Decision Tree
 			else:
 				#create folder only for Main
 
@@ -123,6 +129,8 @@ class kb_genomeclfUtils(object):
 		#overview.html, dtt.html, ensemble.html
 
 		#generate table from dict_classification_report_dict
+		#write self.buildMainHTMLContent
+		#write self.buildDTTHTMLContent
 
 		#return html_output_name, predictions_mapping
 
@@ -133,10 +141,10 @@ class kb_genomeclfUtils(object):
 
 	def executeClassifier(self, current_ws, common_classifier_information, current_classifier_object, folder_name):
 		
-		matrix_size = len(common_classifier_information["class_enumeration"])
+		matrix_size = len(common_classifier_information["class_list_mapping"])
 		cnf_matrix_proportion = np.zeros(shape=(matrix_size, matrix_size))
 		
-		for c in range(splits):
+		for c in range(common_classifier_information["splits"]):
 			X_train = common_classifier_information["whole_X"][common_classifier_information["list_train_index"][c]]
 			y_train = common_classifier_information["whole_Y"][common_classifier_information["list_train_index"][c]]
 			X_test = common_classifier_information["whole_X"][common_classifier_information["list_test_index"][c]]
@@ -193,9 +201,172 @@ class kb_genomeclfUtils(object):
 		cm = np.round(cnf_matrix_proportion/splits*100.0,1)
 		title = "CM: " + current_classifier_object["classifier_type"]
 		#classes = list(common_classifier_information["class_enumeration"].keys())
-     	self.plot_confusion_matrix(cm, title, current_classifier_object["classifier_name"], list(common_classifier_information["class_enumeration"].keys()), folder_name)
+     	self.plot_confusion_matrix(cm, title, current_classifier_object["classifier_name"], list(common_classifier_information["class_list_mapping"].keys()), folder_name)
 
      	return classification_report_dict
+
+
+	def tuneDecisionTree(self, current_ws, common_classifier_information, classifier_object_name, folder_name):
+
+		iterations = 13
+		ddt_dict_classification_report_dict = {}
+
+		#Gini Criterion
+		training_avg = []
+		training_std = []
+		validation_avg = []
+		validation_std = []
+
+		for tree_depth in range(1, iterations):#notice here that tree depth must start at 1
+			
+			classifier = DecisionTreeClassifier(random_state=0, max_depth=tree_depth, criterion=u'gini')
+			train_score = []
+			validate_score = []
+
+			for c in range(common_classifier_information["splits"]):
+				X_train = common_classifier_information["whole_X"][common_classifier_information["list_train_index"][c]]
+				y_train = common_classifier_information["whole_Y"][common_classifier_information["list_train_index"][c]]
+				X_test = common_classifier_information["whole_X"][common_classifier_information["list_test_index"][c]]
+				y_test = common_classifier_information["whole_Y"][common_classifier_information["list_test_index"][c]]
+
+				classifier.fit(X_train, y_train)
+				y_pred = classifier.predict(X_test)
+
+				train_score.append(classifier.score(X_train, y_train))
+				validate_score.append(classifier.score(X_test, y_test))
+
+			training_avg.append(np.average(np.array(train_score)))
+			training_std.append(np.std(train_score))
+			validation_avg.append(np.average(validate_score))
+			validate_std.append(np.std(validate_score))
+
+		#Create Figure
+		fig, ax = plt.subplots(figsize=(6, 6))
+		plt.errorbar(np.arange(1,iterations), training_avg, yerr=training_std, fmt=u'o', label=u'Training set')
+		plt.errorbar(np.arange(1,iterations), validation_avg, yerr=validation_std, fmt=u'o', label=u'Testing set')
+		ax.set_ylim(ymin=0.0, ymax=1.1)
+		ax.set_title("Gini Criterion")
+		plt.xlabel('Tree Depth', fontsize=12)
+		plt.ylabel('Accuracy', fontsize=12)
+		plt.legend(loc='lower left')
+		ax.grid(which='major', linestyle=':', linewidth='0.5', color='black')
+		plt.savefig(os.path.join(self.scratch, folder_name, "images", "decision_tree_classifier_gini_depth.png"))
+		
+		best_gini_depth = np.argmax(validation_avg) + 1
+		best_gini_accuracy_score = np.max(validation_avg)
+
+		#Create Gini Genome Categorizer
+		current_classifier_object = {	"classifier_to_execute": DecisionTreeClassifier(random_state=0, max_depth=best_gini_depth, criterion='gini'),
+										"classifier_type": "decision_tree_classifier_gini",
+										"classifier_name": classifier_object_name + "_" + classifier_type + "_gini" 
+									}
+
+		#this is a dictionary containing 'class 0': {'precision': 0.5, 'recall': 1.0, 'f1-score': 0.2}, 'accuracy'
+		classification_report_dict = self.executeClassifier(current_ws, common_classifier_information, current_classifier_object, folder_name)
+		ddt_dict_classification_report_dict["decision_tree_classifier_gini"] = classification_report_dict
+
+
+		
+		#Entropy Criterion
+		training_avg = []
+		training_std = []
+		validation_avg = []
+		validation_std = []
+
+		for tree_depth in range(1, iterations):#notice here that tree depth must start at 1
+			classifier = DecisionTreeClassifier(random_state=0, max_depth=tree_depth, criterion=u'entropy')
+			train_score = []
+			validate_score = []
+
+			for c in range(common_classifier_information["splits"]):
+				X_train = common_classifier_information["whole_X"][common_classifier_information["list_train_index"][c]]
+				y_train = common_classifier_information["whole_Y"][common_classifier_information["list_train_index"][c]]
+				X_test = common_classifier_information["whole_X"][common_classifier_information["list_test_index"][c]]
+				y_test = common_classifier_information["whole_Y"][common_classifier_information["list_test_index"][c]]
+
+				classifier.fit(X_train, y_train)
+				y_pred = classifier.predict(X_test)
+
+				train_score.append(classifier.score(X_train, y_train))
+				validate_score.append(classifier.score(X_test, y_test))
+
+			training_avg.append(np.average(np.array(train_score)))
+			training_std.append(np.std(train_score))
+			validation_avg.append(np.average(validate_score))
+			validate_std.append(np.std(validate_score))
+
+		fig, ax = plt.subplots(figsize=(6, 6))
+		plt.errorbar(np.arange(1,iterations), training_avg, yerr=training_std, fmt=u'o', label=u'Training set')
+		plt.errorbar(np.arange(1,iterations), validation_avg, yerr=validation_std, fmt=u'o', label=u'Testing set')
+		ax.set_ylim(ymin=0.0, ymax=1.1)
+		ax.set_title("Entropy Criterion")
+		plt.xlabel('Tree Depth', fontsize=12)
+		plt.ylabel('Accuracy', fontsize=12)
+		plt.legend(loc='lower left')
+		ax.grid(which='major', linestyle=':', linewidth='0.5', color='black')
+		plt.savefig(os.path.join(self.scratch, folder_name, "images", "decision_tree_classifier_entropy_depth.png"))
+		
+		best_entropy_depth = np.argmax(validation_avg) + 1
+		best_entropy_accuracy_score = np.max(validation_avg)
+
+		#Create Gini Genome Categorizer
+		current_classifier_object = {	"classifier_to_execute": DecisionTreeClassifier(random_state=0, max_depth=best_entropy_depth, criterion='entropy'),
+										"classifier_type": "decision_tree_classifier_entropy",
+										"classifier_name": classifier_object_name + "_" + classifier_type + "_entropy" 
+									}
+
+		#this is a dictionary containing 'class 0': {'precision': 0.5, 'recall': 1.0, 'f1-score': 0.2}, 'accuracy'
+		classification_report_dict = self.executeClassifier(current_ws, common_classifier_information, current_classifier_object, folder_name)
+		ddt_dict_classification_report_dict["decision_tree_classifier_entropy"] = classification_report_dict
+
+		if best_gini_accuracy_score > best_entropy_accuracy_score:
+			top_20 = self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=best_gini_depth, criterion=u'gini'), common_classifier_information)
+		else:
+			top_20 = self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=best_entropy_depth, criterion=u'entropy'), common_classifier_information)
+
+		return (ddt_dict_classification_report_dict, top_20)
+
+	def tree_code(self, tree, common_classifier_information):
+
+		tree = tree.fit(common_classifier_information["whole_X"], common_classifier_information["whole_Y"])
+
+		tree_contents = export_graphviz(tree, 
+										out_file=None, 
+										feature_names=common_classifier_information["attribute_data"],
+										class_names=list(common_classifier_information["class_list_mapping"].keys()))
+
+		initial_tree_contents = open(os.path.join(self.scratch, 'forBuild', 'initial_tree_contents.dot'), 'w')
+		initial_tree_contents.write(tree_contents)
+		initial_tree_contents.close()
+
+		#start parsing the tree contents
+		tree_contents = tree_contents.replace('\\n', '')
+		tree_contents = re.sub(r'(\w\s\[label="[\w\s.,:\'\/()-]+)<=([\w\s.\[\]=,]+)("] ;)', r'\1 (Absent)" , color="0.650 0.200 1.000"] ;', tree_contents)
+		tree_contents = re.sub(r'(\w\s\[label=")(.+?class\s=\s)', r'\1', tree_contents)
+		tree_contents = re.sub(r'shape=box] ;', r'shape=Mrecord] ; node [style=filled];', tree_contents)
+
+		color_set = []
+		for i in range(len(class_list)):
+			color_set.append('%.4f'%np.random.random() + " " + '%.4f'%np.random.random()+ " " + '0.900')
+
+		for current_class, current_color in zip(class_list, color_set):
+			tree_contents = re.sub(r'(\w\s\[label="%s")' % current_class, r'\1, color = "%s"' % current_color, tree_contents)
+
+
+		modified_tree_contents = open(os.path.join(self.scratch, 'forBuild', 'modified_tree_contents.dot'), "w")
+		modified_tree_contents.write(tree_contents)
+		modified_tree_contents.close()
+
+		#take the tree dot file and turn it into an image
+		os.system(u'dot -Tpng ' + os.path.join(self.scratch, 'forBuild', 'modified_tree_contents.dot') + ' >  '+ os.path.join(self.scratch, 'forBuild', 'images', "VisualDecisionTree.png"))
+		
+		#find the 20 "most important" functional roles
+		genome_attribute_to_importance = pd.DataFrame({	common_classifier_information["attribute_type"]: common_classifier_information["attribute_data"], 
+														'Importance': tree.feature_importances_})
+
+		top_20 = genome_attribute_to_importance.sort_values("Importance", ascending = False).head(20)
+
+		return top_20
 
 	def _upload_to_shock(self, file_path):
 
@@ -763,7 +934,7 @@ class kb_genomeclfUtils(object):
 
 
 	def viewerHTMLContent(self, folder_name, status_view = False, main_report_view = False, decision_tree_view = False, ensemble_view = False):
-		file = open(os.path.join(self.scratch, folder_name, 'viewer.html'), u"w")
+		file = open(os.path.join(self.scratch, folder_name, 'viewer.html'), "w")
 
 		header = u"""
 			<!DOCTYPE html>
@@ -968,49 +1139,49 @@ class kb_genomeclfUtils(object):
 
 	def predictHTMLContent(self, categorizer_name, phenotype, selection_attribute, selected_file_name, missing_genomes, genome_label, predict_table):
 		
-		file = open(os.path.join(self.scratch, 'forPredict', 'status.html'), u"w")
-		header = u"""
-			<!DOCTYPE html>
-			<html>
-			<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
-			<body>
+		# file = open(os.path.join(self.scratch, 'forPredict', 'status.html'), u"w")
+		# header = u"""
+		# 	<!DOCTYPE html>
+		# 	<html>
+		# 	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
+		# 	<body>
 
-			<h2 style="text-align:center;"> Report: Predict Phenotype </h2>
-			<p>
-			"""
-		file.write(header)
+		# 	<h2 style="text-align:center;"> Report: Predict Phenotype </h2>
+		# 	<p>
+		# 	"""
+		# file.write(header)
 
-		first_paragraph = u"""The Genome Categorizer named """ + str(categorizer_name) \
-							+ """ is being used to make predictions for  """ + str(phenotype)+ """ based on \
-							""" + str(selection_attribute) + """. Missing genomes (those that were \
-							present in the selected file: """ + str(selected_file_name) + """, but not present in the staging area) \
-							were the following: """ + str(missing_genomes)+ """ ."""
-		file.write(first_paragraph)
+		# first_paragraph = u"""The Genome Categorizer named """ + str(categorizer_name) \
+		# 					+ """ is being used to make predictions for  """ + str(phenotype)+ """ based on \
+		# 					""" + str(selection_attribute) + """. Missing genomes (those that were \
+		# 					present in the selected file: """ + str(selected_file_name) + """, but not present in the staging area) \
+		# 					were the following: """ + str(missing_genomes)+ """ ."""
+		# file.write(first_paragraph)
 
-		second_paragraph = u"""Below is a detailed table which shows """ + str(genome_label) + """ , whether it \
-						was loaded into the workspace, its """ + str(phenotype)+ """, and the probabiltiy of that \
-						prediction </p>"""
-		file.write(second_paragraph)
+		# second_paragraph = u"""Below is a detailed table which shows """ + str(genome_label) + """ , whether it \
+		# 				was loaded into the workspace, its """ + str(phenotype)+ """, and the probabiltiy of that \
+		# 				prediction </p>"""
+		# file.write(second_paragraph)
 
-		predict_table_html = predict_table.to_html(index=False, table_id="predict_table", justify='center')
-		file.write(predict_table_html)
+		# predict_table_html = predict_table.to_html(index=False, table_id="predict_table", justify='center')
+		# file.write(predict_table_html)
 
-		scripts = u"""</body>
+		# scripts = u"""</body>
 
-			<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
-			<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
-			<script type="text/javascript">
-			$(document).ready(function() {
-				$('#predict_table').DataTable( {
-					"scrollY":        "500px",
-					"scrollCollapse": true,
-					"paging":         false
-				} );
-			} );
-			</script>
-			</html>"""
-		file.write(scripts)
-		file.close()
+		# 	<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+		# 	<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+		# 	<script type="text/javascript">
+		# 	$(document).ready(function() {
+		# 		$('#predict_table').DataTable( {
+		# 			"scrollY":        "500px",
+		# 			"scrollCollapse": true,
+		# 			"paging":         false
+		# 		} );
+		# 	} );
+		# 	</script>
+		# 	</html>"""
+		# file.write(scripts)
+		# file.close()
 
 
 
