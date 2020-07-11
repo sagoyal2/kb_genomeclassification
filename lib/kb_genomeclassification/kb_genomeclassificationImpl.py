@@ -62,10 +62,10 @@ This module build a classifier and predict phenotypes based on the classifier An
         #BEGIN upload_trainingset
 
         self.config['ctx'] = ctx
-        upload_Runner = kb_genomeclfUtils(self.config)
-        html_output_name, classifier_training_set = upload_Runner.fullUpload(params, params['workspace'])
+        upload_runner = kb_genomeclfUtils(self.config)
+        html_output_name, classifier_training_set = upload_runner.fullUpload(params, params['workspace'])
 
-        report_output = upload_Runner.generateHTMLReport(params['workspace'], "forUpload", html_output_name, params['description'])
+        report_output = upload_runner.generateHTMLReport(params['workspace'], "forUpload", html_output_name, params['description'])
         output = {'report_name': report_output['name'], 'report_ref': report_output['ref'], 'classifier_training_set': classifier_training_set}
 
         #END upload_trainingset
@@ -87,19 +87,17 @@ This module build a classifier and predict phenotypes based on the classifier An
         #BEGIN build_classifier
 
         self.config['ctx'] = ctx
-        clf_Runner = kb_genomeclfUtils(self.config)
+        build_runner = kb_genomeclfUtils(self.config)
 
-        clf_Runner.fullClassify(params, params.get('workspace'))
-        # location_of_report, classifier_info_list, attribute_weights_list = clf_Runner.fullClassify(params, params.get('workspace'))
-        # report_output = clf_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'clf_Runner', params.get('description'))
-        # output = {'report_name': report_output['name'], 'report_ref': report_output['ref'], 'classifier_info': classifier_info_list, 'attribute_weights': attribute_weights_list }
-        output = {}
+        html_output_name, classifier_info_list = build_runner.fullClassify(params, params['workspace'])
+        report_output =  build_runner.generateHTMLReport(params['workspace'], "forBuild", html_output_name, params['description'], for_build_classifier=True)
+        output = {'report_name': report_output['name'], 'report_ref': report_output['ref'], 'classifier_info': classifier_info_list}
         #END build_classifier
 
         # At some point might do deeper type checking...
-        if not isinstance(output, dict):
-            raise ValueError('Method build_classifier return value ' +
-                             'output is not type dict as required.')
+        # if not isinstance(output, dict):
+        #     raise ValueError('Method build_classifier return value ' +
+        #                      'output is not type dict as required.')
         # return the results
         return [output]
 

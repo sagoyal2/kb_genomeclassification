@@ -1,5 +1,6 @@
 import os
 import uuid
+import operator
 import numpy as np
 import pandas as pd
 
@@ -84,8 +85,10 @@ class kb_genomeclfUtils(object):
 				'description' : params["description"]
 				}
 
-		dict_classification_report_dict = {}
+		classifier_info_list = []
 
+		dict_classification_report_dict = {}
+		genome_classifier_object_names = []
 		classifier_to_run = params["classifier_to_run"]
 		if(classifier_to_run == "run_all"):
 
@@ -95,52 +98,61 @@ class kb_genomeclfUtils(object):
 												"classifier_type": classifier_type,
 												"classifier_name": params["classifier_object_name"] + "_" + classifier_type
 											}
+				genome_classifier_object_names.append(current_classifier_object["classifier_name"])
 
 				#this is a dictionary containing 'class 0': {'precision': 0.5, 'recall': 1.0, 'f1-score': 0.2}, 'accuracy'
-				classification_report_dict = self.executeClassifier(current_ws, common_classifier_information, current_classifier_object, folder_name)
+				(classification_report_dict,individual_classifier_info) = self.executeClassifier(current_ws, common_classifier_information, current_classifier_object, folder_name)
 				dict_classification_report_dict[classifier_type] = classification_report_dict
+				classifier_info_list.append(individual_classifier_info)
 
 
-				#handle Decision Tree Case
-				(ddt_dict_classification_report_dict, top_20) = self.tuneDecisionTree(current_ws, common_classifier_information, params["classifier_object_name"], folder_name)
-				dict_classification_report_dict["decision_tree_classifier_gini"] = ddt_dict_classification_report_dict["decision_tree_classifier_gini"]
-				dict_classification_report_dict["decision_tree_classifier_entropy"] = ddt_dict_classification_report_dict["decision_tree_classifier_entropy"]
-			
+			#handle Decision Tree Case
+			(ddt_dict_classification_report_dict, dtt_classifier_info, top_20) = self.tuneDecisionTree(current_ws, common_classifier_information, params["classifier_object_name"], folder_name)
+			dict_classification_report_dict["decision_tree_classifier_gini"] = ddt_dict_classification_report_dict["decision_tree_classifier_gini"]
+			dict_classification_report_dict["decision_tree_classifier_entropy"] = ddt_dict_classification_report_dict["decision_tree_classifier_entropy"]
+			classifier_info_list.append(dtt_classifier_info[0])
+			classifier_info_list.append(dtt_classifier_info[1])
+
+
 			#handle case for ensemble
 		else:
 			current_classifier_object = {	"classifier_to_execute": getCurrentClassifierObject(classifier_to_run),
 											"classifier_type": classifier_to_run,
 											"classifier_name": params["classifier_object_name"] + "_" + classifier_to_run
 										}
+			genome_classifier_object_names.append(current_classifier_object["classifier_name"])
 
-			classification_report_dict = self.executeClassifier(current_ws, common_classifier_information, current_classifier_object)
+			(classification_report_dict,individual_classifier_info)  = self.executeClassifier(current_ws, common_classifier_information, current_classifier_object)
 			dict_classification_report_dict[classifier_to_run] = classification_report_dict
+			classifier_info_list.append(individual_classifier_info)
 
 			if(classifier_to_run == "decision_tree_classifier"):
-				(ddt_dict_classification_report_dict, top_20) = self.tuneDecisionTree(current_ws, common_classifier_information, params["classifier_object_name"], folder_name)
+				(ddt_dict_classification_report_dict, dtt_classifier_info, top_20) = self.tuneDecisionTree(current_ws, common_classifier_information, params["classifier_object_name"], folder_name)
 				dict_classification_report_dict["decision_tree_classifier_gini"] = ddt_dict_classification_report_dict["decision_tree_classifier_gini"]
 				dict_classification_report_dict["decision_tree_classifier_entropy"] = ddt_dict_classification_report_dict["decision_tree_classifier_entropy"]
+				classifier_info_list.append(dtt_classifier_info[0])
+				classifier_info_list.append(dtt_classifier_info[1])
 
-			else:
-				#create folder only for Main
-
-
-		#make the storage folders
-		#overview.html, dtt.html, ensemble.html
 
 		#generate table from dict_classification_report_dict
-		#write self.buildMainHTMLContent
-		#write self.buildDTTHTMLContent
+		main_report_df_flag = False
+		dtt_report_df_flag = False
 
-		#return html_output_name, predictions_mapping
+		(main_report_df, dtt_report_df, best_classifier_type_nice, genome_dtt_classifier_object_names) = self.handleClassificationReports(dict_classification_report_dict, list(common_classifier_information["class_enumeration"].keys()), params["classifier_object_name"] )
+		if(len(main_report_df.keys()) > 0):
+			main_report_df_flag = True
+			self.buildMainHTMLContent(main_report_df, genome_classifier_object_names, phenotype, best_classifier_type_nice)
+		if(len(dtt_report_df.keys()) > 0):
+			dtt_report_df_flag = True
+			self.buildDTTHTMLContent(dtt_report_df, genome_dtt_classifier_object_names, best_classifier_type_nice)
 
-		else:
-			ensemble_params["flatten_transform"] = self.str_to_bool(ensemble_params["flatten_transform"])
+		html_output_name = self.viewerHTMLContent(folder_name, main_report_view = main_report_df_flag, decision_tree_view = dtt_report_df_flag)
 
-		return ensemble_params
+		return html_output_name, classifier_info_list
 
 	def executeClassifier(self, current_ws, common_classifier_information, current_classifier_object, folder_name):
 		
+		individual_classifier_info = {}
 		matrix_size = len(common_classifier_information["class_list_mapping"])
 		cnf_matrix_proportion = np.zeros(shape=(matrix_size, matrix_size))
 		
@@ -198,18 +210,139 @@ class kb_genomeclfUtils(object):
 													  }]
 													})[0]
      
+     	#information for call back
+		individual_classifier_info = {	"classifier_name": current_classifier_object["classifier_name"],
+										"classifier_ref": obj_save_ref,
+										"accuracy": classification_report_dict["accuracy"]}
+
 		cm = np.round(cnf_matrix_proportion/splits*100.0,1)
 		title = "CM: " + current_classifier_object["classifier_type"]
 		#classes = list(common_classifier_information["class_enumeration"].keys())
      	self.plot_confusion_matrix(cm, title, current_classifier_object["classifier_name"], list(common_classifier_information["class_list_mapping"].keys()), folder_name)
 
-     	return classification_report_dict
+     	return classification_report_dict, individual_classifier_info
 
+    def handleClassificationReports(dict_classification_report_dict, target_names, classifier_object_name):
+
+    	main_report_df = {}
+    	dtt_report_df = {}
+    	best_classifier_type_nice = None
+    	genome_dtt_classifier_object_names = []
+    	#genome_dtt_classifier_object_names is a list of classifier_object_name + "_" + dtt_classifier_type
+
+    	metric_column =[]
+    	for target in target_names:
+    		metric_column.append(target)
+    		metric_column.append("Precision")
+    		metric_column.append("Recall")
+    		metric_column.append("F1-Score")
+
+    	metric_column.append("Accuracy")
+    	main_report_df["Metrics"] = metric_column
+
+		classifier_types_to_nice = {"k_nearest_neighbors": "K Nearest Neighbors", 
+									"gaussian_nb": "Gaussian Naive Bayes", 
+									"logistic_regression": "Logistic Regression",
+									"decision_tree_classifier": "Decision Tree",
+									"decision_tree_classifier_gini": "Decision Tree Gini",
+									"decision_tree_classifier_entropy": "Decision Tree Entropy",
+									"support_vector_machine": "Support Vector Machine", 
+									"neural_network": "Neural Network"
+									}
+
+    	#only making a single column
+    	if(len(dict_classification_report_dict.keys())==1):
+    		classifier_type = dict_classification_report_dict.keys()[0]
+    		classifier_type_column = []
+
+    		for target in target_names:
+    			classifier_type_column.append(None)
+    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["precision"])
+    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["recall"])
+    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["f1-score"])
+
+    		#also add accuracy
+    		classifier_type_column.append(dict_classification_report_dict[classifier_type]["accuracy"])
+
+    		main_report_df[classifier_types_to_nice[classifier_type]] = classifier_type_column
+
+    	elif(len(dict_classification_report_dict.keys())==3):
+    		#case where the keys are decision_tree_classifier, decision_tree_classifier_gini, and decision_tree_classifier_entropy
+    		
+    		dtt_report_df["Metrics"] = metric_column
+    		dtt_classifier_types = ["decision_tree_classifier", "decision_tree_classifier_gini", "decision_tree_classifier_entropy"]
+    		for classifier_type in dtt_classifier_types
+    		    classifier_type_column = []
+
+	    		for target in target_names:
+	    			classifier_type_column.append(None)
+	    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["precision"])
+	    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["recall"])
+	    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["f1-score"])
+
+	    		#also add accuracy
+	    		classifier_type_column.append(dict_classification_report_dict[classifier_type]["accuracy"])
+
+	    		dtt_report_df[classifier_types_to_nice[classifier_type]] = classifier_type_column
+	    		genome_dtt_classifier_object_names.append(classifier_object_name + "_" + classifier_type)
+
+
+	    	#In this case there will be no main page and only a decision tree page
+
+    	else:
+    		#there is everything **and** we have to select a best classifier
+    		regular_classifier_types = ["k_nearest_neighbors", "gaussian_nb", "logistic_regression", "decision_tree_classifier", "support_vector_machine", "neural_network"]
+    		regular_classifier_type_to_accuracy = {}
+
+    		for classifier_type in regular_classifier_types
+    			classifier_type_column = []
+
+	    		for target in target_names:
+	    			classifier_type_column.append(None)
+	    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["precision"])
+	    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["recall"])
+	    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["f1-score"])
+
+	    		#also add accuracy
+	    		regular_classifier_type_to_accuracy[classifier_type] = dict_classification_report_dict[classifier_type]["accuracy"]
+	    		classifier_type_column.append(dict_classification_report_dict[classifier_type]["accuracy"])
+
+	    		main_report_df[classifier_types_to_nice[classifier_type]] = classifier_type_column
+
+	    	best_classifier_type = max(regular_classifier_type_to_accuracy.items(), key=operator.itemgetter(1))[0]
+	    	best_classifier_type_nice = classifier_types_to_nice[best_classifier_type]
+
+	    	#handle decision_tree_classifier, decision_tree_classifier_gini, and decision_tree_classifier_entropy
+    		dtt_report_df["Metrics"] = metric_column
+			dtt_classifier_types.append("decision_tree_classifier")
+    		if(best_classifier_type != "decision_tree_classifier"):
+    			dtt_classifier_types.append(best_classifier_type)
+    		else:
+    			dtt_classifier_types.append("decision_tree_classifier_gini")
+    			dtt_classifier_types.append("decision_tree_classifier_entropy")
+
+    		for classifier_type in dtt_classifier_types
+    		    classifier_type_column = []
+
+	    		for target in target_names:
+	    			classifier_type_column.append(None)
+	    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["precision"])
+	    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["recall"])
+	    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["f1-score"])
+
+	    		#also add accuracy
+	    		classifier_type_column.append(dict_classification_report_dict[classifier_type]["accuracy"])
+
+	    		dtt_report_df[classifier_types_to_nice[classifier_type]] = classifier_type_column
+	    		genome_dtt_classifier_object_names.append(classifier_object_name + "_" + classifier_type)
+
+	    return(main_report_df, dtt_report_df, best_classifier_type_nice, genome_dtt_classifier_object_names)
 
 	def tuneDecisionTree(self, current_ws, common_classifier_information, classifier_object_name, folder_name):
 
 		iterations = 13
 		ddt_dict_classification_report_dict = {}
+		dtt_classifier_info = []
 
 		#Gini Criterion
 		training_avg = []
@@ -258,13 +391,13 @@ class kb_genomeclfUtils(object):
 		#Create Gini Genome Categorizer
 		current_classifier_object = {	"classifier_to_execute": DecisionTreeClassifier(random_state=0, max_depth=best_gini_depth, criterion='gini'),
 										"classifier_type": "decision_tree_classifier_gini",
-										"classifier_name": classifier_object_name + "_" + classifier_type + "_gini" 
+										"classifier_name": classifier_object_name + "_" + "decision_tree_classifier_gini"
 									}
 
 		#this is a dictionary containing 'class 0': {'precision': 0.5, 'recall': 1.0, 'f1-score': 0.2}, 'accuracy'
-		classification_report_dict = self.executeClassifier(current_ws, common_classifier_information, current_classifier_object, folder_name)
+		(classification_report_dict, individual_classifier_info) = self.executeClassifier(current_ws, common_classifier_information, current_classifier_object, folder_name)
 		ddt_dict_classification_report_dict["decision_tree_classifier_gini"] = classification_report_dict
-
+		dtt_classifier_info.append(individual_classifier_info)
 
 		
 		#Entropy Criterion
@@ -312,19 +445,20 @@ class kb_genomeclfUtils(object):
 		#Create Gini Genome Categorizer
 		current_classifier_object = {	"classifier_to_execute": DecisionTreeClassifier(random_state=0, max_depth=best_entropy_depth, criterion='entropy'),
 										"classifier_type": "decision_tree_classifier_entropy",
-										"classifier_name": classifier_object_name + "_" + classifier_type + "_entropy" 
+										"classifier_name": classifier_object_name + "_" + "decision_tree_classifier_entropy" 
 									}
 
 		#this is a dictionary containing 'class 0': {'precision': 0.5, 'recall': 1.0, 'f1-score': 0.2}, 'accuracy'
-		classification_report_dict = self.executeClassifier(current_ws, common_classifier_information, current_classifier_object, folder_name)
+		(classification_report_dict, individual_classifier_info) = self.executeClassifier(current_ws, common_classifier_information, current_classifier_object, folder_name)
 		ddt_dict_classification_report_dict["decision_tree_classifier_entropy"] = classification_report_dict
+		dtt_classifier_info.append(individual_classifier_info)
 
 		if best_gini_accuracy_score > best_entropy_accuracy_score:
 			top_20 = self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=best_gini_depth, criterion=u'gini'), common_classifier_information)
 		else:
 			top_20 = self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=best_entropy_depth, criterion=u'entropy'), common_classifier_information)
 
-		return (ddt_dict_classification_report_dict, top_20)
+		return (ddt_dict_classification_report_dict, dtt_classifier_info, top_20)
 
 	def tree_code(self, tree, common_classifier_information):
 
@@ -1058,7 +1192,7 @@ class kb_genomeclfUtils(object):
 		</div>
 
 		<div id="Decision Tree Tuning" class="tabcontent">
-		  <iframe src="dtt.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
+		  <iframe src="dtt_report.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
 		</div>
 
 		<div id="Ensemble Model" class="tabcontent">
@@ -1135,7 +1269,239 @@ class kb_genomeclfUtils(object):
 		file.write(scripts)
 		file.close()
 
+	def buildMainHTMLContent(self, main_report_df, genome_classifier_object_names, phenotype, best_classifier_type_nice):
 
+		folder_name = "forBuild"
+		file = open(os.path.join(self.scratch, folder_name, 'main_report.html'), "w")
+		header = u"""
+			<!DOCTYPE html>
+			<html>
+
+			<style>
+			* {
+			  box-sizing: border-box;
+			}
+
+			.column {
+			  float: left;
+			  width: 50%;
+			  padding: 5px;
+			}
+
+			/* Clearfix (clear floats) */
+			.row::after {
+			  content: "";
+			  clear: both;
+			  display: table;
+			}
+			</style>
+
+			<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
+			<body>
+
+			<h2 style="text-align:center;"> Report: Build Genome Classifier - Overview </h2>
+			<p>
+			"""
+		file.write(header)
+
+		first_paragraph = 	u"""The following Genome Categorizer Objects were created """ + str(genome_classifier_object_names) +\
+							""" to classify genomes based on """ + str(phenotype) + """. Below we display a confusion matrix which \
+							evaluates the performance of the selected classification algorithms. To do so, for each """ + str(phenotype) + """ \
+							class we compute the percentage of genomes with a true label that get classified with a predicted label. Read more \
+							about <a href="https://en.wikipedia.org/wiki/Confusion_matrix"> Confusion Matrices</a>. Given the magnitude of the \
+							number of classes relative to the overall size of the training set, creating only one test set would lead to 
+							inconclusive results. Instead, we use K-Fold (K=10) Cross Validation to ensure the quality of the model. Thus the below 
+							confusion matrices represent the average percentages over all 10 folds.</p><p>
+							"""
+		file.write(first_paragraph)
+
+		second_paragraph = 	u"""For each classification algorithm, we also provide the Precision, Recall, and F1-Score for each """ + str(phenotype) + """ \
+							class. More information about these metrics can be found <a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_recall_fscore_support.html#sklearn.metrics.precision_recall_fscore_support">
+							here </a>.</p><p>
+							"""
+		file.write(second_paragraph)
+
+		if(best_classifier_type_nice != None):
+			sentence = u"""The best classification algorithm (highest average accuracy) was: """ + str(best_classifier_type_nice) +""".</p>"""
+			file.write(sentence)
+
+
+		#Do not produce confusion Matrix if more than 6 classes = 6*4 + 1
+		if(main_report_df.shape[0] > 6*4+1):
+			sentence = 	u"""<p color: #ff5050;> Sorry, we cannot display confusion matricies for classifiers with greater than 6 classes. \
+						However statistics are still produced below.</p>"""
+			file.write(sentence)
+
+		#We are making a confusion Matrix with <6 classes
+		else:
+			#single classifier was choosen
+			if(main_report_df.shape[1] == 2):
+				images_str = u"""
+							<div class="row">
+							  	<figcaption>""" + genome_classifier_object_names[0] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_classifier_object_names[0] + ".pickle") + """ " download> (Download) </a> </figcaption>
+							    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_classifier_object_names[0] +".png")+ """ " alt=" """+ genome_classifier_object_names[0]  +""" "  style="width:100%">
+							</div>
+				"""
+				file.write(images_str)
+			else:
+				images_str = u"""
+							<div class="row">
+							  <div class="column">
+							  	<figcaption>""" + genome_classifier_object_names[0] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_classifier_object_names[0] + ".pickle") + """ " download> (Download) </a> </figcaption>
+							    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_classifier_object_names[0] +".png")+ """ " alt=" """+ genome_classifier_object_names[0]  +""" "  style="width:100%">
+							  </div>
+							  <div class="column">
+							  	<figcaption>""" + genome_classifier_object_names[1] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_classifier_object_names[1] + ".pickle") + """ " download> (Download) </a> </figcaption>
+							    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_classifier_object_names[1] +".png")+ """ " alt=" """+ genome_classifier_object_names[1]  +""" "  style="width:100%">
+							  </div>
+							</div>
+							<div class="row">
+							  <div class="column">
+							  	<figcaption>""" + genome_classifier_object_names[2] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_classifier_object_names[2] + ".pickle") + """ " download> (Download) </a> </figcaption>
+							    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_classifier_object_names[2] +".png")+ """ " alt=" """+ genome_classifier_object_names[2]  +""" "  style="width:100%">
+							  </div>
+							  <div class="column">
+							  	<figcaption>""" + genome_classifier_object_names[3] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_classifier_object_names[3] + ".pickle") + """ " download> (Download) </a> </figcaption>
+							    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_classifier_object_names[3] +".png")+ """ " alt=" """+ genome_classifier_object_names[3]  +""" "  style="width:100%">
+							  </div>
+							</div>
+							<div class="row">
+							  <div class="column">
+							  	<figcaption>""" + genome_classifier_object_names[4] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_classifier_object_names[4] + ".pickle") + """ " download> (Download) </a> </figcaption>
+							    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_classifier_object_names[4] +".png")+ """ " alt=" """+ genome_classifier_object_names[4]  +""" "  style="width:100%">
+							  </div>
+							  <div class="column">
+							  	<figcaption>""" + genome_classifier_object_names[5] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_classifier_object_names[5] + ".pickle") + """ " download> (Download) </a> </figcaption>
+							    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_classifier_object_names[5] +".png")+ """ " alt=" """+ genome_classifier_object_names[5]  +""" "  style="width:100%">
+							  </div>
+							</div>
+				"""
+			
+				file.write(images_str)
+
+		main_report_html = main_report_df.to_html(index=False, table_id="main_report_table", justify='center')
+		file.write(main_report_html)
+
+		scripts = u"""</body>
+
+			<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+			<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+			<script type="text/javascript">
+			$(document).ready(function() {
+				$('#main_report_table').DataTable( {
+					"scrollY":        "500px",
+					"scrollCollapse": true,
+					"paging":         false
+				} );
+			} );
+			</script>
+			</html>"""
+		file.write(scripts)
+		file.close()
+
+	def buildDTTHTMLContent(self, dtt_report_df, genome_dtt_classifier_object_names, best_classifier_type_nice):
+
+		folder_name = "forBuild"
+		file = open(os.path.join(self.scratch, folder_name, 'dtt_report.html'), "w")
+		header = u"""
+			<!DOCTYPE html>
+			<html>
+
+			<style>
+			* {
+			  box-sizing: border-box;
+			}
+
+			.column {
+			  float: left;
+			  width: 50%;
+			  padding: 5px;
+			}
+
+			/* Clearfix (clear floats) */
+			.row::after {
+			  content: "";
+			  clear: both;
+			  display: table;
+			}
+			</style>
+
+			<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
+			<body>
+
+			<h2 style="text-align:center;"> Report: Build Genome Classifier - Decision Tree Tuning </h2>
+			<p>
+			"""
+		file.write(header)
+
+		first_paragraph = 	u"""Since the feature space (functional role) is categorical, we further fine tune the Decision Tree \
+							classification algorithm in particular to seek better metrics. We tune the Decision Tree based on two \
+							hyperparameters: Tree Depth and Criterion (quality of a split). The two criterion are "gini" which uses \
+							the Gini impurity score and "entropy" which uses information gain score.</p>
+							"""
+		file.write(first_paragraph)
+
+		if((best_classifier_type_nice != "Decision Tree") and (best_classifier_type_nice != None)):
+			sentence = 	u"""<p> We also include the confusion matrix and metrics for """ + best_classifier_type_nice + """ (the best classifier determined highest average accuracy)</p>"""
+			file.write(sentence)
+		
+			tuning_str =u"""
+			<div class="row">
+			  <div class="column">
+			  	<figcaption>""" + genome_dtt_classifier_object_names[0] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_dtt_classifier_object_names[0] + ".pickle") + """ " download> (Download) </a> </figcaption>
+			    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_dtt_classifier_object_names[0] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[0]  +""" "  style="width:100%">
+			  </div>
+			  <div class="column">
+			  	<figcaption>""" + genome_dtt_classifier_object_names[1] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_dtt_classifier_object_namesv[1] + ".pickle") + """ " download> (Download) </a> </figcaption>
+			    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_dtt_classifier_object_names[1] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[1]  +""" "  style="width:100%">
+			  </div>
+			</div>
+			"""
+			file.write(tuning_str)
+
+		else:	
+			tuning_str = u"""
+						<div class="row">
+						  	<figcaption>""" + genome_dtt_classifier_object_names[0] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_dtt_classifier_object_names[0] + ".pickle") + """ " download> (Download) </a> </figcaption>
+						    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_dtt_classifier_object_names[0] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[0]  +""" "  style="width:100%">
+						</div>
+			"""
+			file.write(tuning_str)
+		
+		tuning_str =u"""
+		<div class="row">
+		  <div class="column">
+		  	<figcaption>""" + genome_dtt_classifier_object_names[-1 -1] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_dtt_classifier_object_names[-1 -1] + ".pickle") + """ " download> (Download) </a> </figcaption>
+		    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_dtt_classifier_object_names[-1 -1] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[-1 -1]  +""" "  style="width:100%">
+		  </div>
+		  <div class="column">
+		  	<figcaption>""" + genome_dtt_classifier_object_names[-1] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_dtt_classifier_object_namesv[-1] + ".pickle") + """ " download> (Download) </a> </figcaption>
+		    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_dtt_classifier_object_names[-1] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[-1]  +""" "  style="width:100%">
+		  </div>
+		</div>
+		"""
+		file.write(tuning_str)
+
+
+		dtt_report_html = dtt_report_df.to_html(index=False, table_id="dtt_report_table", justify='center')
+		file.write(dtt_report_html)
+
+		scripts = u"""</body>
+
+			<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+			<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+			<script type="text/javascript">
+			$(document).ready(function() {
+				$('#dtt_report_table').DataTable( {
+					"scrollY":        "500px",
+					"scrollCollapse": true,
+					"paging":         false
+				} );
+			} );
+			</script>
+			</html>"""
+		file.write(scripts)
+		file.close()
 
 	def predictHTMLContent(self, categorizer_name, phenotype, selection_attribute, selected_file_name, missing_genomes, genome_label, predict_table):
 		

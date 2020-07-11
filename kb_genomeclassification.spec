@@ -134,28 +134,14 @@ module kb_genomeclassification {
         EnsembleModelOptions ensemble_model;
     }BuildClassifierInput;
 
-	typedef structure{
-		string attribute;
-		float weight;
-	}attributeWeights;
-
-	typedef structure{
-		string phenotypeclass;
-		float accuracy;
-		float precision;
-		float recall;
-		float f1score;
-	}phenotypeClassInfo;
 
 	typedef structure{
 		string classifier_name;
 		string classifier_ref;
-		list<phenotypeClassInfo> phenotype_class_info;
-		float averagef1;
+		float accuracy;
 	}classifierInfo;
 
     typedef structure {
-        list<attributeWeights> attribute_weights;
     	list<classifierInfo> classifier_info;
         string report_name;
         string report_ref;
@@ -170,7 +156,6 @@ module kb_genomeclassification {
 
     funcdef build_classifier(BuildClassifierInput params)
         returns (ClassifierOut output) authentication required;
-
 
 
    typedef structure {
