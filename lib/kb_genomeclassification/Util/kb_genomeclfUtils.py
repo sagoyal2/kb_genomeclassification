@@ -4,6 +4,16 @@ import operator
 import numpy as np
 import pandas as pd
 
+#Classifier Models
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn import svm
+from sklearn.neural_network import MLPClassifier
+
+#additional classifier methods
+from sklearn.tree import export_graphviz
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 from sklearn.model_selection import StratifiedKFold
@@ -149,6 +159,21 @@ class kb_genomeclfUtils(object):
 		html_output_name = self.viewerHTMLContent(folder_name, main_report_view = main_report_df_flag, decision_tree_view = dtt_report_df_flag)
 
 		return html_output_name, classifier_info_list
+
+	def getCurrentClassifierObject(self, classifier_type):
+		
+		if classifier_type == "k_nearest_neighbors":
+			return KNeighborsClassifier()
+		elif classifier_type == "gaussian_nb":
+			return GaussianNB()
+		elif classifier_type == "logistic_regression":
+			return LogisticRegression(random_state=0)
+		elif classifier_type == "decision_tree_classifier":
+			return DecisionTreeClassifier(random_state=0)
+		elif classifier_type == "support_vector_machine":
+			return svm.SVC(kernel = "linear",random_state=0)
+		elif classifier_type == "neural_network":
+			return MLPClassifier(random_state=0)
 
 	def executeClassifier(self, current_ws, common_classifier_information, current_classifier_object, folder_name):
 		
