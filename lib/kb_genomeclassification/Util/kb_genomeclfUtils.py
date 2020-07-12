@@ -1,8 +1,14 @@
 import os
+import re
 import uuid
+import pickle
 import operator
 import numpy as np
 import pandas as pd
+import seaborn as sns
+
+import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 
 #Classifier Models
 from sklearn.neighbors import KNeighborsClassifier
@@ -43,6 +49,7 @@ class kb_genomeclfUtils(object):
 	#return html_output_name, classifier_training_set_mapping
 	def fullUpload(self, params, current_ws):
 		#create folder
+		folder_name = "forUpload"
 		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
 
 		params["file_path"] = "/kb/module/data/RealData/GramDataEdit5.xlsx"
@@ -70,16 +77,16 @@ class kb_genomeclfUtils(object):
 
 		#unload the training_set_object
 		#uploaded_df is four columns: Genome Name | Genome Reference | Phenotype | Phenotype Enumeration
-		(phenotype, class_enumeration, uploaded_df, training_set_object_reference) = self.unloadTrainingSet(params['training_set_name'])
+		(phenotype, class_enumeration, uploaded_df, training_set_object_reference) = self.unloadTrainingSet(current_ws, params['training_set_name'])
 
 		#get functional_roles and make indicator matrix
-		(indicator_matrix, master_role_list) = createIndicatorMatrix(uploaded_df, params["genome_attribute"])
+		(indicator_matrix, master_role_list) = self.createIndicatorMatrix(uploaded_df, params["genome_attribute"])
 
 		#split up training data
 		splits = 2 #5
 		whole_X = indicator_matrix[master_role_list].values
 		whole_Y = uploaded_df["Phenotype Enumeration"].values
-		(list_train_index, list_test_index) = getKSplits(splits, whole_X, whole_Y)
+		(list_train_index, list_test_index) = self.getKSplits(splits, whole_X, whole_Y)
 
 		#figure out which classifier is getting made
 		common_classifier_information = {
@@ -91,7 +98,7 @@ class kb_genomeclfUtils(object):
 				'list_test_index' : list_test_index,
 				'whole_X' : whole_X,
 				'whole_Y' : whole_Y,
-				'training_set_ref' : training_set_ref,
+				'training_set_ref' : training_set_object_reference,
 				'description' : params["description"]
 				}
 
@@ -104,7 +111,7 @@ class kb_genomeclfUtils(object):
 
 			list_classifier_types = ["k_nearest_neighbors", "gaussian_nb", "logistic_regression", "decision_tree_classifier", "support_vector_machine", "neural_network"]
 			for classifier_type in list_classifier_types:
-				current_classifier_object = {	"classifier_to_execute": getCurrentClassifierObject(classifier_type),
+				current_classifier_object = {	"classifier_to_execute": self.getCurrentClassifierObject(classifier_type),
 												"classifier_type": classifier_type,
 												"classifier_name": params["classifier_object_name"] + "_" + classifier_type
 											}
@@ -126,13 +133,13 @@ class kb_genomeclfUtils(object):
 
 			#handle case for ensemble
 		else:
-			current_classifier_object = {	"classifier_to_execute": getCurrentClassifierObject(classifier_to_run),
+			current_classifier_object = {	"classifier_to_execute": self.getCurrentClassifierObject(classifier_to_run),
 											"classifier_type": classifier_to_run,
 											"classifier_name": params["classifier_object_name"] + "_" + classifier_to_run
 										}
 			genome_classifier_object_names.append(current_classifier_object["classifier_name"])
 
-			(classification_report_dict,individual_classifier_info)  = self.executeClassifier(current_ws, common_classifier_information, current_classifier_object)
+			(classification_report_dict,individual_classifier_info)  = self.executeClassifier(current_ws, common_classifier_information, current_classifier_object, folder_name)
 			dict_classification_report_dict[classifier_to_run] = classification_report_dict
 			classifier_info_list.append(individual_classifier_info)
 
@@ -148,13 +155,13 @@ class kb_genomeclfUtils(object):
 		main_report_df_flag = False
 		dtt_report_df_flag = False
 
-		(main_report_df, dtt_report_df, best_classifier_type_nice, genome_dtt_classifier_object_names) = self.handleClassificationReports(dict_classification_report_dict, list(common_classifier_information["class_enumeration"].keys()), params["classifier_object_name"] )
-		if(len(main_report_df.keys()) > 0):
+		(main_report_df, dtt_report_df, best_classifier_type_nice, genome_dtt_classifier_object_names) = self.handleClassificationReports(dict_classification_report_dict, list(common_classifier_information["class_list_mapping"].keys()), params["classifier_object_name"] )
+		if(len(main_report_df.keys()) > 1):
 			main_report_df_flag = True
 			self.buildMainHTMLContent(main_report_df, genome_classifier_object_names, phenotype, best_classifier_type_nice)
 		if(len(dtt_report_df.keys()) > 0):
 			dtt_report_df_flag = True
-			self.buildDTTHTMLContent(dtt_report_df, genome_dtt_classifier_object_names, best_classifier_type_nice)
+			self.buildDTTHTMLContent(dtt_report_df, top_20, genome_dtt_classifier_object_names, best_classifier_type_nice)
 
 		html_output_name = self.viewerHTMLContent(folder_name, main_report_view = main_report_df_flag, decision_tree_view = dtt_report_df_flag)
 
@@ -181,6 +188,8 @@ class kb_genomeclfUtils(object):
 		matrix_size = len(common_classifier_information["class_list_mapping"])
 		cnf_matrix_proportion = np.zeros(shape=(matrix_size, matrix_size))
 		
+		classifier = current_classifier_object["classifier_to_execute"]
+
 		for c in range(common_classifier_information["splits"]):
 			X_train = common_classifier_information["whole_X"][common_classifier_information["list_train_index"][c]]
 			y_train = common_classifier_information["whole_Y"][common_classifier_information["list_train_index"][c]]
@@ -190,7 +199,7 @@ class kb_genomeclfUtils(object):
 			classifier.fit(X_train, y_train)
 			y_pred = classifier.predict(X_test)
 
-			cnf = confusion_matrix(y_test, y_pred, lables=list(common_classifier_information["class_enumeration"].values()))
+			cnf = confusion_matrix(y_test, y_pred, labels=list(common_classifier_information["class_list_mapping"].values()))
 			cnf_f = cnf.astype('float') / cnf.sum(axis=1)[:, np.newaxis]
 			for i in range(len(cnf)):
 				for j in range(len(cnf)):
@@ -198,11 +207,11 @@ class kb_genomeclfUtils(object):
 
 		#get statistics for the last case made
 		#diagonal entries of cm are the accuracies of each class
-		target_names = list(common_classifier_information["class_enumeration"].keys())
+		target_names = list(common_classifier_information["class_list_mapping"].keys())
 		classification_report_dict = classification_report(y_test, y_pred, target_names=target_names, output_dict = True)
 
 		#save down classifier object in pickle format
-		pickle_out = open(os.path.join(self.scratch, folder_name, "data", current_classifier_object["classifier_name"] + ".pickle"), "w")
+		pickle_out = open(os.path.join(self.scratch, folder_name, "data", current_classifier_object["classifier_name"] + ".pickle"), "wb")
 		main_clf = classifier.fit(common_classifier_information["whole_X"], common_classifier_information["whole_Y"])
 		pickle.dump(main_clf, pickle_out, protocol = 2)
 		pickle_out.close()
@@ -234,36 +243,35 @@ class kb_genomeclfUtils(object):
 													  'provenance': self.ctx['provenance']
 													  }]
 													})[0]
-     
-     	#information for call back
+	 
+		#information for call back
 		individual_classifier_info = {	"classifier_name": current_classifier_object["classifier_name"],
 										"classifier_ref": obj_save_ref,
 										"accuracy": classification_report_dict["accuracy"]}
 
-		cm = np.round(cnf_matrix_proportion/splits*100.0,1)
+		cm = np.round(cnf_matrix_proportion/common_classifier_information["splits"]*100.0,1)
 		title = "CM: " + current_classifier_object["classifier_type"]
-		#classes = list(common_classifier_information["class_enumeration"].keys())
-     	self.plot_confusion_matrix(cm, title, current_classifier_object["classifier_name"], list(common_classifier_information["class_list_mapping"].keys()), folder_name)
+		self.plot_confusion_matrix(cm, title, current_classifier_object["classifier_name"], list(common_classifier_information["class_list_mapping"].keys()), folder_name)
 
-     	return classification_report_dict, individual_classifier_info
+		return classification_report_dict, individual_classifier_info
 
-    def handleClassificationReports(dict_classification_report_dict, target_names, classifier_object_name):
+	def handleClassificationReports(self, dict_classification_report_dict, target_names, classifier_object_name):
 
-    	main_report_df = {}
-    	dtt_report_df = {}
-    	best_classifier_type_nice = None
-    	genome_dtt_classifier_object_names = []
-    	#genome_dtt_classifier_object_names is a list of classifier_object_name + "_" + dtt_classifier_type
+		main_report_dict = {}
+		dtt_report_dict = {}
+		best_classifier_type_nice = None
+		genome_dtt_classifier_object_names = []
+		#genome_dtt_classifier_object_names is a list of classifier_object_name + "_" + dtt_classifier_type
 
-    	metric_column =[]
-    	for target in target_names:
-    		metric_column.append(target)
-    		metric_column.append("Precision")
-    		metric_column.append("Recall")
-    		metric_column.append("F1-Score")
+		metric_column =[]
+		for target in target_names:
+			metric_column.append(target)
+			metric_column.append("Precision")
+			metric_column.append("Recall")
+			metric_column.append("F1-Score")
 
-    	metric_column.append("Accuracy")
-    	main_report_df["Metrics"] = metric_column
+		metric_column.append("Accuracy")
+		main_report_dict["Metrics"] = metric_column
 
 		classifier_types_to_nice = {"k_nearest_neighbors": "K Nearest Neighbors", 
 									"gaussian_nb": "Gaussian Naive Bayes", 
@@ -275,93 +283,97 @@ class kb_genomeclfUtils(object):
 									"neural_network": "Neural Network"
 									}
 
-    	#only making a single column
-    	if(len(dict_classification_report_dict.keys())==1):
-    		classifier_type = dict_classification_report_dict.keys()[0]
-    		classifier_type_column = []
+		#only making a single column
+		if(len(dict_classification_report_dict.keys())==1):
+			classifier_type = list(dict_classification_report_dict.keys())[0]
+			classifier_type_column = []
 
-    		for target in target_names:
-    			classifier_type_column.append(None)
-    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["precision"])
-    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["recall"])
-    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["f1-score"])
+			for target in target_names:
+				classifier_type_column.append(None)
+				classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["precision"])
+				classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["recall"])
+				classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["f1-score"])
 
-    		#also add accuracy
-    		classifier_type_column.append(dict_classification_report_dict[classifier_type]["accuracy"])
+			#also add accuracy
+			classifier_type_column.append(dict_classification_report_dict[classifier_type]["accuracy"])
 
-    		main_report_df[classifier_types_to_nice[classifier_type]] = classifier_type_column
+			main_report_dict[classifier_types_to_nice[classifier_type]] = classifier_type_column
 
-    	elif(len(dict_classification_report_dict.keys())==3):
-    		#case where the keys are decision_tree_classifier, decision_tree_classifier_gini, and decision_tree_classifier_entropy
-    		
-    		dtt_report_df["Metrics"] = metric_column
-    		dtt_classifier_types = ["decision_tree_classifier", "decision_tree_classifier_gini", "decision_tree_classifier_entropy"]
-    		for classifier_type in dtt_classifier_types
-    		    classifier_type_column = []
+		elif(len(dict_classification_report_dict.keys())==3):
+			#case where the keys are decision_tree_classifier, decision_tree_classifier_gini, and decision_tree_classifier_entropy
+			
+			dtt_report_dict["Metrics"] = metric_column
+			dtt_classifier_types = ["decision_tree_classifier", "decision_tree_classifier_gini", "decision_tree_classifier_entropy"]
+			for classifier_type in dtt_classifier_types:
+				classifier_type_column = []
 
-	    		for target in target_names:
-	    			classifier_type_column.append(None)
-	    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["precision"])
-	    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["recall"])
-	    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["f1-score"])
+				for target in target_names:
+					classifier_type_column.append(None)
+					classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["precision"])
+					classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["recall"])
+					classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["f1-score"])
 
-	    		#also add accuracy
-	    		classifier_type_column.append(dict_classification_report_dict[classifier_type]["accuracy"])
+				#also add accuracy
+				classifier_type_column.append(dict_classification_report_dict[classifier_type]["accuracy"])
 
-	    		dtt_report_df[classifier_types_to_nice[classifier_type]] = classifier_type_column
-	    		genome_dtt_classifier_object_names.append(classifier_object_name + "_" + classifier_type)
+				dtt_report_dict[classifier_types_to_nice[classifier_type]] = classifier_type_column
+				genome_dtt_classifier_object_names.append(classifier_object_name + "_" + classifier_type)
 
 
-	    	#In this case there will be no main page and only a decision tree page
+			#In this case there will be no main page and only a decision tree page
 
-    	else:
-    		#there is everything **and** we have to select a best classifier
-    		regular_classifier_types = ["k_nearest_neighbors", "gaussian_nb", "logistic_regression", "decision_tree_classifier", "support_vector_machine", "neural_network"]
-    		regular_classifier_type_to_accuracy = {}
+		else:
+			#there is everything **and** we have to select a best classifier
+			regular_classifier_types = ["k_nearest_neighbors", "gaussian_nb", "logistic_regression", "decision_tree_classifier", "support_vector_machine", "neural_network"]
+			regular_classifier_type_to_accuracy = {}
 
-    		for classifier_type in regular_classifier_types
-    			classifier_type_column = []
+			for classifier_type in regular_classifier_types:
+				classifier_type_column = []
 
-	    		for target in target_names:
-	    			classifier_type_column.append(None)
-	    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["precision"])
-	    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["recall"])
-	    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["f1-score"])
+				for target in target_names:
+					classifier_type_column.append(None)
+					classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["precision"])
+					classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["recall"])
+					classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["f1-score"])
 
-	    		#also add accuracy
-	    		regular_classifier_type_to_accuracy[classifier_type] = dict_classification_report_dict[classifier_type]["accuracy"]
-	    		classifier_type_column.append(dict_classification_report_dict[classifier_type]["accuracy"])
+				#also add accuracy
+				regular_classifier_type_to_accuracy[classifier_type] = dict_classification_report_dict[classifier_type]["accuracy"]
+				classifier_type_column.append(dict_classification_report_dict[classifier_type]["accuracy"])
 
-	    		main_report_df[classifier_types_to_nice[classifier_type]] = classifier_type_column
+				main_report_dict[classifier_types_to_nice[classifier_type]] = classifier_type_column
 
-	    	best_classifier_type = max(regular_classifier_type_to_accuracy.items(), key=operator.itemgetter(1))[0]
-	    	best_classifier_type_nice = classifier_types_to_nice[best_classifier_type]
+			best_classifier_type = max(regular_classifier_type_to_accuracy.items(), key=operator.itemgetter(1))[0]
+			best_classifier_type_nice = classifier_types_to_nice[best_classifier_type]
 
-	    	#handle decision_tree_classifier, decision_tree_classifier_gini, and decision_tree_classifier_entropy
-    		dtt_report_df["Metrics"] = metric_column
+			#handle decision_tree_classifier, decision_tree_classifier_gini, and decision_tree_classifier_entropy
+			dtt_report_dict["Metrics"] = metric_column
+			dtt_classifier_types = []
 			dtt_classifier_types.append("decision_tree_classifier")
-    		if(best_classifier_type != "decision_tree_classifier"):
-    			dtt_classifier_types.append(best_classifier_type)
-    		else:
-    			dtt_classifier_types.append("decision_tree_classifier_gini")
-    			dtt_classifier_types.append("decision_tree_classifier_entropy")
+			if(best_classifier_type != "decision_tree_classifier"):
+				dtt_classifier_types.append(best_classifier_type)
+			
+			dtt_classifier_types.append("decision_tree_classifier_gini")
+			dtt_classifier_types.append("decision_tree_classifier_entropy")
 
-    		for classifier_type in dtt_classifier_types
-    		    classifier_type_column = []
+			for classifier_type in dtt_classifier_types:
+				classifier_type_column = []
 
-	    		for target in target_names:
-	    			classifier_type_column.append(None)
-	    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["precision"])
-	    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["recall"])
-	    			classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["f1-score"])
+				for target in target_names:
+					classifier_type_column.append(None)
+					classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["precision"])
+					classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["recall"])
+					classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["f1-score"])
 
-	    		#also add accuracy
-	    		classifier_type_column.append(dict_classification_report_dict[classifier_type]["accuracy"])
+				#also add accuracy
+				classifier_type_column.append(dict_classification_report_dict[classifier_type]["accuracy"])
 
-	    		dtt_report_df[classifier_types_to_nice[classifier_type]] = classifier_type_column
-	    		genome_dtt_classifier_object_names.append(classifier_object_name + "_" + classifier_type)
+				dtt_report_dict[classifier_types_to_nice[classifier_type]] = classifier_type_column
+				genome_dtt_classifier_object_names.append(classifier_object_name + "_" + classifier_type)
 
-	    return(main_report_df, dtt_report_df, best_classifier_type_nice, genome_dtt_classifier_object_names)
+		main_report_df = pd.DataFrame(main_report_dict)
+		dtt_report_df = pd.DataFrame(dtt_report_dict)
+
+		return(main_report_df, dtt_report_df, best_classifier_type_nice, genome_dtt_classifier_object_names)
 
 	def tuneDecisionTree(self, current_ws, common_classifier_information, classifier_object_name, folder_name):
 
@@ -396,7 +408,7 @@ class kb_genomeclfUtils(object):
 			training_avg.append(np.average(np.array(train_score)))
 			training_std.append(np.std(train_score))
 			validation_avg.append(np.average(validate_score))
-			validate_std.append(np.std(validate_score))
+			validation_std.append(np.std(validate_score))
 
 		#Create Figure
 		fig, ax = plt.subplots(figsize=(6, 6))
@@ -451,7 +463,7 @@ class kb_genomeclfUtils(object):
 			training_avg.append(np.average(np.array(train_score)))
 			training_std.append(np.std(train_score))
 			validation_avg.append(np.average(validate_score))
-			validate_std.append(np.std(validate_score))
+			validation_std.append(np.std(validate_score))
 
 		fig, ax = plt.subplots(figsize=(6, 6))
 		plt.errorbar(np.arange(1,iterations), training_avg, yerr=training_std, fmt=u'o', label=u'Training set')
@@ -505,10 +517,10 @@ class kb_genomeclfUtils(object):
 		tree_contents = re.sub(r'shape=box] ;', r'shape=Mrecord] ; node [style=filled];', tree_contents)
 
 		color_set = []
-		for i in range(len(class_list)):
+		for i in range(len(list(common_classifier_information["class_list_mapping"].keys()))):
 			color_set.append('%.4f'%np.random.random() + " " + '%.4f'%np.random.random()+ " " + '0.900')
 
-		for current_class, current_color in zip(class_list, color_set):
+		for current_class, current_color in zip(list(common_classifier_information["class_list_mapping"].keys()), color_set):
 			tree_contents = re.sub(r'(\w\s\[label="%s")' % current_class, r'\1, color = "%s"' % current_color, tree_contents)
 
 
@@ -560,9 +572,10 @@ class kb_genomeclfUtils(object):
 
 	def unloadTrainingSet(self, current_ws, training_set_name):
 
-		training_set_object = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': training_set_name}]})
-		phenotype = training_set_object["classification_type"]
-		classes_sorted = training_set_object["classes"]
+		training_set_object = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': training_set_name}]})["data"]
+	
+		phenotype = training_set_object[0]['data']["classification_type"]
+		classes_sorted = training_set_object[0]['data']["classes"]
 
 		class_enumeration = {}
 		for index, _class in enumerate(classes_sorted):
@@ -584,12 +597,10 @@ class kb_genomeclfUtils(object):
 			_enumeration = class_enumeration[genome["genome_classification"]]
 			_phenotype_enumeration.append(_enumeration)
 
-		uploaded_data = {	"Genome Name": _names,
-						"Geomne Reference": _references,
-						"Phenotype": _phenotypes,
-						"Phenotype Enumeration": _enumeration}
-
-		uploaded_df = pd.DataFrame(data=upload_data)
+		uploaded_df = pd.DataFrame(data={	"Genome Name": _names,
+											"Genome Reference": _references,
+											"Phenotype": _phenotypes,
+											"Phenotype Enumeration": _phenotype_enumeration})
 
 		return(phenotype, class_enumeration, uploaded_df, training_set_object_reference)
 
@@ -599,10 +610,10 @@ class kb_genomeclfUtils(object):
 		if "functional_roles" == genome_attribute:
 			
 			ref_to_role = {}
-			master_role_set = {}
+			master_role_set = set()
 
 			for genome_ref in genome_references:
-				genome_object_data = self.ws_client.get_objects2({'objects':[{'ref': 'genome_ref'}]})['data'][0]['data']
+				genome_object_data = self.ws_client.get_objects2({'objects':[{'ref': genome_ref}]})['data'][0]['data']
 
 				#figure out where functional roles are kept
 				keys_location = genome_object_data.keys()
@@ -626,25 +637,29 @@ class kb_genomeclfUtils(object):
 				for functional_role in location_of_functional_roles:
 					try:
 						list_functional_roles.append(functional_role[function_str])
-					else:
-						#apparently some function list just don't have functions...
+					except (RuntimeError, TypeError, ValueError, NameError):
 						pass
+						print("apparently some function list just don't have functions...")
+
+				# print("list_functional_roles")
+				# print(list_functional_roles)
+				# exit()
 
 				#create a mapping from genome_ref to all of its functional roles
 				ref_to_role[genome_ref] = list_functional_roles
 
 				#keep updateing a set of all functional roles seen so far
-				master_role_set.union(set(list_functional_roles))
+				master_role_set = master_role_set.union(set(list_functional_roles))
 
 			#we are done looping over all genomes
 			master_role_list = sorted(list(master_role_set))
-			master_role_enumeration = enumerate(master_role_set)
+			master_role_list.remove('')
 			ref_to_indication = {}
 
 			#make indicator rows for each 
 			for genome_ref in genome_references:
 				set_functional_roles = set(ref_to_role[genome_ref])
-				matching_index = [i for i, role in master_role_enumeration if role in set_functional_roles] 
+				matching_index = [i for i, role in enumerate(master_role_list) if role in set_functional_roles] 
 
 				indicators = np.zeros(len(master_role_list))
 				indicators[np.array(matching_index)] = 1
@@ -652,7 +667,7 @@ class kb_genomeclfUtils(object):
 				ref_to_indication[genome_ref] = indicators.astype(int)
 
 
-			indicator_matrix = pd.DataFrame(data = ref_to_indication, orient='index', columns = master_role_list).reset_index().rename(columns={"index":"Genome Reference"})
+			indicator_matrix = pd.DataFrame.from_dict(data = ref_to_indication, orient='index', columns = master_role_list).reset_index().rename(columns={"index":"Genome Reference"})
 		
 			return (indicator_matrix, master_role_list)
 		else:
@@ -663,6 +678,8 @@ class kb_genomeclfUtils(object):
 	def getKSplits(self, splits, whole_X, whole_Y):
 
 		#This cross-validation object is a variation of KFold that returns stratified folds. The folds are made by preserving the percentage of samples for each class.
+		list_train_index = []
+		list_test_index = []
 		skf = StratifiedKFold(n_splits=splits, random_state=0, shuffle=True)
 		for train_idx, test_idx in skf.split(whole_X, whole_Y):
 			list_train_index.append(train_idx)
@@ -843,8 +860,8 @@ class kb_genomeclfUtils(object):
 
 			input_genome_names = []
 			for genome_ref in input_genome_references:
-			 	genome_name = str(self.ws_client.get_objects2({'objects' : [{'ref':genome_ref}]})['data'][0]['info'][1])
-			 	input_genome_names.append(genome_name)
+				genome_name = str(self.ws_client.get_objects2({'objects' : [{'ref':genome_ref}]})['data'][0]['info'][1])
+				input_genome_names.append(genome_name)
 
 		else:
 			input_genome_references = []
@@ -1007,25 +1024,25 @@ class kb_genomeclfUtils(object):
 		params_RAST =	{
 		"workspace": current_ws,
 		"annotate_proteins_kmer_v2": 1,
-        "annotate_proteins_similarity": 1,
-        "call_features_CDS_glimmer3": 0,
-        "call_features_CDS_prodigal": 0,
-        "call_features_crispr": 0,
-        "call_features_prophage_phispy": 0,
-        "call_features_rRNA_SEED": 0,
-        "call_features_repeat_region_SEED": 0,
-        "call_features_strep_pneumo_repeat": 0,
-        "call_features_strep_suis_repeat": 0,
-        "call_features_tRNA_trnascan": 0,
-        "call_pyrrolysoproteins": 0,
-        "call_selenoproteins": 0,
-        "genome_text": "",
-        "input_genomes": input_genomes_list,
-        "kmer_v1_parameters": 1,
-        "output_genome": output_genome_set_name,
-        "resolve_overlapping_features": 0,
-        "retain_old_anno_for_hypotheticals": 0
-        }
+		"annotate_proteins_similarity": 1,
+		"call_features_CDS_glimmer3": 0,
+		"call_features_CDS_prodigal": 0,
+		"call_features_crispr": 0,
+		"call_features_prophage_phispy": 0,
+		"call_features_rRNA_SEED": 0,
+		"call_features_repeat_region_SEED": 0,
+		"call_features_strep_pneumo_repeat": 0,
+		"call_features_strep_suis_repeat": 0,
+		"call_features_tRNA_trnascan": 0,
+		"call_pyrrolysoproteins": 0,
+		"call_selenoproteins": 0,
+		"genome_text": "",
+		"input_genomes": input_genomes_list,
+		"kmer_v1_parameters": 1,
+		"output_genome": output_genome_set_name,
+		"resolve_overlapping_features": 0,
+		"retain_old_anno_for_hypotheticals": 0
+		}
 		
 		#we don't do anything with the output but you can if you want to
 		print(params_RAST)
@@ -1195,9 +1212,14 @@ class kb_genomeclfUtils(object):
 			file.write(str_button)
 
 		if(decision_tree_view):
-			str_button = u"""
-			<button class="tablinks" onclick="openTab(event, 'Decision Tree Tuning')">Decision Tree Tuning</button>
-			"""
+			if(main_report_view):
+				str_button = u"""
+				<button class="tablinks" onclick="openTab(event, 'Decision Tree Tuning')">Decision Tree Tuning</button>
+				"""
+			else:
+				str_button = u"""
+				<button class="tablinks" onclick="openTab(event, 'Decision Tree Tuning')" id="defaultOpen">Decision Tree Tuning</button>
+				"""
 			file.write(str_button)
 			
 		if(ensemble_view):
@@ -1303,10 +1325,18 @@ class kb_genomeclfUtils(object):
 			<html>
 
 			<style>
+			figcaption{
+			text-align: center;
+			}
 			* {
 			  box-sizing: border-box;
 			}
-
+			.single{
+			display: block;
+			margin-left: auto;
+			margin-right: auto;
+			width: 40%;
+			}
 			.column {
 			  float: left;
 			  width: 50%;
@@ -1342,7 +1372,7 @@ class kb_genomeclfUtils(object):
 
 		second_paragraph = 	u"""For each classification algorithm, we also provide the Precision, Recall, and F1-Score for each """ + str(phenotype) + """ \
 							class. More information about these metrics can be found <a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_recall_fscore_support.html#sklearn.metrics.precision_recall_fscore_support">
-							here </a>.</p><p>
+							here</a>.</p><p>
 							"""
 		file.write(second_paragraph)
 
@@ -1363,8 +1393,8 @@ class kb_genomeclfUtils(object):
 			if(main_report_df.shape[1] == 2):
 				images_str = u"""
 							<div class="row">
-							  	<figcaption>""" + genome_classifier_object_names[0] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_classifier_object_names[0] + ".pickle") + """ " download> (Download) </a> </figcaption>
-							    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_classifier_object_names[0] +".png")+ """ " alt=" """+ genome_classifier_object_names[0]  +""" "  style="width:100%">
+								<figcaption>""" + genome_classifier_object_names[0] + """  <a href=" """+ os.path.join("data", genome_classifier_object_names[0] + ".pickle") + """ " download> (Download) </a> </figcaption>
+								<img class="single" src=" """ + os.path.join("images", genome_classifier_object_names[0] +".png")+ """ " alt=" """+ genome_classifier_object_names[0]  +""" "  style="width:50%">
 							</div>
 				"""
 				file.write(images_str)
@@ -1372,38 +1402,39 @@ class kb_genomeclfUtils(object):
 				images_str = u"""
 							<div class="row">
 							  <div class="column">
-							  	<figcaption>""" + genome_classifier_object_names[0] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_classifier_object_names[0] + ".pickle") + """ " download> (Download) </a> </figcaption>
-							    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_classifier_object_names[0] +".png")+ """ " alt=" """+ genome_classifier_object_names[0]  +""" "  style="width:100%">
+								<figcaption>""" + genome_classifier_object_names[0] + """  <a href=" """+ os.path.join("data", genome_classifier_object_names[0] + ".pickle") + """ " download> (Download) </a> </figcaption>
+								<img src=" """ + os.path.join("images", genome_classifier_object_names[0] +".png")+ """ " alt=" """+ genome_classifier_object_names[0]  +""" "  style="width:100%">
 							  </div>
 							  <div class="column">
-							  	<figcaption>""" + genome_classifier_object_names[1] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_classifier_object_names[1] + ".pickle") + """ " download> (Download) </a> </figcaption>
-							    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_classifier_object_names[1] +".png")+ """ " alt=" """+ genome_classifier_object_names[1]  +""" "  style="width:100%">
-							  </div>
-							</div>
-							<div class="row">
-							  <div class="column">
-							  	<figcaption>""" + genome_classifier_object_names[2] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_classifier_object_names[2] + ".pickle") + """ " download> (Download) </a> </figcaption>
-							    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_classifier_object_names[2] +".png")+ """ " alt=" """+ genome_classifier_object_names[2]  +""" "  style="width:100%">
-							  </div>
-							  <div class="column">
-							  	<figcaption>""" + genome_classifier_object_names[3] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_classifier_object_names[3] + ".pickle") + """ " download> (Download) </a> </figcaption>
-							    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_classifier_object_names[3] +".png")+ """ " alt=" """+ genome_classifier_object_names[3]  +""" "  style="width:100%">
+								<figcaption>""" + genome_classifier_object_names[1] + """  <a href=" """+ os.path.join("data", genome_classifier_object_names[1] + ".pickle") + """ " download> (Download) </a> </figcaption>
+								<img src=" """ + os.path.join("images", genome_classifier_object_names[1] +".png")+ """ " alt=" """+ genome_classifier_object_names[1]  +""" "  style="width:100%">
 							  </div>
 							</div>
 							<div class="row">
 							  <div class="column">
-							  	<figcaption>""" + genome_classifier_object_names[4] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_classifier_object_names[4] + ".pickle") + """ " download> (Download) </a> </figcaption>
-							    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_classifier_object_names[4] +".png")+ """ " alt=" """+ genome_classifier_object_names[4]  +""" "  style="width:100%">
+								<figcaption>""" + genome_classifier_object_names[2] + """  <a href=" """+ os.path.join("data", genome_classifier_object_names[2] + ".pickle") + """ " download> (Download) </a> </figcaption>
+								<img src=" """ + os.path.join("images", genome_classifier_object_names[2] +".png")+ """ " alt=" """+ genome_classifier_object_names[2]  +""" "  style="width:100%">
 							  </div>
 							  <div class="column">
-							  	<figcaption>""" + genome_classifier_object_names[5] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_classifier_object_names[5] + ".pickle") + """ " download> (Download) </a> </figcaption>
-							    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_classifier_object_names[5] +".png")+ """ " alt=" """+ genome_classifier_object_names[5]  +""" "  style="width:100%">
+								<figcaption>""" + genome_classifier_object_names[3] + """  <a href=" """+ os.path.join("data", genome_classifier_object_names[3] + ".pickle") + """ " download> (Download) </a> </figcaption>
+								<img src=" """ + os.path.join("images", genome_classifier_object_names[3] +".png")+ """ " alt=" """+ genome_classifier_object_names[3]  +""" "  style="width:100%">
+							  </div>
+							</div>
+							<div class="row">
+							  <div class="column">
+								<figcaption>""" + genome_classifier_object_names[4] + """  <a href=" """+ os.path.join("data", genome_classifier_object_names[4] + ".pickle") + """ " download> (Download) </a> </figcaption>
+								<img src=" """ + os.path.join("images", genome_classifier_object_names[4] +".png")+ """ " alt=" """+ genome_classifier_object_names[4]  +""" "  style="width:100%">
+							  </div>
+							  <div class="column">
+								<figcaption>""" + genome_classifier_object_names[5] + """  <a href=" """+ os.path.join("data", genome_classifier_object_names[5] + ".pickle") + """ " download> (Download) </a> </figcaption>
+								<img src=" """ + os.path.join("images", genome_classifier_object_names[5] +".png")+ """ " alt=" """+ genome_classifier_object_names[5]  +""" "  style="width:100%">
 							  </div>
 							</div>
 				"""
 			
 				file.write(images_str)
 
+		main_report_df.fillna('', inplace=True)
 		main_report_html = main_report_df.to_html(index=False, table_id="main_report_table", justify='center')
 		file.write(main_report_html)
 
@@ -1411,12 +1442,13 @@ class kb_genomeclfUtils(object):
 
 			<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
 			<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+
 			<script type="text/javascript">
 			$(document).ready(function() {
 				$('#main_report_table').DataTable( {
-					"scrollY":        "500px",
-					"scrollCollapse": true,
-					"paging":         false
+					"ordering": false,
+					scrollCollapse: true,
+					paging:         false
 				} );
 			} );
 			</script>
@@ -1424,7 +1456,7 @@ class kb_genomeclfUtils(object):
 		file.write(scripts)
 		file.close()
 
-	def buildDTTHTMLContent(self, dtt_report_df, genome_dtt_classifier_object_names, best_classifier_type_nice):
+	def buildDTTHTMLContent(self, dtt_report_df, top_20, genome_dtt_classifier_object_names, best_classifier_type_nice):
 
 		folder_name = "forBuild"
 		file = open(os.path.join(self.scratch, folder_name, 'dtt_report.html'), "w")
@@ -1433,10 +1465,18 @@ class kb_genomeclfUtils(object):
 			<html>
 
 			<style>
+			figcaption{
+			text-align: center;
+			}
 			* {
 			  box-sizing: border-box;
 			}
-
+			.single{
+			display: block;
+			margin-left: auto;
+			margin-right: auto;
+			width: 40%;
+			}
 			.column {
 			  float: left;
 			  width: 50%;
@@ -1466,6 +1506,22 @@ class kb_genomeclfUtils(object):
 							"""
 		file.write(first_paragraph)
 
+
+		#Show the graph for Tree Depth Accuracy
+		tuning_str =u"""
+		<div class="row">
+		  <div class="column">
+			<figcaption> Decision Tree Gini Criterion </figcaption>
+			<img src=" """ + os.path.join("images", "decision_tree_classifier_gini_depth.png")+ """ " alt="decision_tree_classifier_gini_depth"  style="width:100%">
+		  </div>
+		  <div class="column">
+			<figcaption> Decision Tree Entropy Criterion</figcaption>
+			<img src=" """ + os.path.join("images", "decision_tree_classifier_entropy_depth.png")+ """ " alt="decision_tree_classifier_entropy_depth"  style="width:100%">
+		  </div>
+		</div>
+		"""
+		file.write(tuning_str)
+
 		if((best_classifier_type_nice != "Decision Tree") and (best_classifier_type_nice != None)):
 			sentence = 	u"""<p> We also include the confusion matrix and metrics for """ + best_classifier_type_nice + """ (the best classifier determined highest average accuracy)</p>"""
 			file.write(sentence)
@@ -1473,12 +1529,12 @@ class kb_genomeclfUtils(object):
 			tuning_str =u"""
 			<div class="row">
 			  <div class="column">
-			  	<figcaption>""" + genome_dtt_classifier_object_names[0] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_dtt_classifier_object_names[0] + ".pickle") + """ " download> (Download) </a> </figcaption>
-			    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_dtt_classifier_object_names[0] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[0]  +""" "  style="width:100%">
+				<figcaption>""" + genome_dtt_classifier_object_names[0] + """  <a href=" """+ os.path.join("data", genome_dtt_classifier_object_names[0] + ".pickle") + """ " download> (Download) </a> </figcaption>
+				<img src=" """ + os.path.join("images", genome_dtt_classifier_object_names[0] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[0]  +""" "  style="width:100%">
 			  </div>
 			  <div class="column">
-			  	<figcaption>""" + genome_dtt_classifier_object_names[1] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_dtt_classifier_object_namesv[1] + ".pickle") + """ " download> (Download) </a> </figcaption>
-			    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_dtt_classifier_object_names[1] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[1]  +""" "  style="width:100%">
+				<figcaption>""" + genome_dtt_classifier_object_names[1] + """  <a href=" """+ os.path.join("data", genome_dtt_classifier_object_names[1] + ".pickle") + """ " download> (Download) </a> </figcaption>
+				<img src=" """ + os.path.join("images", genome_dtt_classifier_object_names[1] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[1]  +""" "  style="width:100%">
 			  </div>
 			</div>
 			"""
@@ -1487,8 +1543,8 @@ class kb_genomeclfUtils(object):
 		else:	
 			tuning_str = u"""
 						<div class="row">
-						  	<figcaption>""" + genome_dtt_classifier_object_names[0] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_dtt_classifier_object_names[0] + ".pickle") + """ " download> (Download) </a> </figcaption>
-						    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_dtt_classifier_object_names[0] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[0]  +""" "  style="width:100%">
+							<figcaption>""" + genome_dtt_classifier_object_names[0] + """  <a href=" """+ os.path.join("data", genome_dtt_classifier_object_names[0] + ".pickle") + """ " download> (Download) </a> </figcaption>
+							<img class="single" src=" """ + os.path.join("images", genome_dtt_classifier_object_names[0] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[0]  +""" "  style="width:50%">
 						</div>
 			"""
 			file.write(tuning_str)
@@ -1496,20 +1552,34 @@ class kb_genomeclfUtils(object):
 		tuning_str =u"""
 		<div class="row">
 		  <div class="column">
-		  	<figcaption>""" + genome_dtt_classifier_object_names[-1 -1] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_dtt_classifier_object_names[-1 -1] + ".pickle") + """ " download> (Download) </a> </figcaption>
-		    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_dtt_classifier_object_names[-1 -1] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[-1 -1]  +""" "  style="width:100%">
+			<figcaption>""" + genome_dtt_classifier_object_names[-1 -1] + """  <a href=" """+ os.path.join("data", genome_dtt_classifier_object_names[-1 -1] + ".pickle") + """ " download> (Download) </a> </figcaption>
+			<img src=" """ + os.path.join("images", genome_dtt_classifier_object_names[-1 -1] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[-1 -1]  +""" "  style="width:100%">
 		  </div>
 		  <div class="column">
-		  	<figcaption>""" + genome_dtt_classifier_object_names[-1] + """  <a href=" """+ os.path.join(self.scratch, folder_name, "data", genome_dtt_classifier_object_namesv[-1] + ".pickle") + """ " download> (Download) </a> </figcaption>
-		    <img src=" """ + os.path.join(self.scratch, folder_name, "images", genome_dtt_classifier_object_names[-1] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[-1]  +""" "  style="width:100%">
+			<figcaption>""" + genome_dtt_classifier_object_names[-1] + """  <a href=" """+ os.path.join("data", genome_dtt_classifier_object_names[-1] + ".pickle") + """ " download> (Download) </a> </figcaption>
+			<img src=" """ + os.path.join("images", genome_dtt_classifier_object_names[-1] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[-1]  +""" "  style="width:100%">
 		  </div>
 		</div>
 		"""
 		file.write(tuning_str)
 
-
+		dtt_report_df.fillna('', inplace=True)
 		dtt_report_html = dtt_report_df.to_html(index=False, table_id="dtt_report_table", justify='center')
 		file.write(dtt_report_html)
+
+		tree_image = u"""
+					<br>
+					<div class="row">
+						<figcaption> Decision Tree on Functional Roles </figcaption>
+						<img src=" """ + os.path.join("images", "VisualDecisionTree.png")+ """ " alt="VisualDecisionTree"  style="width:100%">
+					</div>
+		"""
+		file.write(tree_image)
+
+		top_20_html = top_20.to_html(index=False, table_id="top_20_table", justify='center')
+		file.write(top_20_html)
+
+
 
 		scripts = u"""</body>
 
@@ -1518,6 +1588,15 @@ class kb_genomeclfUtils(object):
 			<script type="text/javascript">
 			$(document).ready(function() {
 				$('#dtt_report_table').DataTable( {
+			        "ordering": false,
+			        scrollCollapse: true,
+			        paging:         false
+				} );
+			} );
+			</script>
+			<script type="text/javascript">
+			$(document).ready(function() {
+				$('#top_20_table').DataTable( {
 					"scrollY":        "500px",
 					"scrollCollapse": true,
 					"paging":         false
@@ -1529,7 +1608,7 @@ class kb_genomeclfUtils(object):
 		file.close()
 
 	def predictHTMLContent(self, categorizer_name, phenotype, selection_attribute, selected_file_name, missing_genomes, genome_label, predict_table):
-		
+		pass
 		# file = open(os.path.join(self.scratch, 'forPredict', 'status.html'), u"w")
 		# header = u"""
 		# 	<!DOCTYPE html>
@@ -1573,28 +1652,6 @@ class kb_genomeclfUtils(object):
 		# 	</html>"""
 		# file.write(scripts)
 		# file.close()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
