@@ -65,8 +65,8 @@ class kb_genomeclfUtils(object):
 	def fullClassify(self, params, current_ws):
 
 		#double check that Ensemble is only called as specifid in the document
-		if((params["ensemble_model"]!=None) and (classifier_to_run != "run_all")):
-			raise ValueError("Ensemble Model will only be generated if Run All Classifiers is selected")
+		# if((params["ensemble_model"]!=None) and (classifier_to_run != "run_all")):
+		# 	raise ValueError("Ensemble Model will only be generated if Run All Classifiers is selected")
 
 
 		#create folder for images and data
@@ -112,7 +112,7 @@ class kb_genomeclfUtils(object):
 
 			list_classifier_types = ["k_nearest_neighbors", "gaussian_nb", "logistic_regression", "decision_tree_classifier", "support_vector_machine", "neural_network"]
 			for classifier_type in list_classifier_types:
-				current_classifier_object = {	"classifier_to_execute": self.getCurrentClassifierObject(classifier_type),
+				current_classifier_object = {	"classifier_to_execute": self.getCurrentClassifierObject(classifier_type, params[classifier_type]),
 												"classifier_type": classifier_type,
 												"classifier_name": params["classifier_object_name"] + "_" + classifier_type
 											}
@@ -134,7 +134,7 @@ class kb_genomeclfUtils(object):
 
 			#handle case for ensemble
 		else:
-			current_classifier_object = {	"classifier_to_execute": self.getCurrentClassifierObject(classifier_to_run),
+			current_classifier_object = {	"classifier_to_execute": self.getCurrentClassifierObject(classifier_to_run, params[classifier_to_run]),
 											"classifier_type": classifier_to_run,
 											"classifier_name": params["classifier_object_name"] + "_" + classifier_to_run
 										}
@@ -168,20 +168,106 @@ class kb_genomeclfUtils(object):
 
 		return html_output_name, classifier_info_list
 
-	def getCurrentClassifierObject(self, classifier_type):
+	def getCurrentClassifierObject(self, classifier_type, params):
 		
 		if classifier_type == "k_nearest_neighbors":
-			return KNeighborsClassifier()
+			if(params == None):
+				return KNeighborsClassifier()
+			else:
+				return KNeighborsClassifier(n_neighbors = params["n_neighbors"],
+											weights = params["weights"],
+											algorithm = params["algorithm"],
+											leaf_size = params["leaf_size"],
+											p = params["p"],
+											metric = params["metric"]
+											)
+
 		elif classifier_type == "gaussian_nb":
-			return GaussianNB()
+			if(params == None):
+				return GaussianNB()
+			else:
+				if(params["priors"] == "None"):
+					return GaussianNB(priors=None)
+				else:
+					return GaussianNB(	priors=params["prior"]
+										)
+
 		elif classifier_type == "logistic_regression":
-			return LogisticRegression(random_state=0)
+			if(params == None):
+				return LogisticRegression(random_state=0)
+			else:
+				return LogisticRegression(	penalty = params["penalty"],
+											dual = self.getBool(params["dual"]),
+											tol = params["lr_tolerance"],
+											C = params["lr_C"],
+											fit_intercept = self.getBool(params["fit_intercept"]),
+											intercept_scaling = params["intercept_scaling"],
+											solver = params["lr_solver"],
+											max_iter = params["lr_max_iter"],
+											multi_class = params["multi_class"]
+											)
+
 		elif classifier_type == "decision_tree_classifier":
-			return DecisionTreeClassifier(random_state=0)
+			if(params == None):
+				return DecisionTreeClassifier(random_state=0)
+			else:
+
+				return DecisionTreeClassifier(	criterion = params["criterion"],
+												splitter = params["splitter"],
+												max_depth = params["max_depth"],
+												min_samples_split = params["min_samples_split"],
+												min_samples_leaf = params["min_samples_leaf"],
+												min_weight_fraction_leaf = params["min_weight_fraction_leaf"],
+												max_leaf_nodes = params["max_leaf_nodes"],
+												min_impurity_decrease = params["min_impurity_decrease"]
+												)
+
 		elif classifier_type == "support_vector_machine":
-			return svm.SVC(kernel = "linear",random_state=0)
+			if(params == None):
+				return svm.SVC(kernel = "linear",random_state=0)
+			else:
+				return svm.SVC(	C = params["svm_C"],
+								kernel = params["kernel"],
+								degree = params["degree"],
+								gamma = params["gamma"],
+								coef0 = params["coef0"],
+								probability = self.getBool(params["probability"]),
+								shrinking = self.getBool(params["shrinking"]),
+								tol = params["svm_tolerance"],
+								cache_size = params["cache_size"],
+								max_iter = params["svm_max_iter"],
+								decision_function_shape = params["decision_function_shape"]
+								)
+
 		elif classifier_type == "neural_network":
-			return MLPClassifier(random_state=0)
+			if(params == None):
+				return MLPClassifier(random_state=0)
+			else:
+				return MLPClassifier(	hidden_layer_sizes = (int(params["hidden_layer_sizes"]),),
+										activation = params["activation"],
+										solver = params["mlp_solver"],
+										alpha = params["alpha"],
+										batch_size = params["batch_size"],
+										learning_rate = params["learning_rate"],
+										learning_rate_init = params["learning_rate_init"],
+										power_t = params["power_t"],
+										max_iter = params["mlp_max_iter"],
+										shuffle = self.getBool(params["shuffle"]),
+										tol = params["mlp_tolerance"],
+										momentum = params["momentum"],
+										nesterovs_momentum = self.getBool(params["nesterovs_momentum"]),
+										early_stopping = self.getBool(params["early_stopping"]),
+										validation_fraction = params["validation_fraction"],
+										beta_1 = params["beta_1"],
+										beta_2 = params["beta_2"],
+										epsilon = params["epsilon"]
+										)
+
+	def getBool(self, value):
+		if(value == "False"):
+			return False
+		else:
+			return True
 
 	def executeClassifier(self, current_ws, common_classifier_information, current_classifier_object, folder_name):
 		

@@ -95,21 +95,98 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # self.getImpl().upload_trainingset(self.getContext(), params)
 
     def test_build_classifier(self):
-        params = {
-        "description": "my build classifier description",
-        "training_set_name": "to_try_with_build",
-        "classifier_to_run": "run_all",
-        "genome_attribute": "functional_roles",
-        "k_nearest_neighbors": None,
-        "gaussian_nb": None,
-        "logistic_regression": None,
-        "decision_tree_classifier": None,
-        "support_vector_machine": None,
-        "neural_network": None,
-        "ensemble_model": None,
-        "classifier_object_name": "clf_name",
-        "workspace": "sagoyal:narrative_1536939130038"
-        }
+        pass
+        # params = {
+        # "description": "my build classifier description",
+        # "training_set_name": "to_try_with_build",
+        # "classifier_to_run": "run_all",
+        # "genome_attribute": "functional_roles",
+        # "k_nearest_neighbors": None,
+        # "gaussian_nb": None,
+        # "logistic_regression": None,
+        # "decision_tree_classifier": None,
+        # "support_vector_machine": None,
+        # "neural_network": None,
+        # "ensemble_model": None,
+        # "classifier_object_name": "clf_name",
+        # "workspace": "sagoyal:narrative_1536939130038"
+        # }
+        # params = {
+        # "description": "my build classifier description",
+        # "training_set_name": "to_try_with_build",
+        # "classifier_to_run": "run_all",
+        # "genome_attribute": "functional_roles",
+        # "k_nearest_neighbors": {
+        #     "n_neighbors": 5,
+        #     "weights": "uniform",
+        #     "algorithm": "auto",
+        #     "leaf_size": 30,
+        #     "p": 2,
+        #     "metric": "minkowski",
+        # },
+        # "gaussian_nb": {
+        #     "priors": "None"
+        # },
+        # "logistic_regression": {
+        #     "penalty": "l2",
+        #     "dual": "False",
+        #     "lr_tolerance": 0.0001,
+        #     "lr_C": 1,
+        #     "fit_intercept": "True",
+        #     "intercept_scaling": 1,
+        #     "lr_solver": "newton-cg",
+        #     "lr_max_iter": 100,
+        #     "multi_class": "ovr",
+        # },
+        # "decision_tree_classifier": {
+        #     "criterion": "gini",
+        #     "splitter": "best",
+        #     "max_depth": None,
+        #     "min_samples_split": 2,
+        #     "min_samples_leaf": 1,
+        #     "min_weight_fraction_leaf": 0,
+        #     "max_leaf_nodes": None,
+        #     "min_impurity_decrease": 0
+        # },
+        # "support_vector_machine": {
+        #     "svm_C": 1,
+        #     "kernel": "linear",
+        #     "degree": 3,
+        #     "gamma": "auto",
+        #     "coef0": 0,
+        #     "probability": "False",
+        #     "shrinking": "True",
+        #     "svm_tolerance": 0.001,
+        #     "cache_size": 200,
+        #     "svm_max_iter": -1,
+        #     "decision_function_shape": "ovr"
+        # },
+        # "neural_network": {
+        #     "hidden_layer_sizes": "100",
+        #     "activation": "relu",
+        #     "mlp_solver": "adam",
+        #     "alpha": 0.0001,
+        #     "batch_size": "auto",
+        #     "learning_rate": "constant",
+        #     "learning_rate_init": 0.001,
+        #     "power_t": 0.05,
+        #     "mlp_max_iter": 200,
+        #     "shuffle": "True",
+        #     "mlp_random_state": 0,
+        #     "mlp_tolerance": 0.0001,
+        #     "mlp_verbose": "False",
+        #     "mlp_warm_start": "False",
+        #     "momentum": 0.9,
+        #     "nesterovs_momentum": "True",
+        #     "early_stopping": "False",
+        #     "validation_fraction": 0.1,
+        #     "beta_1": 0.9,
+        #     "beta_2": 0.999,
+        #     "epsilon": 1e-8
+        # },
+        # "classifier_object_name": "clf_name",
+        # "workspace": "sagoyal:narrative_1536939130038"
+        # }
         self.getImpl().build_classifier(self.getContext(), params)
 
     def test_predict_phenotype(self):
