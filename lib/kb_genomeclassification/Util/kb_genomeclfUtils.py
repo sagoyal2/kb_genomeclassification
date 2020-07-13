@@ -84,7 +84,7 @@ class kb_genomeclfUtils(object):
 		(indicator_matrix, master_role_list) = self.createIndicatorMatrix(uploaded_df, params["genome_attribute"])
 
 		#split up training data
-		splits = 2 #5
+		splits = 10
 		whole_X = indicator_matrix[master_role_list].values
 		whole_Y = uploaded_df["Phenotype Enumeration"].values
 		(list_train_index, list_test_index) = self.getKSplits(splits, whole_X, whole_Y)
