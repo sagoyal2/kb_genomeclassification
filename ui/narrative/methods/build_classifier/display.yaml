@@ -319,56 +319,6 @@ parameters :
             Epsilon
         short-hint : |
             Value for numerical stability in adam. Only used when solver=’adam’.
-    k_nearest_neighbors_box :
-        ui-name : |
-            K Nearest Neighbors in Ensemble
-        short-hint : |
-            Select to use K Nearest Neighbors in Ensemble Classifier
-    gaussian_nb_box :
-        ui-name : |
-            Gaussian Naive Bayes in Ensemble
-        short-hint : |
-            Select to use Gaussian Naive Bayes in Ensemble Classifier
-    logistic_regression_box :
-        ui-name : |
-            Logistic Regression in Ensemble
-        short-hint : |
-            Select to use Logistic Regression in Ensemble Classifier
-    decision_tree_classifier_box :
-        ui-name : |
-            Decision Tree Classifier in Ensemble
-        short-hint : |
-            Select to use Decision Tree Classifier in Ensemble Classifier
-    support_vector_machine_box :
-        ui-name : |
-            Support Vector Machine in Ensemble
-        short-hint : |
-            Select to use Support Vector Machine in Ensemble Classifier
-    neural_network_box :
-        ui-name : |
-            Neural Network in Ensemble
-        short-hint : |
-            Select to use Neural Network in Ensemble Classifier
-    voting :
-        ui-name : |
-            Voting Scheme
-        short-hint : |
-            If ‘hard’, uses predicted class labels for majority rule voting. Else if ‘soft’, predicts the class label based on the argmax of the sums of the predicted probabilities, which is recommended for an ensemble of well-calibrated classifiers.
-    en_weights :
-        ui-name : |
-            Weights
-        short-hint : |
-            Sequence of weights (float or int) to weight the occurrences of predicted class labels (hard voting) or class probabilities before averaging (soft voting). Uses uniform weights if None.
-    en_n_jobs :
-        ui-name : |
-            Number of Jobs
-        short-hint : |
-            The number of jobs to run in parallel for fit. If -1, then the number of jobs is set to the number of cores.
-    flatten_transform :
-        ui-name : |
-            Flatten Transform
-        short-hint : |
-            Affects shape of transform output only when voting=’soft’ If voting=’soft’ and flatten_transform=True, transform method returns matrix with shape (n_samples, n_classifiers * n_classes). If flatten_transform=False, it returns (n_classifiers, n_samples, n_classes).
 parameter-groups :
     k_nearest_neighbors :
         ui-name: |

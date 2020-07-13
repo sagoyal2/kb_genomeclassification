@@ -95,22 +95,22 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # self.getImpl().upload_trainingset(self.getContext(), params)
 
     def test_build_classifier(self):
-        pass
-        # params = {
-        # "description": "my build classifier description",
-        # "training_set_name": "to_try_with_build",
-        # "classifier_to_run": "run_all",
-        # "genome_attribute": "functional_roles",
-        # "k_nearest_neighbors": None,
-        # "gaussian_nb": None,
-        # "logistic_regression": None,
-        # "decision_tree_classifier": None,
-        # "support_vector_machine": None,
-        # "neural_network": None,
-        # "ensemble_model": None,
-        # "classifier_object_name": "clf_name",
-        # "workspace": "sagoyal:narrative_1536939130038"
-        # }
+
+        params = {
+        "description": "my build classifier description",
+        "training_set_name": "to_try_with_build",
+        "classifier_to_run": "run_all",
+        "genome_attribute": "functional_roles",
+        "k_nearest_neighbors": None,
+        "gaussian_nb": None,
+        "logistic_regression": None,
+        "decision_tree_classifier": None,
+        "support_vector_machine": None,
+        "neural_network": None,
+        "ensemble_model": None,
+        "classifier_object_name": "clf_name",
+        "workspace": "sagoyal:narrative_1536939130038"
+        }
         # params = {
         # "description": "my build classifier description",
         # "training_set_name": "to_try_with_build",
