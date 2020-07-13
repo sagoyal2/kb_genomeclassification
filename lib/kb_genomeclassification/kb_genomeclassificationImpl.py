@@ -63,8 +63,8 @@ This module build a classifier and predict phenotypes based on the classifier An
 
         self.config['ctx'] = ctx
         upload_runner = kb_genomeclfUtils(self.config)
-        html_output_name, classifier_training_set = upload_runner.fullUpload(params, params['workspace'])
 
+        html_output_name, classifier_training_set = upload_runner.fullUpload(params, params['workspace'])
         report_output = upload_runner.generateHTMLReport(params['workspace'], "forUpload", html_output_name, params['description'])
         output = {'report_name': report_output['name'], 'report_ref': report_output['ref'], 'classifier_training_set': classifier_training_set}
 
@@ -109,11 +109,12 @@ This module build a classifier and predict phenotypes based on the classifier An
         # ctx is the context object
         # return variables are: output
         #BEGIN predict_phenotype
-        # self.config['ctx'] = ctx
-        # pred_Runner = kb_genomeclfUtils(self.config)
-        # location_of_report, predictions_mapping = pred_Runner.fullPredict(params, params.get('workspace'))
-        # report_output = pred_Runner.makeHtmlReport(location_of_report, params.get('workspace'), 'pred_Runner', params.get('description'), for_predict = True)
-        # output = {'report_name': report_output['name'], 'report_ref': report_output['ref'], 'predictions': predictions_mapping}
+        self.config['ctx'] = ctx
+        predict_Runner = kb_genomeclfUtils(self.config)
+
+        html_output_name, prediction_set = predict_Runner.fullPredict(params, params['workspace'])
+        report_output = predict_Runner.generateHTMLReport(params['workspace'], "forPredict", html_output_name, params['description'])
+        output = {'report_name': report_output['name'], 'report_ref': report_output['ref'], 'prediction_set': prediction_set}
 
         #END predict_phenotype
 
@@ -122,8 +123,7 @@ This module build a classifier and predict phenotypes based on the classifier An
             raise ValueError('Method predict_phenotype return value ' +
                              'output is not type dict as required.')
         # return the results
-        # return [output]
-        return
+        return [output]
 
     def status(self, ctx):
         #BEGIN_STATUS

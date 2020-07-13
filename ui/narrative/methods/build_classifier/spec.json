@@ -53,10 +53,6 @@
         {
           "input_parameter": "neural_network",
           "target_property": "neural_network"
-        },
-        {
-          "input_parameter": "ensemble_model",
-          "target_property": "ensemble_model"
         }
       ],
       "method": "build_classifier",
@@ -211,25 +207,6 @@
         "beta_1",
         "beta_2",
         "epsilon"
-      ],
-      "with_border": true
-    },
-    {
-      "advanced": true,
-      "allow_multiple": false,
-      "id": "ensemble_model",
-      "optional": true,
-      "parameters": [
-        "k_nearest_neighbors_box",
-        "gaussian_nb_box",
-        "logistic_regression_box",
-        "decision_tree_classifier_box",
-        "support_vector_machine_box",
-        "neural_network_box",
-        "voting",
-        "en_weights",
-        "en_n_jobs",
-        "flatten_transform"
       ],
       "with_border": true
     }

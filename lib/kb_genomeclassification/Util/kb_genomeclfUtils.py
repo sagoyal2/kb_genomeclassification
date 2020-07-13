@@ -76,6 +76,7 @@ class kb_genomeclfUtils(object):
 		os.makedirs(os.path.join(self.scratch, folder_name, "data"), exist_ok=True)
 
 		#unload the training_set_object
+		#class_enumeration : {'N': 0, 'P': 1}
 		#uploaded_df is four columns: Genome Name | Genome Reference | Phenotype | Phenotype Enumeration
 		(phenotype, class_enumeration, uploaded_df, training_set_object_reference) = self.unloadTrainingSet(current_ws, params['training_set_name'])
 
@@ -604,13 +605,15 @@ class kb_genomeclfUtils(object):
 
 		return(phenotype, class_enumeration, uploaded_df, training_set_object_reference)
 
-	def createIndicatorMatrix(self, uploaded_df, genome_attribute):
+	def createIndicatorMatrix(self, uploaded_df, genome_attribute, master_role_list = None):
 		genome_references = uploaded_df["Genome Reference"].to_list()
 
 		if "functional_roles" == genome_attribute:
 			
 			ref_to_role = {}
-			master_role_set = set()
+
+			if(master_role_list == None):
+				master_role_set = set()
 
 			for genome_ref in genome_references:
 				genome_object_data = self.ws_client.get_objects2({'objects':[{'ref': genome_ref}]})['data'][0]['data']
@@ -641,19 +644,17 @@ class kb_genomeclfUtils(object):
 						pass
 						print("apparently some function list just don't have functions...")
 
-				# print("list_functional_roles")
-				# print(list_functional_roles)
-				# exit()
-
 				#create a mapping from genome_ref to all of its functional roles
 				ref_to_role[genome_ref] = list_functional_roles
 
-				#keep updateing a set of all functional roles seen so far
-				master_role_set = master_role_set.union(set(list_functional_roles))
+				if(master_role_list == None):
+					#keep updateing a set of all functional roles seen so far
+					master_role_set = master_role_set.union(set(list_functional_roles))
 
-			#we are done looping over all genomes
-			master_role_list = sorted(list(master_role_set))
-			master_role_list.remove('')
+			if(master_role_list == None):
+				#we are done looping over all genomes
+				master_role_list = sorted(list(master_role_set))
+				master_role_list.remove('')
 			ref_to_indication = {}
 
 			#make indicator rows for each 
@@ -673,8 +674,6 @@ class kb_genomeclfUtils(object):
 		else:
 			raise ValueError("Only classifiers based on functional roles have been impliemented please check back later")
 
-
-
 	def getKSplits(self, splits, whole_X, whole_Y):
 
 		#This cross-validation object is a variation of KFold that returns stratified folds. The folds are made by preserving the percentage of samples for each class.
@@ -688,77 +687,88 @@ class kb_genomeclfUtils(object):
 		return (list_train_index, list_test_index)
 
 	def fullPredict(self, params, current_ws):
+		#create folder
+		folder_name = "forPredict"
+		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
 
-		# #Load Information from Categorizer 
-		# categorizer_object = ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name':params['categorizer_name']}]})
+		#Load Information from Categorizer 
+		categorizer_object = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name':params['categorizer_name']}]})["data"]
 
-		# categorizer_handle_ref = categorizer_object[0]['data']['classifier_handle_ref']
-		# categorizer_file_path = self._download_shock(categorizer_handle_ref)
+		categorizer_handle_ref = categorizer_object[0]['data']['classifier_handle_ref']
+		categorizer_file_path = self._download_shock(categorizer_handle_ref)
 
-		# master_feature_list = categorizer_object[0]['data']['attribute_data']
-		# class_to_index_mapping = categorizer_object[0]['data']['class_list_mapping']
+		master_role_list = categorizer_object[0]['data']['attribute_data']
+		class_list_mapping = categorizer_object[0]['data']['class_list_mapping']
+		genome_attribute = categorizer_object[0]['data']['attribute_type']
 
-		# current_categorizer = pickle.load(open(categorizer_file_path, "rb"))
-
-
-		# #Load Information from UploadedFile
-		# uploaded_df = getUploadedFileAsDF(params["file_path"])
-		# (missing_genomes, genome_label, _genome_df, _in_workspace, _list_genome_name, _list_genome_ref) = createListsForPredictionSet(current_ws, params, uploaded_df)
-		# feature_matrix = self.getFeatureMatrix(stuff goes here)
+		current_categorizer = pickle.load(open(categorizer_file_path, "rb"))
 
 
-		# #Make Predictions on uploaded file
-		# predictions_numerical = current_categorizer.predict(feature_matrix)
-		# predictions_phenotype = #map numerical to phenotype
-		# prediction_probabilities = current_categorizer.predict_proba(feature_matrix)
+		#Load Information from UploadedFile
+		params["file_path"] = "/kb/module/data/RealData/GramDataEdit5.xlsx"
+		uploaded_df = self.getUploadedFileAsDF(params["file_path"])
+		(missing_genomes, genome_label, subset_uploaded_df, _in_workspace, _list_genome_name, _list_genome_ref) = self.createListsForPredictionSet(current_ws, params, uploaded_df)
+
+		#get functional_roles and make indicator matrix
+		(indicator_matrix, master_role_list) = self.createIndicatorMatrix(subset_uploaded_df, genome_attribute, master_role_list = master_role_list)
+		whole_X = indicator_matrix[master_role_list].values
+		#Make Predictions on uploaded file
+		predictions_numerical = current_categorizer.predict(whole_X)
+
+		#{'N': 0, 'P': 1} --> {0:'N', 1: 'P'}
+		inv_map_class_list_mapping = {v: k for k, v in class_list_mapping.items()}
+		predictions_phenotype = [] #map numerical to phenotype
+		for numerical in predictions_numerical:
+			predictions_phenotype.append(inv_map_class_list_mapping[numerical])
+		prediction_probabilities = current_categorizer.predict_proba(whole_X)
+		prediction_probabilities = np.max(prediction_probabilities, axis = 1) #predict_proba returns an genome by class_num probability matrix, you only want to select maximum
+
+		#for callback structure and prediction set object
+		_list_prediction_phenotype = []
+		_list_prediction_probabilities = []
+
+		#for use in report
+		_prediction_phenotype = []
+		_prediction_probabilities = []
+		index = 0
+
+		genome_iter = uploaded_df[genome_label].to_list()
+		for genome in genome_iter:
+			if(genome not in missing_genomes):
+				_prediction_phenotype.append(predictions_phenotype[index])
+				_prediction_probabilities.append(prediction_probabilities[index])
+				_list_prediction_phenotype.append(predictions_phenotype[index])
+				_list_prediction_probabilities.append(prediction_probabilities[index])	
+
+				index +=1
+			else:
+				_prediction_phenotype.append("N/A")
+				_prediction_probabilities.append("N/A")
 
 
-		# #Lists to use for report
-		# _prediction_phenotype = []
-		# _prediction_probabilities = []
-		# index = 0
-
-		# #all lists for callback structure and training set object
-		# _list_prediction_phenotype = []
-		# _list_prediction_probabilities = []
-
-		# for genome in _genome_df:
-		# 	if(genome not in missing_genomes):
-		# 		_prediction_phenotype.append(predictions_phenotype[index])
-		# 		_prediction_probabilities.append(prediction_probabilities[index])
-		# 		index +=1
-
-		# 		_list_prediction_phenotype.append(predictions_phenotype[index])
-		# 		_list_prediction_probabilities.append(prediction_probabilities[index])
-
-		# 	else:
-		# 		_prediction_phenotype.append("N/A")
-		# 		_prediction_probabilities.append("N/A")
+		#construct prediction_set mapping
+		prediction_set = {}
+		for index, curr_genome_ref in enumerate(_list_genome_ref):
+			prediction_set[curr_genome_ref] = { 'genome_name': _list_genome_name[index],
+												'genome_ref': curr_genome_ref,
+												'phenotype': _list_prediction_phenotype[index],
+												'prediction_probabilities': _list_prediction_probabilities[index]
+												}
 
 
-		# #construct classifier_training_set mapping
-		# prediction_set = {}
+		training_set_ref = categorizer_object[0]['data']['training_set_ref']
+		phenotype = self.ws_client.get_objects2({'objects' : [{'ref': training_set_ref}]})["data"][0]['data']["classification_type"]
+
+		predict_table = pd.DataFrame.from_dict({	genome_label: genome_iter,
+													"In Workspace": _in_workspace,
+													phenotype: _prediction_phenotype,
+													"Probability": _prediction_probabilities
+											 	})
 		
-		# for index, curr_genome_ref in enumerate(_list_genome_ref):
-		# 	prediction_set[curr_genome_ref] = { 'genome_name': _list_genome_name[index],
-		# 										'genome_ref': curr_genome_ref,
-		# 										'phenotype': _list_prediction_phenotype[index],
-		# 										'prediction_probabilities': _list_prediction_probabilities[index]
-		# 										}
+		self.predictHTMLContent(params['categorizer_name'], phenotype, genome_attribute, params["file_path"], missing_genomes, genome_label, predict_table)
+		html_output_name = self.viewerHTMLContent(folder_name, status_view = True)
 
-		# report_table = pd.DataFrame.from_dict({	genome_label: _genome_df,
-		# 										"In Workspace": _in_workspace,
-		# 										"Phenotype": _prediction_phenotype,
-		# 										"Probability": _prediction_probabilities
-		# 									 	})
-
-
-
-		# self.html_report_3(missingGenomes, params['phenotypeclass'])
-		# html_output_name = self.html_nodual("forSecHTML")
-		#handle making a report in html
-
-		return html_output_name, predictions_mapping
+		return html_output_name, prediction_set
 
 
 	def generateHTMLReport(self, current_ws, folder_name, single_html_name, description, for_build_classifier = False):
@@ -835,7 +845,7 @@ class kb_genomeclfUtils(object):
 
 	def createAndUseListsForTrainingSet(self, current_ws, params, uploaded_df):
 		
-		(genome_label, all_df_genome, missing_genomes) = self.findMissingGenomes( current_ws, uploaded_df)
+		(genome_label, all_df_genome, missing_genomes) = self.findMissingGenomes(current_ws, uploaded_df)
 
 		uploaded_df_columns = uploaded_df.columns
 		_references = []
@@ -1056,57 +1066,72 @@ class kb_genomeclfUtils(object):
 
 
 	def createListsForPredictionSet(self, current_ws, params, uploaded_df):
-		(genome_label, all_df_genome, missing_genomes) = findMissingGenomes(current_ws, uploaded_df)
+		(genome_label, all_df_genome, missing_genomes) = self.findMissingGenomes(current_ws, uploaded_df)
+		uploaded_df_columns = uploaded_df.columns
 
-		# all lists needed for report
-		_genome_df = []
-		_in_workspace = []
+		############################################################
+		#subset dataframe to only include values that aren't missing
+		filtered_uploaded_df = uploaded_df[~uploaded_df[genome_label].isin(missing_genomes)]
 
-		#all lists for callback structure and prediction object
-		_list_genome_name = []
-		_list_genome_ref = []
+		#get references
+		if(genome_label == "Genome Reference"):
+			input_genome_references = filtered_uploaded_df["Genome Reference"].to_list()
 
-		for genome in all_df_genome:	
-			#genome is present in workspace
-			if(genome not in missing_genomes):
+			input_genome_names = []
+			for genome_ref in input_genome_references:
+				genome_name = str(self.ws_client.get_objects2({'objects' : [{'ref':genome_ref}]})['data'][0]['info'][1])
+				input_genome_names.append(genome_name)
 
-				#figure out genome_name and genome_ref
-				genome_name = genome if genome_label == "Genome Name" else str(self.ws_client.get_objects2({'objects' : [{'ref':genome}]})['data'][0]['info'][1])	
-				if(genome_label == "Genome Reference"):
-					genome_ref = genome
-				else:
-					meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': genome}]})['data'][0]['info']
-					genome_ref = str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
+		else:
+			input_genome_references = []
+
+			for genome in filtered_uploaded_df[genome_label]: #genome_label MUST be "Genome Name"
+				meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': genome}]})['data'][0]['info']
+				genome_ref = str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
+				input_genome_references.append(genome_ref)
+
+			input_genome_names = filtered_uploaded_df["Genome Name"].to_list()
+
+		if(params["annotate"]):
+			
+			#RAST Annotate the Genome
+			output_genome_set_name = params['training_set_name'] + "_RAST_Genome_SET"
+			self.RASTAnnotateGenome(current_ws, input_genome_references, input_genome_names, output_genome_set_name)
+
+			#We know ahead of time that all names are just old names with .RAST appended to them
+			RAST_genome_names = [genome_name + ".RAST" for genome_name in input_genome_names]
+			_list_genome_name = RAST_genome_names
+
+			#Figure out new RAST references 
+			RAST_genome_references = []
+			for RAST_genome in RAST_genome_names:
+				meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': RAST_genome}]})['data'][0]['info']
+				genome_ref = str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
+				RAST_genome_references.append(genome_ref)
+			_list_genome_ref = RAST_genome_references
+
+		else:
+			_list_genome_ref = input_genome_references
+
+			#get genome_names
+			genome_names = []
+			for genome_ref in _list_genome_ref:
+				name = str(self.ws_client.get_objects2({'objects' : [{'ref':genome_ref}]})['data'][0]['info'][1])
+				genome_names.append(name)
+			_list_genome_name = genome_names
 
 
-				#indicates that users wants us to RAST annotate the Genomes
-				if(params["annotate"]):
-					rast_genome_name = genome_name + ".RAST"
-					self.RASTAnnotateGenome(current_ws, genome_name, rast_genome_name)
-					_genome_df.append(rast_genome_name)
+		#everything above this is only for non-missing genomes
+		############################################################
+		#locations where genomes are present / not missing
+		_in_workspace = np.where(~uploaded_df[genome_label].isin(missing_genomes), "True", "False")
 
-					RAST_meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': rast_genome_name}]})['data'][0]['info']
-					rast_genome_ref = str(RAST_meta_data[6]) + "/" + str(RAST_meta_data[0]) + "/" + str(RAST_meta_data[4])
-					
-					#in the training set, set the genome_name and genome_ref with rast
-					_list_genome_name.append(rast_genome_name)
-					_list_genome_ref.append(rast_genome_ref)
 
-				else:
-					_genome_df.append(genome)
-					
-					#in the training set, set the genome_name and genome_ref exactly what the user passed in
-					_list_genome_name.append(genome_name)
-					_list_genome_ref.append(genome_ref)
+		subset_uploaded_df = pd.DataFrame(data={	"Genome Name": _list_genome_name,
+													"Genome Reference": _list_genome_ref
+												})
 
-				#lists for report
-				_in_workspace.append("True")
-
-			else:
-				_genome_df.append(genome)
-				_in_workspace.append("False")
-
-		return (missing_genomes, genome_label, _genome_df, _in_workspace, _list_genome_name, _list_genome_ref)
+		return (missing_genomes, genome_label, subset_uploaded_df, _in_workspace, _list_genome_name, _list_genome_ref)
 
 
 	def viewerHTMLContent(self, folder_name, status_view = False, main_report_view = False, decision_tree_view = False, ensemble_view = False):
@@ -1607,51 +1632,50 @@ class kb_genomeclfUtils(object):
 		file.write(scripts)
 		file.close()
 
-	def predictHTMLContent(self, categorizer_name, phenotype, selection_attribute, selected_file_name, missing_genomes, genome_label, predict_table):
-		pass
-		# file = open(os.path.join(self.scratch, 'forPredict', 'status.html'), u"w")
-		# header = u"""
-		# 	<!DOCTYPE html>
-		# 	<html>
-		# 	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
-		# 	<body>
+	def predictHTMLContent(self, categorizer_name, phenotype, selection_attribute, selected_file_name, missing_genomes, genome_label, predict_table):		
+		file = open(os.path.join(self.scratch, 'forPredict', 'status.html'), u"w")
+		header = u"""
+			<!DOCTYPE html>
+			<html>
+			<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
+			<body>
 
-		# 	<h2 style="text-align:center;"> Report: Predict Phenotype </h2>
-		# 	<p>
-		# 	"""
-		# file.write(header)
+			<h2 style="text-align:center;"> Report: Predict Phenotype </h2>
+			<p>
+			"""
+		file.write(header)
 
-		# first_paragraph = u"""The Genome Categorizer named """ + str(categorizer_name) \
-		# 					+ """ is being used to make predictions for  """ + str(phenotype)+ """ based on \
-		# 					""" + str(selection_attribute) + """. Missing genomes (those that were \
-		# 					present in the selected file: """ + str(selected_file_name) + """, but not present in the staging area) \
-		# 					were the following: """ + str(missing_genomes)+ """ ."""
-		# file.write(first_paragraph)
+		first_paragraph = u"""The Genome Categorizer named """ + str(categorizer_name) \
+							+ """ is being used to make predictions for  """ + str(phenotype)+ """ based on \
+							""" + str(selection_attribute) + """. Missing genomes (those that were \
+							present in the selected file: """ + str(selected_file_name) + """, but not present in the staging area) \
+							were the following: """ + str(missing_genomes)+ """ ."""
+		file.write(first_paragraph)
 
-		# second_paragraph = u"""Below is a detailed table which shows """ + str(genome_label) + """ , whether it \
-		# 				was loaded into the workspace, its """ + str(phenotype)+ """, and the probabiltiy of that \
-		# 				prediction </p>"""
-		# file.write(second_paragraph)
+		second_paragraph = u"""Below is a detailed table which shows """ + str(genome_label) + """ , whether it \
+						was loaded into the workspace, its """ + str(phenotype)+ """, and the probabiltiy of that \
+						prediction.</p>"""
+		file.write(second_paragraph)
 
-		# predict_table_html = predict_table.to_html(index=False, table_id="predict_table", justify='center')
-		# file.write(predict_table_html)
+		predict_table_html = predict_table.to_html(index=False, table_id="predict_table", justify='center')
+		file.write(predict_table_html)
 
-		# scripts = u"""</body>
+		scripts = u"""</body>
 
-		# 	<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
-		# 	<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
-		# 	<script type="text/javascript">
-		# 	$(document).ready(function() {
-		# 		$('#predict_table').DataTable( {
-		# 			"scrollY":        "500px",
-		# 			"scrollCollapse": true,
-		# 			"paging":         false
-		# 		} );
-		# 	} );
-		# 	</script>
-		# 	</html>"""
-		# file.write(scripts)
-		# file.close()
+			<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+			<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+			<script type="text/javascript">
+			$(document).ready(function() {
+				$('#predict_table').DataTable( {
+					"scrollY":        "500px",
+					"scrollCollapse": true,
+					"paging":         false
+				} );
+			} );
+			</script>
+			</html>"""
+		file.write(scripts)
+		file.close()
 
 
 

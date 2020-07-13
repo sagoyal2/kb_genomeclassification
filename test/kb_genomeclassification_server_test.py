@@ -98,7 +98,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         params = {
         "description": "my build classifier description",
         "training_set_name": "to_try_with_build",
-        "classifier_to_run": "k_nearest_neighbors",
+        "classifier_to_run": "run_all",
         "genome_attribute": "functional_roles",
         "k_nearest_neighbors": None,
         "gaussian_nb": None,
@@ -114,6 +114,14 @@ class kb_genomeclassificationTest(unittest.TestCase):
 
     def test_predict_phenotype(self):
         pass
+        # params = {
+        # "categorizer_name": "clf_name_k_nearest_neighbors",
+        # "annotate": 0,
+        # "file_path": "GramDataEdit5.xlsx",
+        # "description": "my predict phenotype description",
+        # "workspace": "sagoyal:narrative_1536939130038"
+        # }
+        # self.getImpl().predict_phenotype(self.getContext(), params)
 
 
 

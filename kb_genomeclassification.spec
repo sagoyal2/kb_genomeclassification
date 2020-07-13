@@ -160,10 +160,8 @@ module kb_genomeclassification {
 
    typedef structure {
         string workspace;
-        string attribute;
         string categorizer_name;
         string description;
-        string phenotype;
         string file_path;
         int annotate;
     } ClassifierPredictionInput;
