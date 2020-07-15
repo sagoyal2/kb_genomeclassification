@@ -53,7 +53,7 @@ class kb_genomeclfUtils(object):
 		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
 
 		#params["file_path"] = "/kb/module/data/RealData/GramDataEdit5.xlsx"
-		params["file_path"] = "/kb/module/data/RealData/full_genomeid_classification.xlsx"
+		#params["file_path"] = "/kb/module/data/RealData/full_genomeid_classification.xlsx"
 		uploaded_df = self.getUploadedFileAsDF(params["file_path"])
 		(upload_table, classifier_training_set, missing_genomes, genome_label) = self.createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
 
@@ -919,12 +919,14 @@ class kb_genomeclfUtils(object):
 
 	def getUploadedFileAsDF(self, file_path, forPredict=False):
 
+		file_path = self.dfu.download_staging_file({'staging_file_subdir_path':file_path})['copy_file_path']
+
 		if file_path.endswith('.xlsx'):
-			uploaded_df = pd.read_excel(os.path.join(os.path.sep,"staging",file_path), dtype=str)
+			uploaded_df = pd.read_excel(file_path, dtype=str)
 		elif file_path.endswith('.csv'):
-			uploaded_df = pd.read_csv(os.path.join(os.path.sep,"staging",file_path), header=0, dtype=str)
+			uploaded_df = pd.read_csv(file_path, header=0, dtype=str)
 		elif file_path.endswith('.tsv'):
-			uploaded_df = pd.read_csv(os.path.join(os.path.sep,"staging",file_path), sep='\t', header=0, dtype=str)
+			uploaded_df = pd.read_csv(file_path, sep='\t', header=0, dtype=str)
 		else:
 			raise ValueError('The following file type is not accepted, must be .xlsx, .csv, .tsv')
 
