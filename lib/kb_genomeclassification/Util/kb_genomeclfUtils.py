@@ -53,6 +53,7 @@ class kb_genomeclfUtils(object):
 		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
 
 		#params["file_path"] = "/kb/module/data/RealData/GramDataEdit5.xlsx"
+		params["file_path"] = "/kb/module/data/RealData/full_genomeid_classification.xlsx"
 		uploaded_df = self.getUploadedFileAsDF(params["file_path"])
 		(upload_table, classifier_training_set, missing_genomes, genome_label) = self.createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
 
@@ -725,10 +726,18 @@ class kb_genomeclfUtils(object):
 				list_functional_roles = []
 				for functional_role in location_of_functional_roles:
 					try:
-						list_functional_roles.append(functional_role[function_str])
+						role_to_insert = functional_role[function_str]
+						if " @ " in  role_to_insert:
+							list_functional_roles.extend(role_to_insert.split(" @ "))
+						elif: " / " in role_to_insert:
+							list_functional_roles.extend(role_to_insert.split(" / "))
+						elif: "; " in role_to_insert:
+							list_functional_roles.extend(role_to_insert.split("; "))
+						else:
+							list_functional_roles.append(functional_role[function_str])
 					except (RuntimeError, TypeError, ValueError, NameError):
-						pass
 						print("apparently some function list just don't have functions...")
+						pass
 
 				#create a mapping from genome_ref to all of its functional roles
 				ref_to_role[genome_ref] = list_functional_roles
@@ -792,7 +801,7 @@ class kb_genomeclfUtils(object):
 
 		#Load Information from UploadedFile
 		#params["file_path"] = "/kb/module/data/RealData/GramDataEdit5.xlsx"
-		uploaded_df = self.getUploadedFileAsDF(params["file_path"])
+		uploaded_df = self.getUploadedFileAsDF(params["file_path"], forPredict=True)
 		(missing_genomes, genome_label, subset_uploaded_df, _in_workspace, _list_genome_name, _list_genome_ref) = self.createListsForPredictionSet(current_ws, params, uploaded_df)
 
 		#get functional_roles and make indicator matrix
@@ -861,7 +870,8 @@ class kb_genomeclfUtils(object):
 
 		#folder_name = forUpload forBuild forPredict
 
-		report_shock_id = self.dfu.file_to_shock({'file_path': os.path.join(self.scratch, folder_name),'pack': 'zip'})['shock_id']
+		report_shock_id = self.dfu.file_to_shock({	'file_path': os.path.join(self.scratch, folder_name),
+													'pack': 'zip'})['shock_id']
 
 		html_output = {
 		'name' : single_html_name, #always viewer.html
@@ -907,7 +917,7 @@ class kb_genomeclfUtils(object):
 		
 		return file_path
 
-	def getUploadedFileAsDF(self, file_path):
+	def getUploadedFileAsDF(self, file_path, forPredict=False):
 
 		if file_path.endswith('.xlsx'):
 			uploaded_df = pd.read_excel(os.path.join(os.path.sep,"staging",file_path), dtype=str)
@@ -918,16 +928,23 @@ class kb_genomeclfUtils(object):
 		else:
 			raise ValueError('The following file type is not accepted, must be .xlsx, .csv, .tsv')
 
-		self.checkValidFile(uploaded_df)
+		self.checkValidFile(uploaded_df, forPredict)
 		return uploaded_df
 
-	def checkValidFile(self, uploaded_df):
+	def checkValidFile(self, uploaded_df, forPredict):
 		
 		uploaded_df_columns = uploaded_df.columns
-		if (("Genome Name" in uploaded_df_columns) or ("Genome Reference" in uploaded_df_columns)) and ("Phenotype" in uploaded_df_columns):
-			pass
-		else:
-			raise ValueError('File must include Genome Name/Genome Reference and Phenotype as columns')
+
+		if forPredict:
+			if(("Genome Name" in uploaded_df_columns) or ("Genome Reference" in uploaded_df_columns)):
+				pass
+			else:
+				raise ValueError('File must include Genome Name/Genome Reference')
+		else:		
+			if (("Genome Name" in uploaded_df_columns) or ("Genome Reference" in uploaded_df_columns)) and ("Phenotype" in uploaded_df_columns):
+				pass
+			else:
+				raise ValueError('File must include Genome Name/Genome Reference and Phenotype as columns')
 
 	def createAndUseListsForTrainingSet(self, current_ws, params, uploaded_df):
 		
@@ -945,6 +962,8 @@ class kb_genomeclfUtils(object):
 		if("Evidence Types" in uploaded_df_columns):
 			has_evidence_types = True
 			uploaded_df["Evidence Types"].fillna("", inplace=True)
+		else:
+			has_evidence_types = False
 
 		############################################################
 		#subset dataframe to only include values that aren't missing
