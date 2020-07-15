@@ -729,9 +729,9 @@ class kb_genomeclfUtils(object):
 						role_to_insert = functional_role[function_str]
 						if " @ " in  role_to_insert:
 							list_functional_roles.extend(role_to_insert.split(" @ "))
-						elif: " / " in role_to_insert:
+						elif " / " in role_to_insert:
 							list_functional_roles.extend(role_to_insert.split(" / "))
-						elif: "; " in role_to_insert:
+						elif "; " in role_to_insert:
 							list_functional_roles.extend(role_to_insert.split("; "))
 						else:
 							list_functional_roles.append(functional_role[function_str])
