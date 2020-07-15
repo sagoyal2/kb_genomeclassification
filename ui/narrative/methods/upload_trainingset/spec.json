@@ -91,9 +91,7 @@
       "allow_multiple" : false,
       "default_values" : [ "" ],
       "field_type" : "dynamic_dropdown",
-      "dynamic_dropdown_options" : {
-        "data_source": "ftp_staging"
-      }
+      "text_options": {}
     },
     {
       "id": "description",
