@@ -27,7 +27,7 @@
           "target_property": "description"
         }
       ],
-      "method": "upload_trainingset",
+      "method": "predict_phenotype",
       "name": "kb_genomeclassification",
       "output_mapping": [
         {
