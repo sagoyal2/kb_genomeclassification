@@ -26,7 +26,8 @@ from sklearn.model_selection import StratifiedKFold
 
 from KBaseReport.KBaseReportClient import KBaseReport
 from DataFileUtil.DataFileUtilClient import DataFileUtil
-from RAST_SDK.RAST_SDKClient import RAST_SDK
+# from RAST_SDK.RAST_SDKClient import RAST_SDK
+from installed_clients.RAST_SDKClient import RAST_SDK
 from biokbase.workspace.client import Workspace as workspaceService
 
 
@@ -51,9 +52,9 @@ class kb_genomeclfUtils(object):
 		folder_name = "forUpload"
 		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
 
-		params["file_path"] = "/kb/module/data/RealData/GramDataEdit5.xlsx"
-		uploaded_df = pd.read_excel(params["file_path"], dtype=str)
-		#uploaded_df = self.getUploadedFileAsDF(params["file_path"])
+		# params["file_path"] = "/kb/module/data/RealData/GramDataEdit2.xlsx"
+		# uploaded_df = pd.read_excel(params["file_path"], dtype=str)
+		uploaded_df = self.getUploadedFileAsDF(params["file_path"])
 		(upload_table, classifier_training_set, missing_genomes, genome_label) = self.createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
 
 		self.uploadHTMLContent(params['training_set_name'], params["file_path"], missing_genomes, genome_label, params['phenotype'], upload_table)
@@ -464,9 +465,8 @@ class kb_genomeclfUtils(object):
 
 	def tuneDecisionTree(self, current_ws, common_classifier_information, classifier_object_name, folder_name):
 
-		# iterations = 13
-		range_start = 3
-		iterations  = 5
+		range_start = 1
+		iterations = 13
 		ddt_dict_classification_report_dict = {}
 		dtt_classifier_info = []
 
@@ -476,7 +476,7 @@ class kb_genomeclfUtils(object):
 		validation_avg = []
 		validation_std = []
 
-		for tree_depth in range(1, iterations):#notice here that tree depth must start at 1
+		for tree_depth in range(range_start, iterations):#notice here that tree depth must start at 1
 			
 			classifier = DecisionTreeClassifier(random_state=0, max_depth=tree_depth, criterion=u'gini')
 			train_score = []
@@ -501,8 +501,8 @@ class kb_genomeclfUtils(object):
 
 		#Create Figure
 		fig, ax = plt.subplots(figsize=(6, 6))
-		plt.errorbar(np.arange(1,iterations), training_avg, yerr=training_std, fmt=u'o', label=u'Training set')
-		plt.errorbar(np.arange(1,iterations), validation_avg, yerr=validation_std, fmt=u'o', label=u'Testing set')
+		plt.errorbar(np.arange(range_start,iterations), training_avg, yerr=training_std, fmt=u'o', label=u'Training set')
+		plt.errorbar(np.arange(range_start,iterations), validation_avg, yerr=validation_std, fmt=u'o', label=u'Testing set')
 		ax.set_ylim(ymin=0.0, ymax=1.1)
 		ax.set_title("Gini Criterion")
 		plt.xlabel('Tree Depth', fontsize=12)
@@ -532,7 +532,7 @@ class kb_genomeclfUtils(object):
 		validation_avg = []
 		validation_std = []
 
-		for tree_depth in range(1, iterations):#notice here that tree depth must start at 1
+		for tree_depth in range(range_start, iterations):#notice here that tree depth must start at 1
 			classifier = DecisionTreeClassifier(random_state=0, max_depth=tree_depth, criterion=u'entropy')
 			train_score = []
 			validate_score = []
@@ -555,8 +555,8 @@ class kb_genomeclfUtils(object):
 			validation_std.append(np.std(validate_score))
 
 		fig, ax = plt.subplots(figsize=(6, 6))
-		plt.errorbar(np.arange(1,iterations), training_avg, yerr=training_std, fmt=u'o', label=u'Training set')
-		plt.errorbar(np.arange(1,iterations), validation_avg, yerr=validation_std, fmt=u'o', label=u'Testing set')
+		plt.errorbar(np.arange(range_start,iterations), training_avg, yerr=training_std, fmt=u'o', label=u'Training set')
+		plt.errorbar(np.arange(range_start,iterations), validation_avg, yerr=validation_std, fmt=u'o', label=u'Testing set')
 		ax.set_ylim(ymin=0.0, ymax=1.1)
 		ax.set_title("Entropy Criterion")
 		plt.xlabel('Tree Depth', fontsize=12)
@@ -601,8 +601,10 @@ class kb_genomeclfUtils(object):
 
 		#start parsing the tree contents
 		tree_contents = tree_contents.replace('\\n', '')
-		tree_contents = re.sub(r'(\w\s\[label="[\w\s.,:\'\/()-]+)<=([\w\s.\[\]=,]+)("] ;)', r'\1 (Absent)" , color="0.650 0.200 1.000"] ;', tree_contents)
-		tree_contents = re.sub(r'(\w\s\[label=")(.+?class\s=\s)', r'\1', tree_contents)
+		tree_contents = re.sub(r'<=[^;]+', r' (Absent)" , color="0.650 0.200 1.000"]', tree_contents)
+		#tree_contents = re.sub(r'(\w\s\[label="[\w\s.,:\'\/()-]+)<=([\w\s.\[\]=,]+)("] ;)', r'\1 (Absent)" , color="0.650 0.200 1.000"] ;', tree_contents)
+		tree_contents = re.sub(r'[^"]*(class = )', r'', tree_contents)
+		#tree_contents = re.sub(r'(\w\s\[label=")(.+?class\s=\s)', r'\1', tree_contents)
 		tree_contents = re.sub(r'shape=box] ;', r'shape=Mrecord] ; node [style=filled];', tree_contents)
 
 		color_set = []
@@ -610,7 +612,7 @@ class kb_genomeclfUtils(object):
 			color_set.append('%.4f'%np.random.random() + " " + '%.4f'%np.random.random()+ " " + '0.900')
 
 		for current_class, current_color in zip(list(common_classifier_information["class_list_mapping"].keys()), color_set):
-			tree_contents = re.sub(r'(\w\s\[label="%s")' % current_class, r'\1, color = "%s"' % current_color, tree_contents)
+			tree_contents = re.sub(r'("%s")' % current_class, r'\1, color = "%s"' % current_color, tree_contents)
 
 
 		modified_tree_contents = open(os.path.join(self.scratch, 'forBuild', 'modified_tree_contents.dot'), "w")
@@ -994,7 +996,7 @@ class kb_genomeclfUtils(object):
 		if(params["annotate"]):
 			
 			#RAST Annotate the Genome
-			output_genome_set_name = params['training_set_name'] + "_RAST_"
+			output_genome_set_name = params['training_set_name'] + "_RAST"
 			self.RASTAnnotateGenome(current_ws, input_genome_references, output_genome_set_name)
 
 			#We know a head of time that all names are just old names with .RAST appended to them
@@ -1182,7 +1184,7 @@ class kb_genomeclfUtils(object):
 		if(params["annotate"]):
 			
 			#RAST Annotate the Genome
-			output_genome_set_name = params['training_set_name'] + "_RAST_"
+			output_genome_set_name = params['training_set_name'] + "_RAST"
 			self.RASTAnnotateGenome(current_ws, input_genome_references, output_genome_set_name)
 
 			#We know a head of time that all names are just old names with .RAST appended to them
