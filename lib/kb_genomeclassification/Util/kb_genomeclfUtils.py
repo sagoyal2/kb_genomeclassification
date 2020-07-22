@@ -43,7 +43,6 @@ class kb_genomeclfUtils(object):
 		self.rast = RAST_SDK(self.callback_url)
 		self.ws_client = workspaceService(self.workspaceURL)
 
-
 	#### MAIN Methods below are called from KBASE apps ###
 
 	#return html_output_name, classifier_training_set_mapping
@@ -466,7 +465,8 @@ class kb_genomeclfUtils(object):
 	def tuneDecisionTree(self, current_ws, common_classifier_information, classifier_object_name, folder_name):
 
 		# iterations = 13
-		iterations  = 2
+		range_start = 3
+		iterations  = 5
 		ddt_dict_classification_report_dict = {}
 		dtt_classifier_info = []
 
