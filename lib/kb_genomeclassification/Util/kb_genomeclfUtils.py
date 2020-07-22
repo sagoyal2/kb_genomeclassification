@@ -52,9 +52,9 @@ class kb_genomeclfUtils(object):
 		folder_name = "forUpload"
 		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
 
-		#params["file_path"] = "/kb/module/data/RealData/GramDataEdit5.xlsx"
-		#params["file_path"] = "/kb/module/data/RealData/full_genomeid_classification.xlsx"
-		uploaded_df = self.getUploadedFileAsDF(params["file_path"])
+		params["file_path"] = "/kb/module/data/RealData/GramDataEdit5.xlsx"
+		uploaded_df = pd.read_excel(params["file_path"], dtype=str)
+		#uploaded_df = self.getUploadedFileAsDF(params["file_path"])
 		(upload_table, classifier_training_set, missing_genomes, genome_label) = self.createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
 
 		self.uploadHTMLContent(params['training_set_name'], params["file_path"], missing_genomes, genome_label, params['phenotype'], upload_table)
@@ -465,7 +465,8 @@ class kb_genomeclfUtils(object):
 
 	def tuneDecisionTree(self, current_ws, common_classifier_information, classifier_object_name, folder_name):
 
-		iterations = 13
+		# iterations = 13
+		iterations  = 2
 		ddt_dict_classification_report_dict = {}
 		dtt_classifier_info = []
 
@@ -579,10 +580,10 @@ class kb_genomeclfUtils(object):
 		dtt_classifier_info.append(individual_classifier_info)
 
 		if best_gini_accuracy_score > best_entropy_accuracy_score:
-			top_20 = self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=best_gini_depth, criterion=u'gini'), common_classifier_information)
+			top_20 = self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=best_gini_depth, criterion='gini'), common_classifier_information)
 		else:
-			top_20 = self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=best_entropy_depth, criterion=u'entropy'), common_classifier_information)
-
+			top_20 = self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=best_entropy_depth, criterion='entropy'), common_classifier_information)
+		
 		return (ddt_dict_classification_report_dict, dtt_classifier_info, top_20)
 
 	def tree_code(self, tree, common_classifier_information):
@@ -993,11 +994,11 @@ class kb_genomeclfUtils(object):
 		if(params["annotate"]):
 			
 			#RAST Annotate the Genome
-			output_genome_set_name = params['training_set_name'] + "_RAST_Genome_SET"
-			self.RASTAnnotateGenome(current_ws, input_genome_references, input_genome_names, output_genome_set_name)
+			output_genome_set_name = params['training_set_name'] + "_RAST_"
+			self.RASTAnnotateGenome(current_ws, input_genome_references, output_genome_set_name)
 
 			#We know a head of time that all names are just old names with .RAST appended to them
-			RAST_genome_names = [genome_name + ".RAST" for genome_name in input_genome_names]
+			RAST_genome_names = [params['training_set_name'] + "_RAST_" + genome_name  for genome_name in input_genome_names]
 			_list_genome_name = RAST_genome_names
 
 			#Figure out new RAST references 
@@ -1131,39 +1132,18 @@ class kb_genomeclfUtils(object):
 
 		return (genome_label, all_df_genome, missing_genomes)
 
-	def RASTAnnotateGenome(self, current_ws, input_genomes, output_genomes, output_genome_set_name):
+	def RASTAnnotateGenome(self, current_ws, input_genomes, output_genome_set_name):
 
-		input_genomes_list = []
-		for index, element in enumerate(output_genomes):
-			input_genomes_list.append({"input_genome": element,
-										"output_genome": element+".RAST"})
 
 		params_RAST =	{
-		"workspace": current_ws,
-		"annotate_proteins_kmer_v2": 1,
-		"annotate_proteins_similarity": 1,
-		"call_features_CDS_glimmer3": 0,
-		"call_features_CDS_prodigal": 0,
-		"call_features_crispr": 0,
-		"call_features_prophage_phispy": 0,
-		"call_features_rRNA_SEED": 0,
-		"call_features_repeat_region_SEED": 0,
-		"call_features_strep_pneumo_repeat": 0,
-		"call_features_strep_suis_repeat": 0,
-		"call_features_tRNA_trnascan": 0,
-		"call_pyrrolysoproteins": 0,
-		"call_selenoproteins": 0,
-		"genome_text": "",
-		"input_genomes": input_genomes_list,
-		"kmer_v1_parameters": 1,
-		"output_genome": output_genome_set_name,
-		"resolve_overlapping_features": 0,
-		"retain_old_anno_for_hypotheticals": 0
+        "input_text": ";".join(input_genomes),
+        "output_workspace": current_ws,
+       	"output_GenomeSet_name" : output_genome_set_name
 		}
 		
 		#we don't do anything with the output but you can if you want to
 		print(params_RAST)
-		output = self.rast.annotate_genomes(params_RAST)
+		output = self.rast.rast_genomes_assemblies(params_RAST)
 
 		if(output):
 			pass
@@ -1202,11 +1182,11 @@ class kb_genomeclfUtils(object):
 		if(params["annotate"]):
 			
 			#RAST Annotate the Genome
-			output_genome_set_name = params['training_set_name'] + "_RAST_Genome_SET"
-			self.RASTAnnotateGenome(current_ws, input_genome_references, input_genome_names, output_genome_set_name)
+			output_genome_set_name = params['training_set_name'] + "_RAST_"
+			self.RASTAnnotateGenome(current_ws, input_genome_references, output_genome_set_name)
 
-			#We know ahead of time that all names are just old names with .RAST appended to them
-			RAST_genome_names = [genome_name + ".RAST" for genome_name in input_genome_names]
+			#We know a head of time that all names are just old names with .RAST appended to them
+			RAST_genome_names = [params['training_set_name'] + "_RAST_" + genome_name  for genome_name in input_genome_names]
 			_list_genome_name = RAST_genome_names
 
 			#Figure out new RAST references 

@@ -9,5 +9,5 @@
 }, {
   "module_name" : "RAST_SDK",
   "type" : "sdk",
-  "version_tag" : "release"
+  "version_tag" : "beta"
 } ]
