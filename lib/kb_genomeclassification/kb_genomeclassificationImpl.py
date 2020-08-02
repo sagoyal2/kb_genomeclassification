@@ -74,7 +74,6 @@ This module build a classifier and predict phenotypes based on the classifier An
         # if not isinstance(output, dict):
         #     raise ValueError('Method upload_trainingset return value ' +
         #                      'output is not type dict as required.')
-        # return the results
         return [output]
 
     def build_classifier(self, ctx, params):
@@ -98,7 +97,6 @@ This module build a classifier and predict phenotypes based on the classifier An
         # if not isinstance(output, dict):
         #     raise ValueError('Method build_classifier return value ' +
         #                      'output is not type dict as required.')
-        # return the results
         return [output]
 
     def predict_phenotype(self, ctx, params):
@@ -119,10 +117,9 @@ This module build a classifier and predict phenotypes based on the classifier An
         #END predict_phenotype
 
         # At some point might do deeper type checking...
-        if not isinstance(output, dict):
-            raise ValueError('Method predict_phenotype return value ' +
-                             'output is not type dict as required.')
-        # return the results
+        # if not isinstance(output, dict):
+        #     raise ValueError('Method predict_phenotype return value ' +
+        #                      'output is not type dict as required.')
         return [output]
 
     def status(self, ctx):
