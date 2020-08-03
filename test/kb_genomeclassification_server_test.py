@@ -85,10 +85,10 @@ class kb_genomeclassificationTest(unittest.TestCase):
     def test_upload_trainingset(self):
         params = {
         "annotate": 1,
-        "file_path": "GramDataEdit5.xlsx",
+        "file_path": "fake_2_refseq.xlsx",
         "description": "my description",
         "phenotype": "my phenotype",
-        "training_set_name": "attempt_rast",
+        "training_set_name": "AgainRefSeq",
         "workspace": "sagoyal:narrative_1536939130038"
         }
         self.getImpl().upload_trainingset(self.getContext(), params)

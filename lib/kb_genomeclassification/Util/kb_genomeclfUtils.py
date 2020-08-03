@@ -44,16 +44,19 @@ class kb_genomeclfUtils(object):
 		self.rast = RAST_SDK(self.callback_url)
 		self.ws_client = workspaceService(self.workspaceURL)
 
-	#### MAIN Methods below are called from KBASE apps ###
-
 	def fullUpload(self, params, current_ws):
+		"""
+		workhorse function for upload_trainingset
+		"""
+
 		#create folder
 		folder_name = "forUpload"
 		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
 
-		# params["file_path"] = "/kb/module/data/RealData/GramDataEdit2.xlsx"
-		# uploaded_df = pd.read_excel(params["file_path"], dtype=str)
-		uploaded_df = self.getUploadedFileAsDF(params["file_path"])
+		#params["file_path"] = "/kb/module/data/RealData/GramDataEdit2Ref.xlsx"
+		params["file_path"] = "/kb/module/data/RealData/fake_2_refseq.xlsx"
+		uploaded_df = pd.read_excel(params["file_path"], dtype=str)
+		#uploaded_df = self.getUploadedFileAsDF(params["file_path"])
 		(upload_table, classifier_training_set, missing_genomes, genome_label) = self.createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
 
 		self.uploadHTMLContent(params['training_set_name'], params["file_path"], missing_genomes, genome_label, params['phenotype'], upload_table)
@@ -62,6 +65,10 @@ class kb_genomeclfUtils(object):
 		return html_output_name, classifier_training_set
 
 	def fullClassify(self, params, current_ws):
+		"""
+		workhorse function for build_classifier
+		"""
+
 		#create folder for images and data
 		folder_name = "forBuild"
 		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
@@ -125,7 +132,6 @@ class kb_genomeclfUtils(object):
 			classifier_info_list.append(dtt_classifier_info[1])
 
 
-			#handle case for ensemble
 		else:
 			current_classifier_object = {	"classifier_to_execute": self.getCurrentClassifierObject(classifier_to_run, params[classifier_to_run]),
 											"classifier_type": classifier_to_run,
@@ -283,7 +289,31 @@ class kb_genomeclfUtils(object):
 			return True
 
 	def executeClassifier(self, current_ws, common_classifier_information, current_classifier_object, folder_name):
-		
+		"""
+		Creates k=splits number of classifiers and then generates a confusion matrix that averages
+		over the predicted results for all of the classifiers.
+
+		Generates statistics for each classifier (saved in classification_report_dict)
+
+		Saves each classifier object as a pickle file and then uploads that object to shock, saves the object's 
+		shock handle into the KBASE Categorizer Object (https://narrative.kbase.us/#spec/type/KBaseClassifier.GenomeCategorizer)
+
+		Calls function to create png of confusion matrix
+
+		Saves information for callback of build_classifier in individual_classifier_info
+
+		Parameter
+		---------
+		current_ws : str
+			current_ws
+		common_classifier_information : dict
+			information that is common to the current classifier that is going to be built
+		current_classifier_object: dict
+			information that is specific to the current classifier that is going to be built
+		folder_name:
+			folder name gives the location to save classifier and images
+		"""
+
 		individual_classifier_info = {}
 		matrix_size = len(common_classifier_information["class_list_mapping"])
 		cnf_matrix_proportion = np.zeros(shape=(matrix_size, matrix_size))
@@ -356,6 +386,45 @@ class kb_genomeclfUtils(object):
 		return classification_report_dict, individual_classifier_info
 
 	def handleClassificationReports(self, dict_classification_report_dict, target_names, classifier_object_name):
+		"""
+		This function takes all of the classification scores (Precision, Recall, F1-Score, Accuracy) for all of the classifier
+		and places them into a DataFrame that can then be transformed into an html report to show statistics for the classifiers
+
+		The Build Classifer App can create 2 views:
+		1. Main Report (main_report_dict/main_report_df)
+			a. Run All 
+				In the Run All case the user has selected to build all of the default classifier
+				and so the view reflects this choice by showing all of the classifier and their appropriate
+				scores
+
+				This will also keep track of the best classifier in terms of accuracy and pass this information
+				to the Decision Tree Report
+
+				(will also make Decision Tree Report, since decision_tree is one of the options in Run All)
+
+			b. Single Selection
+				In the Single Selection case the user has selects only a single option so only one column of 
+				statistics being shown
+
+				however in the even that the user selects the Decision Tree as the single selection, then there is
+				NO main page made and only a Decision Tree Report made
+	
+		2. Decision Tree Report (dtt_report_dict/dtt_report_df)
+			Show statistics for vanilla Decision Tree Classifier, Best Gini Decision Tree, Best Entropy Decision Tree
+
+			optionally if Run All has been run it will also repeat the statistics in the Main Report for the best classifier for comparision
+
+		Parameter
+		---------
+		dict_classification_report_dict : dict
+			classification scores per classifier
+			ex: dict_classification_report_dict["decision_tree_classifier"]["aerobic"]["precision"]
+
+		target_names : str list
+			list of phenotypes ["aerobic", "anerobic", etc.]
+		classifier_object_name: str
+			classifier_object_name
+		"""
 
 		main_report_dict = {}
 		dtt_report_dict = {}
@@ -905,6 +974,10 @@ class kb_genomeclfUtils(object):
 		return (list_train_index, list_test_index)
 
 	def fullPredict(self, params, current_ws):
+		"""
+		workhorse function for predict_phenotype
+		"""
+
 		#create folder
 		folder_name = "forPredict"
 		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
@@ -1111,7 +1184,27 @@ class kb_genomeclfUtils(object):
 				raise ValueError('File must include Genome Name/Genome Reference and Phenotype as columns')
 
 	def createAndUseListsForTrainingSet(self, current_ws, params, uploaded_df):
-		
+		"""
+		This function does preprocessing that is necessary to create a Training Set Object
+		1. Regardless of if the user only passes in the Genome Name or the Genome Reference, it will go and
+			acquire both and pass them to be saved in the training set object
+		2. If the user chooses to have their genomes RAST Annotated then we will annotate them
+		3. Create a display report(report_table) that has information
+			on whether their genomes in their uploaded file (uploaded_df) are present in their workspace (missing_genomes),
+			which genomes were added to the training set, their corresponding phenotype, references, evidence
+		4. Notice that the report_table and classifier_training_set are different, the report_table has information for both missing
+			and present genomes, but the classifier_training_set only has information for present genomes.
+
+		Parameter
+		---------
+		current_ws : str
+			current_ws
+		params : dict
+			user specified parameters
+		uploaded_df: pd DataFrame
+			user uploaded file
+		"""
+
 		(genome_label, all_df_genome, missing_genomes) = self.findMissingGenomes(current_ws, uploaded_df)
 
 		uploaded_df_columns = uploaded_df.columns
@@ -1133,8 +1226,8 @@ class kb_genomeclfUtils(object):
 		#subset dataframe to only include values that aren't missing
 		filtered_uploaded_df = uploaded_df[~uploaded_df[genome_label].isin(missing_genomes)]
 
-		#get references
 		if(genome_label == "Genome Reference"):
+			#get name
 			input_genome_references = filtered_uploaded_df["Genome Reference"].to_list()
 
 			input_genome_names = []
@@ -1143,6 +1236,7 @@ class kb_genomeclfUtils(object):
 				input_genome_names.append(genome_name)
 
 		else:
+			#get references
 			input_genome_references = []
 
 			for genome in filtered_uploaded_df[genome_label]: #genome_label MUST be "Genome Name"
@@ -1285,6 +1379,72 @@ class kb_genomeclfUtils(object):
 		else:
 			raise ValueError(str(genome_label) + "column is not unique")
 
+	def genomes_to_ws(self, to_ws='', from_ws='19217', refseq_ids=[], verbose=False):
+		"""
+		Special Thanks to https://github.com/braceal
+
+		Copies genomes specified in refseq_ids (GCF ids) from from_ws to to_ws
+		and returns a dictionary of associated genome object ref ids e.g. 65797/3/1
+		(ws/object-id/version).
+		
+		Will be GCF id itself if it does not exist
+		
+		return obj_refs: {'GCF_900128725.1': '36230/794/9', 'GCF_x001289725.1': 'GCF_900128725.1'}
+
+		Parameter
+		---------
+		to_ws : str
+			Workspace to copy objects to
+		from_ws : str
+			Workspace to copy objects from
+		refseq_ids : list
+			GCF ids of genomes to copy to to_ws
+		verbose : bool
+			If true, shows verbose output with progress updates
+		"""
+		# Default to current user workspace
+
+		obj_refs = {curr_refseq_id: curr_refseq_id for curr_refseq_id in refseq_ids}
+		total_add_refs = 0
+
+		# Use set for O(1) query
+		refseqs = set(refseq_ids)
+		# Data batch parameters
+		step = 10000 # How many genome objects to pull in each batch
+		max_object_id = 0 # Keeps track of max object id seen so far
+		prev_max_object_id = -1 # Defines stoping condition for while loop
+		if verbose:
+			batch = 0
+		# If the previous iterations max object id is greater than or equal
+		# to the most recent max_object_id, then all genomes have been pulled.
+		while max_object_id > prev_max_object_id:
+			prev_max_object_id = max_object_id
+			# Get list of KBaseGenomes.Genome objects
+			genomes = self.ws_client.list_objects({'ids':[from_ws],
+									   'type': 'KBaseGenomes.Genome',
+									   'includeMetadata':1,
+									   'minObjectID':max_object_id,
+									   'limit': step})
+			if verbose:
+				print(f'Batch {batch}')
+				print(f'\t{len(genomes)} genomes pulled with max_object_id {max_object_id}')
+				batch += 1
+			# Check each received genome to see if it is in the user requested refseq_ids
+			for genome in genomes:
+				if genome[1] in refseqs:
+					obj = self.ws_client.copy_object({'from':{'objid':genome[0],'wsid': from_ws},'to':{'wsid': to_ws,'name':genome[1]}})
+					# Build list of KBase object references
+					curr_obj_ref = f'{to_ws}/{obj[0]}/{obj[4]}'# (ws/object-id/version)
+					obj_refs[genome[1]] = curr_obj_ref
+					total_add_refs+=1
+				# Early stopping optimization
+				if total_add_refs == len(refseq_ids):
+					return obj_refs
+				# For pulling batches
+				if genome[0] > max_object_id:
+					max_object_id = genome[0]
+		return obj_refs
+
 	def findMissingGenomes(self, current_ws, uploaded_df):
 		"""
 		Finds missing genomes from user uploaded_df. Returns either a list of 
@@ -1299,17 +1459,24 @@ class kb_genomeclfUtils(object):
 			user uploaded dataframe
 		"""
 
-		uploaded_df_columns = uploaded_df.columns
+		if "Ref Seq Ids" in uploaded_df.columns:
+			#in the event that the user passes in "Ref Seq Ids" you have to use those first
+			self.checkUniqueColumn(uploaded_df, "Ref Seq Ids")
+
+			#{'GCF_900128725.1': '36230/794/9', 'GCF_x001289725.1': 'GCF_900128725.1'}
+			obj_refs = self.genomes_to_ws("36230", refseq_ids=uploaded_df["Ref Seq Ids"].to_list())
+			uploaded_df["Genome Reference"] = uploaded_df["Ref Seq Ids"].map(obj_refs)
+
 		all_genomes_workspace = self.ws_client.list_objects({'workspaces':[current_ws],'type':'KBaseGenomes.Genome'})
 
 		#figure out if matching on Reference or Name and then find missing genomes
-		if "Genome Reference" in uploaded_df_columns:
+		if "Genome Reference" in uploaded_df.columns:
 			genome_label = "Genome Reference"
 			self.checkUniqueColumn(uploaded_df, genome_label)
 
 			all_df_genome = uploaded_df[genome_label]
-			all_refs2_workspace = [str(genome[0]) + "/" + str(genome[4]) for genome in all_genomes_workspace]
-			all_refs3_workspace = [str(genome[0]) + "/" + str(genome[4]) + "/" + str(genome[6]) for genome in all_genomes_workspace]
+			all_refs2_workspace = [str(genome[6]) + "/" +str(genome[0])for genome in all_genomes_workspace]
+			all_refs3_workspace = [str(genome[6]) + "/" +str(genome[0]) + "/" + str(genome[4]) for genome in all_genomes_workspace]
 			
 			missing_genomes = []
 			for ref in all_df_genome:
@@ -1344,6 +1511,9 @@ class kb_genomeclfUtils(object):
 			name of genome set that will be added to the workspaces: params['training_set_name'] + "_RAST"
 		"""
 
+		print("in RASTAnnotateGenome input_genomes are:")
+		print(input_genomes)
+
 		params_RAST =	{
 		"input_text": ";".join(input_genomes),
 		"output_workspace": current_ws,
@@ -1354,6 +1524,11 @@ class kb_genomeclfUtils(object):
 		print(params_RAST)
 		output = self.rast.rast_genomes_assemblies(params_RAST)
 
+		print("this is output from rast processing")
+		print(output)
+		print("this is output from rast processing keys")
+		print(output.keys())
+
 		if(output):
 			pass
 		else:
@@ -1362,6 +1537,21 @@ class kb_genomeclfUtils(object):
 
 
 	def createListsForPredictionSet(self, current_ws, params, uploaded_df):
+		"""
+		Similar method to createAndUseListsForTrainingSet, however adapted for the Predict Phenotype app.
+		Most differences are that the only required user input is Genome Name or Genome Reference so we don't 
+		need to account for other details.
+
+		Parameter
+		---------
+		current_ws : str
+			current_ws
+		params : dict
+			user specified parameters
+		uploaded_df: pd DataFrame
+			user uploaded file
+		"""
+
 		(genome_label, all_df_genome, missing_genomes) = self.findMissingGenomes(current_ws, uploaded_df)
 		uploaded_df_columns = uploaded_df.columns
 
