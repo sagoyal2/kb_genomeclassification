@@ -54,9 +54,9 @@ class kb_genomeclfUtils(object):
 		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
 
 		#params["file_path"] = "/kb/module/data/RealData/GramDataEdit2Ref.xlsx"
-		params["file_path"] = "/kb/module/data/RealData/fake_2_refseq.xlsx"
-		uploaded_df = pd.read_excel(params["file_path"], dtype=str)
-		#uploaded_df = self.getUploadedFileAsDF(params["file_path"])
+		#params["file_path"] = "/kb/module/data/RealData/fake_2_refseq.xlsx"
+		#uploaded_df = pd.read_excel(params["file_path"], dtype=str)
+		uploaded_df = self.getUploadedFileAsDF(params["file_path"])
 		(upload_table, classifier_training_set, missing_genomes, genome_label) = self.createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
 
 		self.uploadHTMLContent(params['training_set_name'], params["file_path"], missing_genomes, genome_label, params['phenotype'], upload_table)
