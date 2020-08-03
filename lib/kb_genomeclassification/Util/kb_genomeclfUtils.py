@@ -55,6 +55,7 @@ class kb_genomeclfUtils(object):
 
 		#params["file_path"] = "/kb/module/data/RealData/GramDataEdit2Ref.xlsx"
 		#params["file_path"] = "/kb/module/data/RealData/fake_2_refseq.xlsx"
+		#params["file_path"] = "/kb/module/data/RealData/SingleForJanaka.xlsx"
 		#uploaded_df = pd.read_excel(params["file_path"], dtype=str)
 		uploaded_df = self.getUploadedFileAsDF(params["file_path"])
 		(upload_table, classifier_training_set, missing_genomes, genome_label) = self.createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
@@ -1178,7 +1179,7 @@ class kb_genomeclfUtils(object):
 			else:
 				raise ValueError('File must include Genome Name/Genome Reference')
 		else:		
-			if (("Genome Name" in uploaded_df_columns) or ("Genome Reference" in uploaded_df_columns)) and ("Phenotype" in uploaded_df_columns):
+			if (("Ref Seq Ids" in uploaded_df_columns) or ("Genome Name" in uploaded_df_columns) or ("Genome Reference" in uploaded_df_columns)) and ("Phenotype" in uploaded_df_columns):
 				pass
 			else:
 				raise ValueError('File must include Genome Name/Genome Reference and Phenotype as columns')
@@ -1468,6 +1469,10 @@ class kb_genomeclfUtils(object):
 			uploaded_df["Genome Reference"] = uploaded_df["Ref Seq Ids"].map(obj_refs)
 
 		all_genomes_workspace = self.ws_client.list_objects({'workspaces':[current_ws],'type':'KBaseGenomes.Genome'})
+		# print(uploaded_df.columns)	
+		# print(uploaded_df.values)
+		# exit()
+
 
 		#figure out if matching on Reference or Name and then find missing genomes
 		if "Genome Reference" in uploaded_df.columns:
