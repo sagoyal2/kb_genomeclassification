@@ -1250,11 +1250,13 @@ class kb_genomeclfUtils(object):
 		if(params["annotate"]):
 			
 			#RAST Annotate the Genome
-			output_genome_set_name = params['training_set_name'] + "_RAST"
+			#output_genome_set_name = params['training_set_name'] + "_RAST"
+			output_genome_set_name = params['training_set_name'] + "_GenomeSET"
 			self.RASTAnnotateGenome(current_ws, input_genome_references, output_genome_set_name)
 
 			#We know a head of time that all names are just old names with .RAST appended to them
-			RAST_genome_names = [params['training_set_name'] + "_RAST_" + genome_name  for genome_name in input_genome_names]
+			#RAST_genome_names = [params['training_set_name'] + "_RAST_" + genome_name  for genome_name in input_genome_names]
+			RAST_genome_names = [genome_name+".RAST" for genome_name in input_genome_names]
 			_list_genome_name = RAST_genome_names
 
 			#Figure out new RAST references 
@@ -1519,16 +1521,41 @@ class kb_genomeclfUtils(object):
 		print("in RASTAnnotateGenome input_genomes are:")
 		print(input_genomes)
 
-		params_RAST =	{
-		"input_text": ";".join(input_genomes),
-		#"input_text": "36230/794;36230/798;36230/799",
-		"output_workspace": current_ws,
-		"output_GenomeSet_name" : output_genome_set_name
-		}
+		# params_RAST =	{
+		# "input_text": ";".join(input_genomes),
+		# #"input_text": "36230/794;36230/798;36230/799",
+		# "output_workspace": current_ws,
+		# "output_GenomeSet_name" : output_genome_set_name
+		# }
 		
-		#we don't do anything with the output but you can if you want to
+		# #we don't do anything with the output but you can if you want to
+		# print(params_RAST)
+		# output = self.rast.rast_genomes_assemblies(params_RAST)
+
+		params_RAST = {
+		"workspace": current_ws,
+		"input_genomes": [],
+        "genome_text": ";".join(input_genomes),
+        "call_features_rRNA_SEED": 0,
+        "call_features_tRNA_trnascan": 0,
+        "call_selenoproteins": 0,
+        "call_pyrrolysoproteins": 0,
+        "call_features_repeat_region_SEED": 0,
+        "call_features_strep_suis_repeat": 0,
+        "call_features_strep_pneumo_repeat": 0,
+        "call_features_crispr": 0,
+        "call_features_CDS_glimmer3": 0,
+        "call_features_CDS_prodigal": 0,
+        "annotate_proteins_kmer_v2": 1,
+        "kmer_v1_parameters": 1,
+        "annotate_proteins_similarity": 1,
+        "retain_old_anno_for_hypotheticals": 0,
+        "resolve_overlapping_features": 0,
+        "call_features_prophage_phispy": 0,
+        "output_genome": output_genome_set_name
+		}
 		print(params_RAST)
-		output = self.rast.rast_genomes_assemblies(params_RAST)
+		output = self.rast.annotate_genomes(params_RAST)
 
 		print("this is output from rast processing")
 		print(output)
@@ -1587,11 +1614,12 @@ class kb_genomeclfUtils(object):
 		if(params["annotate"]):
 			
 			#RAST Annotate the Genome
-			output_genome_set_name = params['training_set_name'] + "_RAST"
+			output_genome_set_name = params['training_set_name'] + "_GenomeSET"
 			self.RASTAnnotateGenome(current_ws, input_genome_references, output_genome_set_name)
 
 			#We know a head of time that all names are just old names with .RAST appended to them
-			RAST_genome_names = [params['training_set_name'] + "_RAST_" + genome_name  for genome_name in input_genome_names]
+			#RAST_genome_names = [params['training_set_name'] + "_RAST_" + genome_name  for genome_name in input_genome_names]
+			RAST_genome_names = [genome_name+".RAST" for genome_name in input_genome_names]
 			_list_genome_name = RAST_genome_names
 
 			#Figure out new RAST references 

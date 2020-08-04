@@ -24,7 +24,7 @@ class RAST_SDK(object):
             password=None, token=None, ignore_authrc=False,
             trust_all_ssl_certificates=False,
             auth_svc='https://ci.kbase.us/services/auth/api/legacy/KBase/Sessions/Login',
-            service_ver='beta',
+            service_ver='release',
             async_job_check_time_ms=100, async_job_check_time_scale_percent=150, 
             async_job_check_max_time_ms=300000):
         if url is None:
@@ -43,75 +43,12 @@ class RAST_SDK(object):
         """
         annotate genome
         params - a param hash that includes the workspace id and options
-        :param params: instance of type "AnnotateGenomeParams" (Parameters
-           for the annotate_genome method. ncbi_taxon_id - the numeric ID of
-           the NCBI taxon to which this genome belongs. If this is included
-           scientific_name is ignored. relation_engine_timestamp_ms - the
-           timestamp to send to the Relation Engine when looking up taxon
-           information in milliseconds since the epoch. scientific_name - the
-           scientific name of the genome. Overridden by ncbi_taxon_id. TODO:
-           document remainder of parameters.) -> structure: parameter
-           "workspace" of String, parameter "input_genome" of type
+        :param params: instance of type "AnnotateGenomeParams" -> structure:
+           parameter "workspace" of String, parameter "input_genome" of type
            "genome_id" (A string representing a genome id.), parameter
            "input_contigset" of type "contigset_id" (A string representing a
            ContigSet id.), parameter "genetic_code" of Long, parameter
-           "domain" of String, parameter "ncbi_taxon_id" of Long, parameter
-           "relation_engine_timestamp_ms" of Long, parameter
-           "scientific_name" of String, parameter "output_genome" of String,
-           parameter "call_features_rRNA_SEED" of type "bool" (A binary
-           boolean), parameter "call_features_tRNA_trnascan" of type "bool"
-           (A binary boolean), parameter "call_selenoproteins" of type "bool"
-           (A binary boolean), parameter "call_pyrrolysoproteins" of type
-           "bool" (A binary boolean), parameter
-           "call_features_repeat_region_SEED" of type "bool" (A binary
-           boolean), parameter "call_features_insertion_sequences" of type
-           "bool" (A binary boolean), parameter
-           "call_features_strep_suis_repeat" of type "bool" (A binary
-           boolean), parameter "call_features_strep_pneumo_repeat" of type
-           "bool" (A binary boolean), parameter "call_features_crispr" of
-           type "bool" (A binary boolean), parameter
-           "call_features_CDS_glimmer3" of type "bool" (A binary boolean),
-           parameter "call_features_CDS_prodigal" of type "bool" (A binary
-           boolean), parameter "call_features_CDS_genemark" of type "bool" (A
-           binary boolean), parameter "annotate_proteins_kmer_v2" of type
-           "bool" (A binary boolean), parameter "kmer_v1_parameters" of type
-           "bool" (A binary boolean), parameter
-           "annotate_proteins_similarity" of type "bool" (A binary boolean),
-           parameter "resolve_overlapping_features" of type "bool" (A binary
-           boolean), parameter "call_features_prophage_phispy" of type "bool"
-           (A binary boolean), parameter "retain_old_anno_for_hypotheticals"
-           of type "bool" (A binary boolean)
-        :returns: instance of type "AnnotateGenomeResults" -> structure:
-           parameter "workspace" of type "workspace_name" (A string
-           representing a workspace name.), parameter "id" of String,
-           parameter "report_name" of String, parameter "report_ref" of String
-        """
-        return self._client.run_job('RAST_SDK.annotate_genome',
-                                    [params], self._service_ver, context)
-
-    def annotate_genomes(self, params, context=None):
-        """
-        annotate genomes
-        params - a param hash that includes the workspace id and options
-        :param params: instance of type "AnnotateGenomesParams" (Parameters
-           for the annotate_genomes method. ncbi_taxon_id - the numeric ID of
-           the NCBI taxon to which this genome belongs. If this is included
-           scientific_name is ignored. relation_engine_timestamp_ms - the
-           timestamp to send to the Relation Engine when looking up taxon
-           information in milliseconds since the epoch. scientific_name - the
-           scientific name of the genome. Overridden by ncbi_taxon_id. TODO:
-           document remainder of parameters.) -> structure: parameter
-           "workspace" of String, parameter "input_genomes" of list of type
-           "GenomeParams" -> structure: parameter "input_contigset" of type
-           "contigset_id" (A string representing a ContigSet id.), parameter
-           "input_genome" of type "genome_id" (A string representing a genome
-           id.), parameter "output_genome" of type "genome_id" (A string
-           representing a genome id.), parameter "genetic_code" of Long,
-           parameter "domain" of String, parameter "scientific_name" of
-           String, parameter "genetic_code" of Long, parameter "domain" of
-           String, parameter "ncbi_taxon_id" of Long, parameter
-           "relation_engine_timestamp_ms" of Long, parameter
-           "scientific_name" of String, parameter "genome_text" of String,
+           "domain" of String, parameter "scientific_name" of String,
            parameter "output_genome" of String, parameter
            "call_features_rRNA_SEED" of type "bool" (A binary boolean),
            parameter "call_features_tRNA_trnascan" of type "bool" (A binary
@@ -136,141 +73,59 @@ class RAST_SDK(object):
            "call_features_prophage_phispy" of type "bool" (A binary boolean),
            parameter "retain_old_anno_for_hypotheticals" of type "bool" (A
            binary boolean)
+        :returns: instance of type "AnnotateGenomeResults" -> structure:
+           parameter "workspace" of type "workspace_name" (A string
+           representing a workspace name.), parameter "id" of String,
+           parameter "report_name" of String, parameter "report_ref" of String
+        """
+        return self._client.run_job('RAST_SDK.annotate_genome',
+                                    [params], self._service_ver, context)
+
+    def annotate_genomes(self, params, context=None):
+        """
+        annotate genomes
+        params - a param hash that includes the workspace id and options
+        :param params: instance of type "AnnotateGenomesParams" -> structure:
+           parameter "workspace" of String, parameter "input_genomes" of list
+           of type "GenomeParams" -> structure: parameter "input_contigset"
+           of type "contigset_id" (A string representing a ContigSet id.),
+           parameter "input_genome" of type "genome_id" (A string
+           representing a genome id.), parameter "output_genome" of type
+           "genome_id" (A string representing a genome id.), parameter
+           "genetic_code" of Long, parameter "domain" of String, parameter
+           "scientific_name" of String, parameter "genetic_code" of Long,
+           parameter "domain" of String, parameter "scientific_name" of
+           String, parameter "genome_text" of String, parameter
+           "output_genome" of String, parameter "call_features_rRNA_SEED" of
+           type "bool" (A binary boolean), parameter
+           "call_features_tRNA_trnascan" of type "bool" (A binary boolean),
+           parameter "call_selenoproteins" of type "bool" (A binary boolean),
+           parameter "call_pyrrolysoproteins" of type "bool" (A binary
+           boolean), parameter "call_features_repeat_region_SEED" of type
+           "bool" (A binary boolean), parameter
+           "call_features_insertion_sequences" of type "bool" (A binary
+           boolean), parameter "call_features_strep_suis_repeat" of type
+           "bool" (A binary boolean), parameter
+           "call_features_strep_pneumo_repeat" of type "bool" (A binary
+           boolean), parameter "call_features_crispr" of type "bool" (A
+           binary boolean), parameter "call_features_CDS_glimmer3" of type
+           "bool" (A binary boolean), parameter "call_features_CDS_prodigal"
+           of type "bool" (A binary boolean), parameter
+           "call_features_CDS_genemark" of type "bool" (A binary boolean),
+           parameter "annotate_proteins_kmer_v2" of type "bool" (A binary
+           boolean), parameter "kmer_v1_parameters" of type "bool" (A binary
+           boolean), parameter "annotate_proteins_similarity" of type "bool"
+           (A binary boolean), parameter "resolve_overlapping_features" of
+           type "bool" (A binary boolean), parameter
+           "call_features_prophage_phispy" of type "bool" (A binary boolean),
+           parameter "retain_old_anno_for_hypotheticals" of type "bool" (A
+           binary boolean)
         :returns: instance of type "AnnotateGenomesResults" -> structure:
            parameter "workspace" of type "workspace_name" (A string
            representing a workspace name.), parameter "report_name" of
            String, parameter "report_ref" of String
         """
         return self._client.run_job('RAST_SDK.annotate_genomes',
-                                    [params], self._service_ver, context)
-
-    def annotate_proteins(self, params, context=None):
-        """
-        annotate proteins - returns a list of the RAST annotations for the input protein sequences
-        :param params: instance of type "AnnotateProteinParams" -> structure:
-           parameter "proteins" of list of String
-        :returns: instance of type "AnnotateProteinResults" -> structure:
-           parameter "functions" of list of list of String
-        """
-        return self._client.run_job('RAST_SDK.annotate_proteins',
-                                    [params], self._service_ver, context)
-
-    def annotate_metagenome(self, params, context=None):
-        """
-        :param params: instance of type "MetagenomeAnnotateParams" (Required
-           parameters: object_ref - reference to Assembly or Genome object,
-           output_workspace - output workspace name, output_metagenome_name -
-           output object name,) -> structure: parameter "object_ref" of type
-           "data_obj_ref" (For RAST annotating metagenomes (borrowed and
-           simplied from ProkkaAnnotation moduel) Reference to an Assembly or
-           Genome object in the workspace @id ws
-           KBaseGenomeAnnotations.Assembly @id ws KBaseGenomes.Genome @id ws
-           KBaseMetagenomes.AnnotatedMetagenomeAssembly), parameter
-           "output_workspace" of String, parameter "output_metagenome_name"
-           of String, parameter "create_report" of type "bool" (A binary
-           boolean)
-        :returns: instance of type "MetagenomeAnnotateOutput" -> structure:
-           parameter "output_metagenome_ref" of type "metagenome_ref"
-           (Reference to a Annotated Metagenome Assembly object in the
-           workspace @id ws KBaseMetagenomes.AnnotatedMetagenomeAssembly),
-           parameter "output_workspace" of String, parameter "report_name" of
-           String, parameter "report_ref" of String
-        """
-        return self._client.run_job('RAST_SDK.annotate_metagenome',
-                                    [params], self._service_ver, context)
-
-    def annotate_metagenomes(self, params, context=None):
-        """
-        :param params: instance of type "BulkAnnotateMetagenomesParams" ->
-           structure: parameter "input_AMAs" of list of type "data_obj_ref"
-           (For RAST annotating metagenomes (borrowed and simplied from
-           ProkkaAnnotation moduel) Reference to an Assembly or Genome object
-           in the workspace @id ws KBaseGenomeAnnotations.Assembly @id ws
-           KBaseGenomes.Genome @id ws
-           KBaseMetagenomes.AnnotatedMetagenomeAssembly), parameter
-           "input_assemblies" of list of type "data_obj_ref" (For RAST
-           annotating metagenomes (borrowed and simplied from
-           ProkkaAnnotation moduel) Reference to an Assembly or Genome object
-           in the workspace @id ws KBaseGenomeAnnotations.Assembly @id ws
-           KBaseGenomes.Genome @id ws
-           KBaseMetagenomes.AnnotatedMetagenomeAssembly), parameter
-           "input_text" of String, parameter "output_workspace" of String,
-           parameter "output_AMASet_name" of String, parameter
-           "create_report" of type "bool" (A binary boolean)
-        :returns: instance of type "BulkMetagenomesAnnotateOutput" ->
-           structure: parameter "output_AMASet_ref" of type "data_obj_ref"
-           (For RAST annotating metagenomes (borrowed and simplied from
-           ProkkaAnnotation moduel) Reference to an Assembly or Genome object
-           in the workspace @id ws KBaseGenomeAnnotations.Assembly @id ws
-           KBaseGenomes.Genome @id ws
-           KBaseMetagenomes.AnnotatedMetagenomeAssembly), parameter
-           "output_workspace" of String
-        """
-        return self._client.run_job('RAST_SDK.annotate_metagenomes',
-                                    [params], self._service_ver, context)
-
-    def rast_genome_assembly(self, params, context=None):
-        """
-        :param params: instance of type "RastGenomeAssemblyParams" (Required
-           parameters for rast_genome_assembly: object_ref - reference to a
-           Genome or Assembly object, output_workspace - output workspace
-           name, output_genome_name - output object name Optional parameters
-           for rast_genome_assembly: ncbi_taxon_id - the numeric ID of the
-           NCBI taxon to which this genome belongs. If this is included
-           scientific_name is ignored. relation_engine_timestamp_ms - the
-           timestamp to send to the Relation Engine when looking up taxon
-           information in milliseconds since the epoch. scientific_name - the
-           scientific name of the genome. Overridden by ncbi_taxon_id.) ->
-           structure: parameter "object_ref" of type "data_obj_ref" (For RAST
-           annotating metagenomes (borrowed and simplied from
-           ProkkaAnnotation moduel) Reference to an Assembly or Genome object
-           in the workspace @id ws KBaseGenomeAnnotations.Assembly @id ws
-           KBaseGenomes.Genome @id ws
-           KBaseMetagenomes.AnnotatedMetagenomeAssembly), parameter
-           "output_workspace" of String, parameter "genetic_code" of Long,
-           parameter "domain" of String, parameter "ncbi_taxon_id" of Long,
-           parameter "relation_engine_timestamp_ms" of Long, parameter
-           "scientific_name" of String, parameter "output_genome_name" of
-           String, parameter "create_report" of type "bool" (A binary boolean)
-        :returns: instance of type "RastGenomeAssemblyOutput" -> structure:
-           parameter "output_genome_ref" of type "genome_id" (A string
-           representing a genome id.), parameter "output_workspace" of
-           String, parameter "report_name" of String, parameter "report_ref"
-           of String
-        """
-        return self._client.run_job('RAST_SDK.rast_genome_assembly',
-                                    [params], self._service_ver, context)
-
-    def rast_genomes_assemblies(self, params, context=None):
-        """
-        :param params: instance of type "BulkRastGenomesAssembliesParams" ->
-           structure: parameter "input_genomes" of list of type
-           "data_obj_ref" (For RAST annotating metagenomes (borrowed and
-           simplied from ProkkaAnnotation moduel) Reference to an Assembly or
-           Genome object in the workspace @id ws
-           KBaseGenomeAnnotations.Assembly @id ws KBaseGenomes.Genome @id ws
-           KBaseMetagenomes.AnnotatedMetagenomeAssembly), parameter
-           "input_assemblies" of list of type "data_obj_ref" (For RAST
-           annotating metagenomes (borrowed and simplied from
-           ProkkaAnnotation moduel) Reference to an Assembly or Genome object
-           in the workspace @id ws KBaseGenomeAnnotations.Assembly @id ws
-           KBaseGenomes.Genome @id ws
-           KBaseMetagenomes.AnnotatedMetagenomeAssembly), parameter
-           "input_text" of String, parameter "scientific_name" of String,
-           parameter "genetic_code" of Long, parameter "domain" of String,
-           parameter "ncbi_taxon_id" of Long, parameter
-           "relation_engine_timestamp_ms" of Long, parameter
-           "output_workspace" of String, parameter "output_GenomeSet_name" of
-           String
-        :returns: instance of type "BulkRastGenomesAssembliesOutput" ->
-           structure: parameter "output_GenomeSet_ref" of type
-           "genomeSet_ref" (For RAST annotating genomes/assemblies Reference
-           to a set of annotated Genome and/or Assembly objects in the
-           workspace @id ws KBaseSearch.GenomeSet), parameter
-           "output_workspace" of String, parameter "report_name" of String,
-           parameter "report_ref" of String
-        """
-        return self._client.run_job('RAST_SDK.rast_genomes_assemblies',
                                     [params], self._service_ver, context)
 
     def status(self, context=None):
