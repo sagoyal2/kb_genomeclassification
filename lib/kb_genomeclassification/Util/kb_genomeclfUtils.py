@@ -1467,7 +1467,8 @@ class kb_genomeclfUtils(object):
 			self.checkUniqueColumn(uploaded_df, "Ref Seq Ids")
 
 			#{'GCF_900128725.1': '36230/794/9', 'GCF_x001289725.1': 'GCF_900128725.1'}
-			obj_refs = self.genomes_to_ws("36230", refseq_ids=uploaded_df["Ref Seq Ids"].to_list())
+			# obj_refs = self.genomes_to_ws("36230", refseq_ids=uploaded_df["Ref Seq Ids"].to_list())
+			obj_refs = self.genomes_to_ws("69058", refseq_ids=uploaded_df["Ref Seq Ids"].to_list())
 			uploaded_df["Genome Reference"] = uploaded_df["Ref Seq Ids"].map(obj_refs)
 
 		all_genomes_workspace = self.ws_client.list_objects({'workspaces':[current_ws],'type':'KBaseGenomes.Genome'})
