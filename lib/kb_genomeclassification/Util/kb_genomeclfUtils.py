@@ -1205,7 +1205,8 @@ class kb_genomeclfUtils(object):
 		uploaded_df: pd DataFrame
 			user uploaded file
 		"""
-
+		print("here are the params")
+		print(params)
 		(genome_label, all_df_genome, missing_genomes) = self.findMissingGenomes(current_ws, params["workspace_id"], uploaded_df)
 
 		uploaded_df_columns = uploaded_df.columns

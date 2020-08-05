@@ -67,6 +67,10 @@
           "target_property": "workspace"
         },
         {
+          "narrative_system_variable": "workspace_id",
+          "target_property": "workspace_id"
+        },
+        {
           "service_method_output_path": [
             0,
             "report_name"
