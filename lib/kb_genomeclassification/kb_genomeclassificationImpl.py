@@ -44,8 +44,6 @@ This module build a classifier and predict phenotypes based on the classifier An
         self.workspaceURL = config.get('workspace-url')
         self.scratch = os.path.abspath(config.get('scratch'))
         self.callback_url = os.environ['SDK_CALLBACK_URL']
-        #self.to_ws = os.environ['KB_NARRATIVE'].split('.')[1]
-        # self.to_ws = "36230"
         self.ws_client = workspaceService(self.workspaceURL)
 
         self.config['workspaceURL'] = self.workspaceURL
