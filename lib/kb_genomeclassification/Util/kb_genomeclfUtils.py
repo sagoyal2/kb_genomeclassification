@@ -1206,7 +1206,7 @@ class kb_genomeclfUtils(object):
 			user uploaded file
 		"""
 
-		(genome_label, all_df_genome, missing_genomes) = self.findMissingGenomes(current_ws, uploaded_df)
+		(genome_label, all_df_genome, missing_genomes) = self.findMissingGenomes(current_ws, params["workspace_id"], uploaded_df)
 
 		uploaded_df_columns = uploaded_df.columns
 		_references = []
@@ -1448,7 +1448,7 @@ class kb_genomeclfUtils(object):
 					max_object_id = genome[0]
 		return obj_refs
 
-	def findMissingGenomes(self, current_ws, uploaded_df):
+	def findMissingGenomes(self, current_ws, workspace_id, uploaded_df):
 		"""
 		Finds missing genomes from user uploaded_df. Returns either a list of 
 		Genome References or Genome Names that are missing from workspace but are 
@@ -1458,6 +1458,8 @@ class kb_genomeclfUtils(object):
 		---------
 		current_ws : str
 			current_ws
+		workspace_id: str
+			ws_id ex: 69058 or 36230
 		uploaded_df : pd DataFrame
 			user uploaded dataframe
 		"""
@@ -1468,14 +1470,10 @@ class kb_genomeclfUtils(object):
 
 			#{'GCF_900128725.1': '36230/794/9', 'GCF_x001289725.1': 'GCF_900128725.1'}
 			# obj_refs = self.genomes_to_ws("36230", refseq_ids=uploaded_df["Ref Seq Ids"].to_list())
-			obj_refs = self.genomes_to_ws("69058", refseq_ids=uploaded_df["Ref Seq Ids"].to_list())
+			obj_refs = self.genomes_to_ws(workspace_id, refseq_ids=uploaded_df["Ref Seq Ids"].to_list())
 			uploaded_df["Genome Reference"] = uploaded_df["Ref Seq Ids"].map(obj_refs)
 
 		all_genomes_workspace = self.ws_client.list_objects({'workspaces':[current_ws],'type':'KBaseGenomes.Genome'})
-		# print(uploaded_df.columns)	
-		# print(uploaded_df.values)
-		# exit()
-
 
 		#figure out if matching on Reference or Name and then find missing genomes
 		if "Genome Reference" in uploaded_df.columns:
@@ -1586,7 +1584,7 @@ class kb_genomeclfUtils(object):
 			user uploaded file
 		"""
 
-		(genome_label, all_df_genome, missing_genomes) = self.findMissingGenomes(current_ws, uploaded_df)
+		(genome_label, all_df_genome, missing_genomes) = self.findMissingGenomes(current_ws, params['workspace_id'], uploaded_df)
 		uploaded_df_columns = uploaded_df.columns
 
 		############################################################

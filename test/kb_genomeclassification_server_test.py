@@ -89,7 +89,8 @@ class kb_genomeclassificationTest(unittest.TestCase):
         "description": "my description",
         "phenotype": "my phenotype",
         "training_set_name": "AgainRefSeq",
-        "workspace": "sagoyal:narrative_1536939130038"
+        "workspace": "sagoyal:narrative_1536939130038",
+        "workspace_id":"36230"
         }
         self.getImpl().upload_trainingset(self.getContext(), params)
 
