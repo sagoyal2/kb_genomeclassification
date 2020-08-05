@@ -120,7 +120,6 @@ module kb_genomeclassification {
     typedef structure {
         string genome_attribute;
         string workspace;
-        string workspace_id;
         string training_set_name;
         mapping <string genome_id,ClassifierTrainingSet> classifier_training_set;
         string classifier_object_name;
@@ -188,6 +187,7 @@ module kb_genomeclassification {
 	typedef structure {
         string phenotype;
         string workspace;
+        string workspace_id;
         string description;
         string training_set_name;
         string file_path;

@@ -11,10 +11,6 @@
           "target_property": "workspace"
         },
         {
-            "narrative_system_variable": "workspace_id",
-            "target_property": "workspace_id"
-        },
-        {
           "input_parameter": "description",
           "target_property": "description"
         },
@@ -65,10 +61,6 @@
         {
           "narrative_system_variable": "workspace",
           "target_property": "workspace"
-        },
-        {
-          "narrative_system_variable": "workspace_id",
-          "target_property": "workspace_id"
         },
         {
           "service_method_output_path": [
