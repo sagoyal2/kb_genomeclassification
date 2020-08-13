@@ -3,7 +3,7 @@
 #
 name: Predict Phenotype
 tooltip: |
-    This module upload training set data save in KBase
+    This module predict phenotypes based on the classifier choosen.
 screenshots: []
 
 icon: null

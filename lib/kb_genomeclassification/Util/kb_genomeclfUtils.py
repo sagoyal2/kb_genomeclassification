@@ -40,7 +40,7 @@ class kb_genomeclfUtils(object):
 		self.ctx = config['ctx']
 
 		self.dfu = DataFileUtil(self.callback_url)
-		self.rast = RAST_SDK(self.callback_url)
+		self.rast = RAST_SDK(self.callback_url, service_ver='beta')
 		self.ws_client = workspaceService(self.workspaceURL)
 
 	def fullUpload(self, params, current_ws):
@@ -53,10 +53,10 @@ class kb_genomeclfUtils(object):
 		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
 
 		#params["file_path"] = "/kb/module/data/RealData/GramDataEdit2Ref.xlsx"
-		params["file_path"] = "/kb/module/data/RealData/fake_2_refseq.xlsx"
+		#params["file_path"] = "/kb/module/data/RealData/fake_2_refseq.xlsx"
 		#params["file_path"] = "/kb/module/data/RealData/SingleForJanaka.xlsx"
-		uploaded_df = pd.read_excel(params["file_path"], dtype=str)
-		#uploaded_df = self.getUploadedFileAsDF(params["file_path"])
+		#uploaded_df = pd.read_excel(params["file_path"], dtype=str)
+		uploaded_df = self.getUploadedFileAsDF(params["file_path"])
 		(upload_table, classifier_training_set, missing_genomes, genome_label) = self.createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
 
 		self.uploadHTMLContent(params['training_set_name'], params["file_path"], missing_genomes, genome_label, params['phenotype'], upload_table)
@@ -158,7 +158,7 @@ class kb_genomeclfUtils(object):
 		(main_report_df, dtt_report_df, best_classifier_type_nice, genome_dtt_classifier_object_names) = self.handleClassificationReports(dict_classification_report_dict, list(common_classifier_information["class_list_mapping"].keys()), params["classifier_object_name"] )
 		if(len(main_report_df.keys()) > 1):
 			main_report_df_flag = True
-			self.buildMainHTMLContent(main_report_df, genome_classifier_object_names, phenotype, best_classifier_type_nice)
+			self.buildMainHTMLContent(params['training_set_name'], main_report_df, genome_classifier_object_names, phenotype, best_classifier_type_nice)
 		if(len(dtt_report_df.keys()) > 0):
 			dtt_report_df_flag = True
 			self.buildDTTHTMLContent(dtt_report_df, top_20, genome_dtt_classifier_object_names, best_classifier_type_nice)
@@ -1749,7 +1749,7 @@ class kb_genomeclfUtils(object):
 
 		if(main_report_view):
 			str_button = u"""
-			<button class="tablinks" onclick="openTab(event, 'Main Report')" id="defaultOpen">Main Report</button>
+			<button class="tablinks" onclick="openTab(event, 'Overview')" id="defaultOpen">Overview</button>
 			"""
 			file.write(str_button)
 
@@ -1776,7 +1776,7 @@ class kb_genomeclfUtils(object):
 		  <iframe src="status.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
 		</div>
 
-		<div id="Main Report" class="tabcontent">
+		<div id="Overview" class="tabcontent">
 		  <iframe src="main_report.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
 		</div>
 
@@ -1858,7 +1858,14 @@ class kb_genomeclfUtils(object):
 		file.write(scripts)
 		file.close()
 
-	def buildMainHTMLContent(self, main_report_df, genome_classifier_object_names, phenotype, best_classifier_type_nice):
+	def ulify(elements):
+	    string = "<ul>\n"
+	    for s in elements:
+	        string += "<li>" + str(s) + "</li>\n"
+	    string += "</ul>"
+	    return string
+
+	def buildMainHTMLContent(self, training_set_name, main_report_df, genome_classifier_object_names, phenotype, best_classifier_type_nice):
 
 		folder_name = "forBuild"
 		file = open(os.path.join(self.scratch, folder_name, 'main_report.html'), "w")
@@ -1896,27 +1903,24 @@ class kb_genomeclfUtils(object):
 			<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
 			<body>
 
-			<h2 style="text-align:center;"> Report: Build Genome Classifier - Overview </h2>
-			<p>
+			<h2 style="text-align:center;"> Construction of Genome Classifiers </h2>
 			"""
 		file.write(header)
 
-		first_paragraph = 	u"""The following Genome Categorizer Objects were created """ + str(genome_classifier_object_names) +\
-							""" to classify genomes based on """ + str(phenotype) + """. Below we display a confusion matrix which \
-							evaluates the performance of the selected classification algorithms. To do so, for each """ + str(phenotype) + """ \
-							class we compute the percentage of genomes with a true label that get classified with a predicted label. Read more \
-							about <a href="https://en.wikipedia.org/wiki/Confusion_matrix"> Confusion Matrices</a>. Given the magnitude of the \
-							number of classes relative to the overall size of the training set, creating only one test set would lead to 
-							inconclusive results. Instead, we use K-Fold (K=10) Cross Validation to ensure the quality of the model. Thus the below 
-							confusion matrices represent the average percentages over all 10 folds.</p><p>
+		list_genome_classifier_object_names =  ulify(genome_classifier_object_names)
+		file.write(list_genome_classifier_object_names)
+
+		first_sentence = u"<p>Based on the training set """ + str(training_set_name)""" .</p><p>"""
+		file.write(first_sentence)
+
+		first_paragraph = 	u"""Below is a confusion matrix (or matrices) which evaluates the performance of the selected classification algorithms \
+							For each classification/phenotype class we compute the percentage of genomes with a true label (Y axis of the confusion matrix) \
+							that get classified with a predicted label (X axis on the confusion matrix). Read more about <a href="https://en.wikipedia.org/wiki/Confusion_matrix"> Confusion Matrices </a>. Given the \
+							magnitude of the number of classes relative to the overall size of the training set, creating only one test set would lead to \
+							inconclusive results. Instead, we use <a href= "https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.StratifiedKFold.html"> K-Fold </a> (K=10) Cross Validation to ensure the quality of the model. Thus the below confusion \
+							matrix (or matrices) represent the average percentages over all 10 folds.</p><p>
 							"""
 		file.write(first_paragraph)
-
-		second_paragraph = 	u"""For each classification algorithm, we also provide the Precision, Recall, and F1-Score for each """ + str(phenotype) + """ \
-							class. More information about these metrics can be found <a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_recall_fscore_support.html#sklearn.metrics.precision_recall_fscore_support">
-							here</a>.</p><p>
-							"""
-		file.write(second_paragraph)
 
 		if(best_classifier_type_nice != None):
 			sentence = u"""The best classification algorithm (highest average accuracy) was: """ + str(best_classifier_type_nice) +""".</p>"""
@@ -1975,6 +1979,9 @@ class kb_genomeclfUtils(object):
 				"""
 			
 				file.write(images_str)
+
+
+		#For each classification algorithm, we also provide the Precision, Recall, and F1-Score for each Respiration class. More information about these metrics can be found here.
 
 		main_report_df.fillna('', inplace=True)
 		main_report_html = main_report_df.to_html(index=False, table_id="main_report_table", justify='center')
