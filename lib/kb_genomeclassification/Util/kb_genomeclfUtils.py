@@ -52,14 +52,21 @@ class kb_genomeclfUtils(object):
 		folder_name = "forUpload"
 		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
 
+		#Testing Files
 		#params["file_path"] = "/kb/module/data/RealData/GramDataEdit2Ref.xlsx"
-		#params["file_path"] = "/kb/module/data/RealData/fake_2_refseq.xlsx"
+		params["file_path"] = "/kb/module/data/RealData/fake_2_refseq_simple.xlsx"
 		#params["file_path"] = "/kb/module/data/RealData/SingleForJanaka.xlsx"
-		#uploaded_df = pd.read_excel(params["file_path"], dtype=str)
-		uploaded_df = self.getUploadedFileAsDF(params["file_path"])
-		(upload_table, classifier_training_set, missing_genomes, genome_label) = self.createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
+		uploaded_df = pd.read_excel(params["file_path"], dtype=str)
+		
+		#Case Study Test
+		#params["file_path"] = "/kb/module/data/RealData/respiration-benchmark.csv"
+		#uploaded_df = pd.read_csv(params["file_path"], header=0, dtype=str)
+		
+		#True App
+		#uploaded_df = self.getUploadedFileAsDF(params["file_path"])
+		(upload_table, classifier_training_set, missing_genomes, genome_label, number_of_genomes, number_of_classes) = self.createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
 
-		self.uploadHTMLContent(params['training_set_name'], params["file_path"], missing_genomes, genome_label, params['phenotype'], upload_table)
+		self.uploadHTMLContent(params['training_set_name'], params["file_path"], missing_genomes, genome_label, params['phenotype'], upload_table, number_of_genomes, number_of_classes)
 		html_output_name = self.viewerHTMLContent(folder_name, status_view = True)
 		
 		return html_output_name, classifier_training_set
@@ -996,8 +1003,9 @@ class kb_genomeclfUtils(object):
 
 
 		#Load Information from UploadedFile
-		#params["file_path"] = "/kb/module/data/RealData/GramDataEdit5.xlsx"
-		uploaded_df = self.getUploadedFileAsDF(params["file_path"], forPredict=True)
+		params["file_path"] = "/kb/module/data/RealData/GramDataEdit5.xlsx"
+		uploaded_df = pd.read_excel(params["file_path"], dtype=str)
+		#uploaded_df = self.getUploadedFileAsDF(params["file_path"], forPredict=True)
 		(missing_genomes, genome_label, subset_uploaded_df, _in_workspace, _list_genome_name, _list_genome_ref) = self.createListsForPredictionSet(current_ws, params, uploaded_df)
 
 		#get functional_roles and make indicator matrix
@@ -1051,8 +1059,8 @@ class kb_genomeclfUtils(object):
 		phenotype = self.ws_client.get_objects2({'objects' : [{'ref': training_set_ref}]})["data"][0]['data']["classification_type"]
 
 		predict_table = pd.DataFrame.from_dict({	genome_label: genome_iter,
-													"In Workspace": _in_workspace,
 													phenotype: _prediction_phenotype,
+													"Verified to be in the Narrative": _in_workspace,
 													"Probability": _prediction_probabilities
 												})
 		
@@ -1245,6 +1253,14 @@ class kb_genomeclfUtils(object):
 
 			input_genome_names = filtered_uploaded_df["Genome Name"].to_list()
 
+		"""
+		At this point both
+			input_genome_references
+			input_genome_names
+
+		will be populated regardelss of what genome_label is 
+		"""
+
 		if(params["annotate"]):
 			
 			#RAST Annotate the Genome
@@ -1302,20 +1318,20 @@ class kb_genomeclfUtils(object):
 		############################################################
 
 		report_table = pd.DataFrame.from_dict({	genome_label: uploaded_df[genome_label],
-												"Phenotype": uploaded_df["Phenotype"],
+												"Phenotype/Classification": uploaded_df["Phenotype"],
 												})	
 
 												#locations where genomes are present / not missing
-		report_table["In Workspace"] = np.where(~uploaded_df[genome_label].isin(missing_genomes), "True", "False")
-		report_table["In Training Set"] = np.where(~uploaded_df[genome_label].isin(missing_genomes), "True", "False")
+		report_table["Verified to be in the Narrative"] = np.where(~uploaded_df[genome_label].isin(missing_genomes), "Yes", "No")
+		report_table["Integrated into the Training Set"] = np.where(~uploaded_df[genome_label].isin(missing_genomes), "Yes", "No")
 
 		if(has_references):
 			report_table["References"] = uploaded_df["References"].str.split(";")
 		if(has_evidence_types):
-			report_table["Evidence Types"] = uploaded_df["Evidence Types"].str.split(";")
+			report_table["Evidence Type(e.g; Respiration)"] = uploaded_df["Evidence Types"].str.split(";")
 
-		self.createTrainingSetObject(current_ws, params, _list_genome_name, _list_genome_ref, _list_phenotype, _list_references, _list_evidence_types)
-		return (report_table, classifier_training_set, missing_genomes, genome_label)
+		(number_of_genomes, number_of_classes) = self.createTrainingSetObject(current_ws, params, _list_genome_name, _list_genome_ref, _list_phenotype, _list_references, _list_evidence_types)
+		return (report_table, classifier_training_set, missing_genomes, genome_label, number_of_genomes, number_of_classes)
 
 	def createTrainingSetObject(self, current_ws, params, _list_genome_name, _list_genome_ref, _list_phenotype, _list_references, _list_evidence_types):
 		"""
@@ -1361,6 +1377,8 @@ class kb_genomeclfUtils(object):
 			'classification_data': classification_data
 			}
 
+		number_of_genomes = len(_list_genome_name)
+		number_of_classes = len(list(set(_list_phenotype)))
 		training_set_ref = self.ws_client.save_objects({'workspace': current_ws,
 													  'objects':[{
 																  'type': 'KBaseClassifier.GenomeClassifierTrainingSet',
@@ -1371,14 +1389,15 @@ class kb_genomeclfUtils(object):
 													})[0]
 
 		print("A Training Set Object named " + str(params['training_set_name']) + " with reference: " + str(training_set_ref) + " was just made.")
-
+		
+		return (number_of_genomes, number_of_classes)
 
 	def checkUniqueColumn(self, uploaded_df, genome_label):
 
 		if(uploaded_df[genome_label].is_unique):
 			pass
 		else:
-			raise ValueError(str(genome_label) + "column is not unique")
+			raise ValueError(str(genome_label) + " column is not unique")
 
 	def genomes_to_ws(self, to_ws='', from_ws='19217', refseq_ids=[], verbose=False):
 		"""
@@ -1466,10 +1485,11 @@ class kb_genomeclfUtils(object):
 			#in the event that the user passes in "Ref Seq Ids" you have to use those first
 			self.checkUniqueColumn(uploaded_df, "Ref Seq Ids")
 
-			#{'GCF_900128725.1': '36230/794/9', 'GCF_x001289725.1': 'GCF_900128725.1'}
+			#{'GCF_900128725.1': '36230/794/9', 'GCF_x001289725.1': 'GCF_x001289725.1'}
 			# obj_refs = self.genomes_to_ws("36230", refseq_ids=uploaded_df["Ref Seq Ids"].to_list())
 			obj_refs = self.genomes_to_ws(workspace_id, refseq_ids=uploaded_df["Ref Seq Ids"].to_list())
-			uploaded_df["Genome Reference"] = uploaded_df["Ref Seq Ids"].map(obj_refs)
+			#uploaded_df["Genome Reference"] = uploaded_df["Ref Seq Ids"].map(obj_refs)
+			uploaded_df["Genome Name"] = uploaded_df["Ref Seq Ids"]
 
 		all_genomes_workspace = self.ws_client.list_objects({'workspaces':[current_ws],'type':'KBaseGenomes.Genome'})
 
@@ -1494,6 +1514,12 @@ class kb_genomeclfUtils(object):
 			all_df_genome = uploaded_df[genome_label]
 			all_names_workspace = [str(genome[1]) for genome in all_genomes_workspace]
 			missing_genomes = list(set(all_df_genome).difference(set(all_names_workspace)))
+
+		"""
+		genome_label is like the "key" that we are going to be consistently indexing by
+		
+		In this method if user passes in Ref Seq Ids ---> Genome Name
+		"""
 
 		return (genome_label, all_df_genome, missing_genomes)
 
@@ -1606,6 +1632,14 @@ class kb_genomeclfUtils(object):
 				input_genome_references.append(genome_ref)
 
 			input_genome_names = filtered_uploaded_df["Genome Name"].to_list()
+
+		"""
+		At this point both
+			input_genome_references
+			input_genome_names
+
+		will be populated regardelss of what genome_label is 
+		"""
 
 		if(params["annotate"]):
 			
@@ -1812,7 +1846,7 @@ class kb_genomeclfUtils(object):
 
 		return "viewer.html"
 
-	def uploadHTMLContent(self, training_set_name, selected_file_name, missing_genomes, genome_label, phenotype, upload_table):
+	def uploadHTMLContent(self, training_set_name, selected_file_name, missing_genomes, genome_label, phenotype, upload_table, number_of_genomes, number_of_classes):
 		
 		file = open(os.path.join(self.scratch, 'forUpload', 'status.html'), "w")
 		header = u"""
@@ -1821,21 +1855,20 @@ class kb_genomeclfUtils(object):
 			<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
 			<body>
 
-			<h2 style="text-align:center;"> Report: Upload Training Set Data </h2>
+			<h2 style="text-align:center;"> Upload Training Set Data Summary </h2>
 			<p>
 			"""
 		file.write(header)
 
-		first_paragraph = u"""A Genome Classifier Training Set Object named """ + str(training_set_name) \
-							+ """ was created and added to the workspace. Missing genomes (those that were \
-							present in the selected file: """ + str(selected_file_name) + """, but not present in the staging area) \
-							were the following: """ + str(missing_genomes)+ """ . """ + str(training_set_name) + """ was created \
-							excluding the missing genomes.</p><p>"""
+		first_paragraph = u"""A Genome Classifier Training Set named """ + str(training_set_name) + """  \
+							  with """ + str(number_of_genomes) + """ genomes and """ + str(number_of_classes) + """ unique classes was successfully created and added \
+							  to the Narrative.</p><p>"""
 		file.write(first_paragraph)
 
-		second_paragraph = u"""Below is a detailed table which shows """ + str(genome_label) + """ , whether it \
-						was loaded into the workspace, its """ + str(phenotype)+ """, and if it is in training_set_name, its References, \
-						its Evidence List. </p>"""
+
+		second_paragraph = u"""The following table shows the information and the status for each genome that is integrated \
+								into """ + str(training_set_name) + """.</p>"""
+
 		file.write(second_paragraph)
 
 		upload_table_html = upload_table.to_html(index=False, table_id="upload_table", justify='center')
@@ -1910,7 +1943,7 @@ class kb_genomeclfUtils(object):
 		list_genome_classifier_object_names =  ulify(genome_classifier_object_names)
 		file.write(list_genome_classifier_object_names)
 
-		first_sentence = u"<p>Based on the training set """ + str(training_set_name)""" .</p><p>"""
+		first_sentence = u"<p>Based on the training set """ + str(training_set_name) + """ .</p><p>"""
 		file.write(first_sentence)
 
 		first_paragraph = 	u"""Below is a confusion matrix (or matrices) which evaluates the performance of the selected classification algorithms \
@@ -1981,7 +2014,11 @@ class kb_genomeclfUtils(object):
 				file.write(images_str)
 
 
-		#For each classification algorithm, we also provide the Precision, Recall, and F1-Score for each Respiration class. More information about these metrics can be found here.
+		second_paragraph = 	u"""<p>For each classification algorithm, we also provide the Precision, Recall, and F1-Score for each """ + str(phenotype) + """ \
+							class. More information about these metrics can be found <a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_recall_fscore_support.html#sklearn.metrics.precision_recall_fscore_support">
+							here</a>.</p>
+							"""
+		file.write(second_paragraph)
 
 		main_report_df.fillna('', inplace=True)
 		main_report_html = main_report_df.to_html(index=False, table_id="main_report_table", justify='center')
@@ -2043,13 +2080,13 @@ class kb_genomeclfUtils(object):
 			<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
 			<body>
 
-			<h2 style="text-align:center;"> Report: Build Genome Classifier - Decision Tree Tuning </h2>
+			<h2 style="text-align:center;"> Decision Tree Tuning </h2>
 			<p>
 			"""
 		file.write(header)
 
-		first_paragraph = 	u"""Since the feature space (functional role) is categorical, we further fine tune the Decision Tree \
-							classification algorithm in particular to seek better metrics. We tune the Decision Tree based on two \
+		first_paragraph = 	u"""Since the functional roles are categorical, we further fine tune the Decision Tree \
+							classification Algorithm to seek better metrics. We tune the Decision Tree based on two \
 							hyperparameters: Tree Depth and Criterion (quality of a split). The two criterion are "gini" which uses \
 							the Gini impurity score and "entropy" which uses information gain score.</p>
 							"""
@@ -2112,6 +2149,12 @@ class kb_genomeclfUtils(object):
 		"""
 		file.write(tuning_str)
 
+		sentence = u"""<p>Below is a visual reprsentation of the Decision Tree with the highest accuracy. Each node represents\
+						a decision (True or False) that the model predicts during the classification process, if the \
+						functional role is absent the classifier moves left, and if it is present it moves right. Leaf\
+						nodes represent final classifications.</p>"""
+		file.write(sentence)
+
 		dtt_report_df.fillna('', inplace=True)
 		dtt_report_html = dtt_report_df.to_html(index=False, table_id="dtt_report_table", justify='center')
 		file.write(dtt_report_html)
@@ -2125,10 +2168,13 @@ class kb_genomeclfUtils(object):
 		"""
 		file.write(tree_image)
 
+
+		sentence = u"""<p>Below is the <a href="https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html#sklearn.tree.DecisionTreeClassifier.feature_importances_">weighting scheme</a> \
+						that the Decision Tree with the highest accuracy places on each of the functional roles</p>"""
+		file.write(sentence)
+
 		top_20_html = top_20.to_html(index=False, table_id="top_20_table", justify='center')
 		file.write(top_20_html)
-
-
 
 		scripts = u"""</body>
 
@@ -2164,21 +2210,17 @@ class kb_genomeclfUtils(object):
 			<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
 			<body>
 
-			<h2 style="text-align:center;"> Report: Predict Phenotype </h2>
+			<h2 style="text-align:center;"> Phenotype Prediction based on Genome Classifiers </h2>
 			<p>
 			"""
 		file.write(header)
 
-		first_paragraph = u"""The Genome Categorizer named """ + str(categorizer_name) \
-							+ """ is being used to make predictions for  """ + str(phenotype)+ """ based on \
-							""" + str(selection_attribute) + """. Missing genomes (those that were \
-							present in the selected file: """ + str(selected_file_name) + """, but not present in the staging area) \
-							were the following: """ + str(missing_genomes)+ """ ."""
+		first_paragraph = u"""The Genome Categorizer """ + str(categorizer_name) \
+							+ """ has been used to make predictions for  """ + str(phenotype)+ """ based on \
+							""" + str(selection_attribute) + """. </p><p>"""
 		file.write(first_paragraph)
 
-		second_paragraph = u"""Below is a detailed table which shows """ + str(genome_label) + """ , whether it \
-						was loaded into the workspace, its """ + str(phenotype)+ """, and the probabiltiy of that \
-						prediction.</p>"""
+		second_paragraph = u"""The following table summarizes the predictions in terms of <a href = "https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html#sklearn.linear_model.LogisticRegression.predict_proba">probabilities</a>.</p>"""
 		file.write(second_paragraph)
 
 		predict_table_html = predict_table.to_html(index=False, table_id="predict_table", justify='center')

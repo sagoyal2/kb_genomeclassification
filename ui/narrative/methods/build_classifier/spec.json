@@ -292,24 +292,6 @@
             "id": "functional_roles",
             "ui_name": "Functional annotations",
             "value": "functional_roles"
-          },
-          {
-            "display": "Protein sequences",
-            "id": "prot_seq",
-            "ui_name": "Protein sequences",
-            "value": "prot_seq"
-          },
-          {
-            "display": "DNA K-mers 18mer",
-            "id": "dnakmer",
-            "ui_name": "DNA K-mers 18mer",
-            "value": "dnakmer"
-          },
-          {
-            "display": "Protein K-mers 18mer",
-            "id": "protkmer",
-            "ui_name": "Protein K-mers 18mer",
-            "value": "protkmer"
           }
         ]
       },
