@@ -19,71 +19,100 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
-    "phenotypeclass",
-    "attribute",
+    "genome_attribute",
     "workspace",
-    "trainingset_name",
+    "training_set_name",
     "classifier_training_set",
-    "classifier_out",
-    "target",
-    "classifier",
-    "shock_id",
-    "list_name",
-    "save_ts"
+    "classifier_object_name",
+    "description",
+    "classifier_to_run",
+    "logistic_regression",
+    "decision_tree_classifier",
+    "gaussian_nb",
+    "k_nearest_neighbors",
+    "support_vector_machine",
+    "neural_network",
+    "ensemble_model"
 })
 public class BuildClassifierInput {
 
-    @JsonProperty("phenotypeclass")
-    private java.lang.String phenotypeclass;
-    @JsonProperty("attribute")
-    private java.lang.String attribute;
+    @JsonProperty("genome_attribute")
+    private java.lang.String genomeAttribute;
     @JsonProperty("workspace")
     private java.lang.String workspace;
-    @JsonProperty("trainingset_name")
-    private java.lang.String trainingsetName;
+    @JsonProperty("training_set_name")
+    private java.lang.String trainingSetName;
     @JsonProperty("classifier_training_set")
     private Map<String, ClassifierTrainingSet> classifierTrainingSet;
-    @JsonProperty("classifier_out")
-    private java.lang.String classifierOut;
-    @JsonProperty("target")
-    private java.lang.String target;
-    @JsonProperty("classifier")
-    private java.lang.String classifier;
-    @JsonProperty("shock_id")
-    private java.lang.String shockId;
-    @JsonProperty("list_name")
-    private java.lang.String listName;
-    @JsonProperty("save_ts")
-    private Long saveTs;
+    @JsonProperty("classifier_object_name")
+    private java.lang.String classifierObjectName;
+    @JsonProperty("description")
+    private java.lang.String description;
+    @JsonProperty("classifier_to_run")
+    private java.lang.String classifierToRun;
+    /**
+     * <p>Original spec-file type: LogisticRegressionOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("logistic_regression")
+    private LogisticRegressionOptions logisticRegression;
+    /**
+     * <p>Original spec-file type: DecisionTreeClassifierOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("decision_tree_classifier")
+    private DecisionTreeClassifierOptions decisionTreeClassifier;
+    /**
+     * <p>Original spec-file type: GaussianNBOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("gaussian_nb")
+    private GaussianNBOptions gaussianNb;
+    /**
+     * <p>Original spec-file type: KNearestNeighborsOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("k_nearest_neighbors")
+    private KNearestNeighborsOptions kNearestNeighbors;
+    /**
+     * <p>Original spec-file type: SupportVectorMachineOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("support_vector_machine")
+    private SupportVectorMachineOptions supportVectorMachine;
+    /**
+     * <p>Original spec-file type: NeuralNetworkOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("neural_network")
+    private NeuralNetworkOptions neuralNetwork;
+    /**
+     * <p>Original spec-file type: EnsembleModelOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("ensemble_model")
+    private EnsembleModelOptions ensembleModel;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
-    @JsonProperty("phenotypeclass")
-    public java.lang.String getPhenotypeclass() {
-        return phenotypeclass;
+    @JsonProperty("genome_attribute")
+    public java.lang.String getGenomeAttribute() {
+        return genomeAttribute;
     }
 
-    @JsonProperty("phenotypeclass")
-    public void setPhenotypeclass(java.lang.String phenotypeclass) {
-        this.phenotypeclass = phenotypeclass;
+    @JsonProperty("genome_attribute")
+    public void setGenomeAttribute(java.lang.String genomeAttribute) {
+        this.genomeAttribute = genomeAttribute;
     }
 
-    public BuildClassifierInput withPhenotypeclass(java.lang.String phenotypeclass) {
-        this.phenotypeclass = phenotypeclass;
-        return this;
-    }
-
-    @JsonProperty("attribute")
-    public java.lang.String getAttribute() {
-        return attribute;
-    }
-
-    @JsonProperty("attribute")
-    public void setAttribute(java.lang.String attribute) {
-        this.attribute = attribute;
-    }
-
-    public BuildClassifierInput withAttribute(java.lang.String attribute) {
-        this.attribute = attribute;
+    public BuildClassifierInput withGenomeAttribute(java.lang.String genomeAttribute) {
+        this.genomeAttribute = genomeAttribute;
         return this;
     }
 
@@ -102,18 +131,18 @@ public class BuildClassifierInput {
         return this;
     }
 
-    @JsonProperty("trainingset_name")
-    public java.lang.String getTrainingsetName() {
-        return trainingsetName;
+    @JsonProperty("training_set_name")
+    public java.lang.String getTrainingSetName() {
+        return trainingSetName;
     }
 
-    @JsonProperty("trainingset_name")
-    public void setTrainingsetName(java.lang.String trainingsetName) {
-        this.trainingsetName = trainingsetName;
+    @JsonProperty("training_set_name")
+    public void setTrainingSetName(java.lang.String trainingSetName) {
+        this.trainingSetName = trainingSetName;
     }
 
-    public BuildClassifierInput withTrainingsetName(java.lang.String trainingsetName) {
-        this.trainingsetName = trainingsetName;
+    public BuildClassifierInput withTrainingSetName(java.lang.String trainingSetName) {
+        this.trainingSetName = trainingSetName;
         return this;
     }
 
@@ -132,93 +161,223 @@ public class BuildClassifierInput {
         return this;
     }
 
-    @JsonProperty("classifier_out")
-    public java.lang.String getClassifierOut() {
-        return classifierOut;
+    @JsonProperty("classifier_object_name")
+    public java.lang.String getClassifierObjectName() {
+        return classifierObjectName;
     }
 
-    @JsonProperty("classifier_out")
-    public void setClassifierOut(java.lang.String classifierOut) {
-        this.classifierOut = classifierOut;
+    @JsonProperty("classifier_object_name")
+    public void setClassifierObjectName(java.lang.String classifierObjectName) {
+        this.classifierObjectName = classifierObjectName;
     }
 
-    public BuildClassifierInput withClassifierOut(java.lang.String classifierOut) {
-        this.classifierOut = classifierOut;
+    public BuildClassifierInput withClassifierObjectName(java.lang.String classifierObjectName) {
+        this.classifierObjectName = classifierObjectName;
         return this;
     }
 
-    @JsonProperty("target")
-    public java.lang.String getTarget() {
-        return target;
+    @JsonProperty("description")
+    public java.lang.String getDescription() {
+        return description;
     }
 
-    @JsonProperty("target")
-    public void setTarget(java.lang.String target) {
-        this.target = target;
+    @JsonProperty("description")
+    public void setDescription(java.lang.String description) {
+        this.description = description;
     }
 
-    public BuildClassifierInput withTarget(java.lang.String target) {
-        this.target = target;
+    public BuildClassifierInput withDescription(java.lang.String description) {
+        this.description = description;
         return this;
     }
 
-    @JsonProperty("classifier")
-    public java.lang.String getClassifier() {
-        return classifier;
+    @JsonProperty("classifier_to_run")
+    public java.lang.String getClassifierToRun() {
+        return classifierToRun;
     }
 
-    @JsonProperty("classifier")
-    public void setClassifier(java.lang.String classifier) {
-        this.classifier = classifier;
+    @JsonProperty("classifier_to_run")
+    public void setClassifierToRun(java.lang.String classifierToRun) {
+        this.classifierToRun = classifierToRun;
     }
 
-    public BuildClassifierInput withClassifier(java.lang.String classifier) {
-        this.classifier = classifier;
+    public BuildClassifierInput withClassifierToRun(java.lang.String classifierToRun) {
+        this.classifierToRun = classifierToRun;
         return this;
     }
 
-    @JsonProperty("shock_id")
-    public java.lang.String getShockId() {
-        return shockId;
+    /**
+     * <p>Original spec-file type: LogisticRegressionOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("logistic_regression")
+    public LogisticRegressionOptions getLogisticRegression() {
+        return logisticRegression;
     }
 
-    @JsonProperty("shock_id")
-    public void setShockId(java.lang.String shockId) {
-        this.shockId = shockId;
+    /**
+     * <p>Original spec-file type: LogisticRegressionOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("logistic_regression")
+    public void setLogisticRegression(LogisticRegressionOptions logisticRegression) {
+        this.logisticRegression = logisticRegression;
     }
 
-    public BuildClassifierInput withShockId(java.lang.String shockId) {
-        this.shockId = shockId;
+    public BuildClassifierInput withLogisticRegression(LogisticRegressionOptions logisticRegression) {
+        this.logisticRegression = logisticRegression;
         return this;
     }
 
-    @JsonProperty("list_name")
-    public java.lang.String getListName() {
-        return listName;
+    /**
+     * <p>Original spec-file type: DecisionTreeClassifierOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("decision_tree_classifier")
+    public DecisionTreeClassifierOptions getDecisionTreeClassifier() {
+        return decisionTreeClassifier;
     }
 
-    @JsonProperty("list_name")
-    public void setListName(java.lang.String listName) {
-        this.listName = listName;
+    /**
+     * <p>Original spec-file type: DecisionTreeClassifierOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("decision_tree_classifier")
+    public void setDecisionTreeClassifier(DecisionTreeClassifierOptions decisionTreeClassifier) {
+        this.decisionTreeClassifier = decisionTreeClassifier;
     }
 
-    public BuildClassifierInput withListName(java.lang.String listName) {
-        this.listName = listName;
+    public BuildClassifierInput withDecisionTreeClassifier(DecisionTreeClassifierOptions decisionTreeClassifier) {
+        this.decisionTreeClassifier = decisionTreeClassifier;
         return this;
     }
 
-    @JsonProperty("save_ts")
-    public Long getSaveTs() {
-        return saveTs;
+    /**
+     * <p>Original spec-file type: GaussianNBOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("gaussian_nb")
+    public GaussianNBOptions getGaussianNb() {
+        return gaussianNb;
     }
 
-    @JsonProperty("save_ts")
-    public void setSaveTs(Long saveTs) {
-        this.saveTs = saveTs;
+    /**
+     * <p>Original spec-file type: GaussianNBOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("gaussian_nb")
+    public void setGaussianNb(GaussianNBOptions gaussianNb) {
+        this.gaussianNb = gaussianNb;
     }
 
-    public BuildClassifierInput withSaveTs(Long saveTs) {
-        this.saveTs = saveTs;
+    public BuildClassifierInput withGaussianNb(GaussianNBOptions gaussianNb) {
+        this.gaussianNb = gaussianNb;
+        return this;
+    }
+
+    /**
+     * <p>Original spec-file type: KNearestNeighborsOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("k_nearest_neighbors")
+    public KNearestNeighborsOptions getKNearestNeighbors() {
+        return kNearestNeighbors;
+    }
+
+    /**
+     * <p>Original spec-file type: KNearestNeighborsOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("k_nearest_neighbors")
+    public void setKNearestNeighbors(KNearestNeighborsOptions kNearestNeighbors) {
+        this.kNearestNeighbors = kNearestNeighbors;
+    }
+
+    public BuildClassifierInput withKNearestNeighbors(KNearestNeighborsOptions kNearestNeighbors) {
+        this.kNearestNeighbors = kNearestNeighbors;
+        return this;
+    }
+
+    /**
+     * <p>Original spec-file type: SupportVectorMachineOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("support_vector_machine")
+    public SupportVectorMachineOptions getSupportVectorMachine() {
+        return supportVectorMachine;
+    }
+
+    /**
+     * <p>Original spec-file type: SupportVectorMachineOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("support_vector_machine")
+    public void setSupportVectorMachine(SupportVectorMachineOptions supportVectorMachine) {
+        this.supportVectorMachine = supportVectorMachine;
+    }
+
+    public BuildClassifierInput withSupportVectorMachine(SupportVectorMachineOptions supportVectorMachine) {
+        this.supportVectorMachine = supportVectorMachine;
+        return this;
+    }
+
+    /**
+     * <p>Original spec-file type: NeuralNetworkOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("neural_network")
+    public NeuralNetworkOptions getNeuralNetwork() {
+        return neuralNetwork;
+    }
+
+    /**
+     * <p>Original spec-file type: NeuralNetworkOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("neural_network")
+    public void setNeuralNetwork(NeuralNetworkOptions neuralNetwork) {
+        this.neuralNetwork = neuralNetwork;
+    }
+
+    public BuildClassifierInput withNeuralNetwork(NeuralNetworkOptions neuralNetwork) {
+        this.neuralNetwork = neuralNetwork;
+        return this;
+    }
+
+    /**
+     * <p>Original spec-file type: EnsembleModelOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("ensemble_model")
+    public EnsembleModelOptions getEnsembleModel() {
+        return ensembleModel;
+    }
+
+    /**
+     * <p>Original spec-file type: EnsembleModelOptions</p>
+     * 
+     * 
+     */
+    @JsonProperty("ensemble_model")
+    public void setEnsembleModel(EnsembleModelOptions ensembleModel) {
+        this.ensembleModel = ensembleModel;
+    }
+
+    public BuildClassifierInput withEnsembleModel(EnsembleModelOptions ensembleModel) {
+        this.ensembleModel = ensembleModel;
         return this;
     }
 
@@ -234,7 +393,7 @@ public class BuildClassifierInput {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((((((((((((("BuildClassifierInput"+" [phenotypeclass=")+ phenotypeclass)+", attribute=")+ attribute)+", workspace=")+ workspace)+", trainingsetName=")+ trainingsetName)+", classifierTrainingSet=")+ classifierTrainingSet)+", classifierOut=")+ classifierOut)+", target=")+ target)+", classifier=")+ classifier)+", shockId=")+ shockId)+", listName=")+ listName)+", saveTs=")+ saveTs)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((((((((((((((((("BuildClassifierInput"+" [genomeAttribute=")+ genomeAttribute)+", workspace=")+ workspace)+", trainingSetName=")+ trainingSetName)+", classifierTrainingSet=")+ classifierTrainingSet)+", classifierObjectName=")+ classifierObjectName)+", description=")+ description)+", classifierToRun=")+ classifierToRun)+", logisticRegression=")+ logisticRegression)+", decisionTreeClassifier=")+ decisionTreeClassifier)+", gaussianNb=")+ gaussianNb)+", kNearestNeighbors=")+ kNearestNeighbors)+", supportVectorMachine=")+ supportVectorMachine)+", neuralNetwork=")+ neuralNetwork)+", ensembleModel=")+ ensembleModel)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

@@ -71,6 +71,84 @@ class kb_genomeclfUtils(object):
 		
 		return html_output_name, classifier_training_set
 
+	def fullAnnotate(self, params, current_ws):
+		"""
+		workhorse function for rast_annotate_trainingset
+		"""
+
+		#create folder
+		folder_name = "forAnnotate"
+		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
+
+		training_set_name = params['training_set_name']
+
+		training_set_object = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': training_set_name}]})["data"]
+	
+		phenotype = training_set_object[0]['data']["classification_type"]
+		classes_sorted = training_set_object[0]['data']["classes"]
+
+		training_set_object_data = training_set_object[0]['data']['classification_data']
+		training_set_object_reference = training_set_object[0]['path'][0]
+
+		_list_genome_name = []
+		_list_genome_ref = []
+		_list_phenotype = []
+		_list_references = []
+		_list_evidence_types = []
+
+		for genome in training_set_object_data:
+			_list_genome_name.append(genome["genome_name"])
+			_list_genome_ref.append(genome["genome_ref"])
+			_list_phenotype.append(genome["genome_classification"])
+			_list_references.append(genome["references"])
+			_list_evidence_types.append(genome["evidence_types"])
+
+
+		genome_set_name = "RAST_"+training_set_name
+		self.RASTAnnotateGenome(current_ws, _list_genome_ref, genome_set_name)
+
+		# RAST_genome_names = _list_genome_name
+		# RAST_genome_references = _list_genome_ref
+		#We know a head of time that all names are just old names with .RAST appended to them
+		RAST_genome_names = [genome_set_name + "_" + genome_name  for genome_name in _list_genome_name]
+
+		#Figure out new RAST references 
+		RAST_genome_references = []
+		for RAST_genome in RAST_genome_names:
+			meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': RAST_genome}]})['data'][0]['info']
+			genome_ref = str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
+			RAST_genome_references.append(genome_ref)
+
+		# make the classifier_training_set (only need to make it from present genomes)
+		classifier_training_set = {}
+		for index, curr_genome_ref in enumerate(RAST_genome_references):
+			classifier_training_set[curr_genome_ref] = { 	'genome_name': RAST_genome_names[index],
+															'genome_ref': curr_genome_ref,
+															'phenotype': _list_phenotype[index],
+															'references': _list_references[index],
+															'evidence_types': _list_evidence_types[index]
+														}
+
+		modified_params = {
+		'training_set_name': params["annotated_trainingset_name"],
+		'description': "We RAST Annotated " + training_set_name,
+		'phenotype': phenotype
+		}
+
+		self.createTrainingSetObject(current_ws, modified_params, RAST_genome_names, RAST_genome_references, _list_phenotype, _list_references, _list_evidence_types, with_Rast=True)
+
+
+		#Make Report Table
+		report_table = pd.DataFrame.from_dict({	"Genome Name": _list_genome_name,
+												"Annotated Genome Name": RAST_genome_names,
+												})	
+
+		self.annotateHTMLContent(params["annotated_trainingset_name"], genome_set_name, report_table)
+		html_output_name = self.viewerHTMLContent(folder_name, status_view = True)
+		
+		return html_output_name, classifier_training_set
+
+
 	def fullClassify(self, params, current_ws):
 		"""
 		workhorse function for build_classifier
@@ -1079,7 +1157,7 @@ class kb_genomeclfUtils(object):
 		current_ws : str
 			current_ws
 		folder_name : str
-			"forUpload" || "forBuild" || "forPredict"
+			"forUpload" || "forAnnotate" || "forBuild" || "forPredict"
 		single_html_name: str
 			file name to display in KBASE Report (from viewerHTMLContent)
 		description: str
@@ -1333,7 +1411,7 @@ class kb_genomeclfUtils(object):
 		(number_of_genomes, number_of_classes) = self.createTrainingSetObject(current_ws, params, _list_genome_name, _list_genome_ref, _list_phenotype, _list_references, _list_evidence_types)
 		return (report_table, classifier_training_set, missing_genomes, genome_label, number_of_genomes, number_of_classes)
 
-	def createTrainingSetObject(self, current_ws, params, _list_genome_name, _list_genome_ref, _list_phenotype, _list_references, _list_evidence_types):
+	def createTrainingSetObject(self, current_ws, params, _list_genome_name, _list_genome_ref, _list_phenotype, _list_references, _list_evidence_types, with_Rast = False):
 		"""
 		Creates a GenomeClassifierTrainingSet: 
 		https://narrative.kbase.us/#spec/type/KBaseClassifier.GenomeClassifierTrainingSet
@@ -1376,6 +1454,9 @@ class kb_genomeclfUtils(object):
 			'classes': sorted(list(set(_list_phenotype))),
 			'classification_data': classification_data
 			}
+
+		if(with_Rast):
+			training_set_object["annoated"] = True
 
 		number_of_genomes = len(_list_genome_name)
 		number_of_classes = len(list(set(_list_phenotype)))
@@ -1881,6 +1962,45 @@ class kb_genomeclfUtils(object):
 			<script type="text/javascript">
 			$(document).ready(function() {
 				$('#upload_table').DataTable( {
+					"scrollY":        "500px",
+					"scrollCollapse": true,
+					"paging":         false
+				} );
+			} );
+			</script>
+			</html>"""
+		file.write(scripts)
+		file.close()
+
+	def annotateHTMLContent(self, annotated_trainingset_name, genome_set_name, report_table):
+		file = open(os.path.join(self.scratch, 'forAnnotate', 'status.html'), "w")
+		header = u"""
+			<!DOCTYPE html>
+			<html>
+			<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
+			<body>
+
+			<h2 style="text-align:center;"> Classifier Training Set Annotation Summary </h2>
+			<p>
+			"""
+		file.write(header)
+
+		first_paragraph = u"""The following genomes are annotated with RAST annotation algorithm. Additionally, \
+							a genomeSet comprising of all RAST annotated genomes were created \
+							named """ + str(genome_set_name) +  """.</p><p>"""
+		file.write(first_paragraph)
+
+
+		report_table_html = report_table.to_html(index=False, table_id="annotate_table", justify='center')
+		file.write(report_table_html)
+
+		scripts = u"""</body>
+
+			<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+			<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+			<script type="text/javascript">
+			$(document).ready(function() {
+				$('#annotate_table').DataTable( {
 					"scrollY":        "500px",
 					"scrollCollapse": true,
 					"paging":         false

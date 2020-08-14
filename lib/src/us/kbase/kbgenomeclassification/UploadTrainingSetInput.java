@@ -12,32 +12,53 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
 /**
- * <p>Original spec-file type: ClassifierPredictionInput</p>
+ * <p>Original spec-file type: UploadTrainingSetInput</p>
  * 
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
+    "phenotype",
     "workspace",
-    "categorizer_name",
+    "workspace_id",
     "description",
+    "training_set_name",
     "file_path",
     "annotate"
 })
-public class ClassifierPredictionInput {
+public class UploadTrainingSetInput {
 
+    @JsonProperty("phenotype")
+    private String phenotype;
     @JsonProperty("workspace")
     private String workspace;
-    @JsonProperty("categorizer_name")
-    private String categorizerName;
+    @JsonProperty("workspace_id")
+    private String workspaceId;
     @JsonProperty("description")
     private String description;
+    @JsonProperty("training_set_name")
+    private String trainingSetName;
     @JsonProperty("file_path")
     private String filePath;
     @JsonProperty("annotate")
     private Long annotate;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+
+    @JsonProperty("phenotype")
+    public String getPhenotype() {
+        return phenotype;
+    }
+
+    @JsonProperty("phenotype")
+    public void setPhenotype(String phenotype) {
+        this.phenotype = phenotype;
+    }
+
+    public UploadTrainingSetInput withPhenotype(String phenotype) {
+        this.phenotype = phenotype;
+        return this;
+    }
 
     @JsonProperty("workspace")
     public String getWorkspace() {
@@ -49,23 +70,23 @@ public class ClassifierPredictionInput {
         this.workspace = workspace;
     }
 
-    public ClassifierPredictionInput withWorkspace(String workspace) {
+    public UploadTrainingSetInput withWorkspace(String workspace) {
         this.workspace = workspace;
         return this;
     }
 
-    @JsonProperty("categorizer_name")
-    public String getCategorizerName() {
-        return categorizerName;
+    @JsonProperty("workspace_id")
+    public String getWorkspaceId() {
+        return workspaceId;
     }
 
-    @JsonProperty("categorizer_name")
-    public void setCategorizerName(String categorizerName) {
-        this.categorizerName = categorizerName;
+    @JsonProperty("workspace_id")
+    public void setWorkspaceId(String workspaceId) {
+        this.workspaceId = workspaceId;
     }
 
-    public ClassifierPredictionInput withCategorizerName(String categorizerName) {
-        this.categorizerName = categorizerName;
+    public UploadTrainingSetInput withWorkspaceId(String workspaceId) {
+        this.workspaceId = workspaceId;
         return this;
     }
 
@@ -79,8 +100,23 @@ public class ClassifierPredictionInput {
         this.description = description;
     }
 
-    public ClassifierPredictionInput withDescription(String description) {
+    public UploadTrainingSetInput withDescription(String description) {
         this.description = description;
+        return this;
+    }
+
+    @JsonProperty("training_set_name")
+    public String getTrainingSetName() {
+        return trainingSetName;
+    }
+
+    @JsonProperty("training_set_name")
+    public void setTrainingSetName(String trainingSetName) {
+        this.trainingSetName = trainingSetName;
+    }
+
+    public UploadTrainingSetInput withTrainingSetName(String trainingSetName) {
+        this.trainingSetName = trainingSetName;
         return this;
     }
 
@@ -94,7 +130,7 @@ public class ClassifierPredictionInput {
         this.filePath = filePath;
     }
 
-    public ClassifierPredictionInput withFilePath(String filePath) {
+    public UploadTrainingSetInput withFilePath(String filePath) {
         this.filePath = filePath;
         return this;
     }
@@ -109,7 +145,7 @@ public class ClassifierPredictionInput {
         this.annotate = annotate;
     }
 
-    public ClassifierPredictionInput withAnnotate(Long annotate) {
+    public UploadTrainingSetInput withAnnotate(Long annotate) {
         this.annotate = annotate;
         return this;
     }
@@ -126,7 +162,7 @@ public class ClassifierPredictionInput {
 
     @Override
     public String toString() {
-        return ((((((((((((("ClassifierPredictionInput"+" [workspace=")+ workspace)+", categorizerName=")+ categorizerName)+", description=")+ description)+", filePath=")+ filePath)+", annotate=")+ annotate)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((("UploadTrainingSetInput"+" [phenotype=")+ phenotype)+", workspace=")+ workspace)+", workspaceId=")+ workspaceId)+", description=")+ description)+", trainingSetName=")+ trainingSetName)+", filePath=")+ filePath)+", annotate=")+ annotate)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

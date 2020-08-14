@@ -203,7 +203,6 @@ module kb_genomeclassification {
     } ClassifierTrainingSetOut;
 
 
-
     typedef structure {
     	mapping <string genome_id, ClassifierTrainingSetOut> classifier_training_set;
         string report_name;
@@ -213,6 +212,23 @@ module kb_genomeclassification {
 
 	funcdef upload_trainingset(UploadTrainingSetInput params)
         returns (UploadTrainingSetOut output) authentication required;
+
+
+    typedef structure{
+        string training_set_name;
+        string annotated_trainingset_name;
+        string description;
+        string workspace;
+    }RastAnnotateTrainingSetInput;
+
+    typedef structure{
+        mapping <string genome_id, ClassifierTrainingSetOut> classifier_training_set;
+        string report_name;
+        string report_ref;
+    }RastAnnotateTrainingSetOutput;
+
+    funcdef rast_annotate_trainingset(RastAnnotateTrainingSetInput params)
+        returns (RastAnnotateTrainingSetOutput output) authentication required;
 };
 
 

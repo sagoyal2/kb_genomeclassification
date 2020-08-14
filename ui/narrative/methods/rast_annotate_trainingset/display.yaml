@@ -1,0 +1,51 @@
+#
+# define display information
+#
+name: Annotate Genomes in a Classifier Training Set
+tooltip: |
+    This module will annotate genomes (using RAST) that are in the Classifier Training Set and output a new training set
+screenshots: []
+
+icon: null
+
+#
+# define a set of similar methods that might be useful to the user
+#
+suggestions:
+    apps:
+        related:
+            []
+        next:
+            []
+    methods:
+        related:
+            []
+        next:
+            []
+
+#
+# Configure the display and description of parameters
+#
+parameters :
+    training_set_name:
+        ui-name : |
+            Training Set Name
+        short-hint : |
+            Provide a name for the training set data
+    description:
+        ui-name : |
+            Description
+        short-hint : |
+            Describe Purpose or Contents of Training Set
+        placeholder: |
+            Enter Description
+    annotated_trainingset_name:
+        ui-name : |
+            Annotated Training Set Name
+        short-hint : |
+            Provide a name for the annotated training set data
+description : |
+   <p>Description soon to follow</p>
+
+
+

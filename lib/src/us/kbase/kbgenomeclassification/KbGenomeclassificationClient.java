@@ -218,6 +218,23 @@ public class KbGenomeclassificationClient {
         return res.get(0);
     }
 
+    /**
+     * <p>Original spec-file function name: rast_annotate_trainingset</p>
+     * <pre>
+     * </pre>
+     * @param   params   instance of type {@link us.kbase.kbgenomeclassification.RastAnnotateTrainingSetInput RastAnnotateTrainingSetInput}
+     * @return   parameter "output" of type {@link us.kbase.kbgenomeclassification.RastAnnotateTrainingSetOutput RastAnnotateTrainingSetOutput}
+     * @throws IOException if an IO exception occurs
+     * @throws JsonClientException if a JSON RPC exception occurs
+     */
+    public RastAnnotateTrainingSetOutput rastAnnotateTrainingset(RastAnnotateTrainingSetInput params, RpcContext... jsonRpcContext) throws IOException, JsonClientException {
+        List<Object> args = new ArrayList<Object>();
+        args.add(params);
+        TypeReference<List<RastAnnotateTrainingSetOutput>> retType = new TypeReference<List<RastAnnotateTrainingSetOutput>>() {};
+        List<RastAnnotateTrainingSetOutput> res = caller.jsonrpcCall("kb_genomeclassification.rast_annotate_trainingset", args, retType, true, true, jsonRpcContext, this.serviceVersion);
+        return res.get(0);
+    }
+
     public Map<String, Object> status(RpcContext... jsonRpcContext) throws IOException, JsonClientException {
         List<Object> args = new ArrayList<Object>();
         TypeReference<List<Map<String, Object>>> retType = new TypeReference<List<Map<String, Object>>>() {};

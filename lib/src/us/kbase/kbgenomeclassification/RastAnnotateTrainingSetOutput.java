@@ -12,39 +12,39 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
 /**
- * <p>Original spec-file type: ClassifierPredictionOutput</p>
+ * <p>Original spec-file type: RastAnnotateTrainingSetOutput</p>
  * 
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
-    "prediction_set",
+    "classifier_training_set",
     "report_name",
     "report_ref"
 })
-public class ClassifierPredictionOutput {
+public class RastAnnotateTrainingSetOutput {
 
-    @JsonProperty("prediction_set")
-    private Map<String, PredictedPhenotypeOut> predictionSet;
+    @JsonProperty("classifier_training_set")
+    private Map<String, ClassifierTrainingSetOut> classifierTrainingSet;
     @JsonProperty("report_name")
     private java.lang.String reportName;
     @JsonProperty("report_ref")
     private java.lang.String reportRef;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
-    @JsonProperty("prediction_set")
-    public Map<String, PredictedPhenotypeOut> getPredictionSet() {
-        return predictionSet;
+    @JsonProperty("classifier_training_set")
+    public Map<String, ClassifierTrainingSetOut> getClassifierTrainingSet() {
+        return classifierTrainingSet;
     }
 
-    @JsonProperty("prediction_set")
-    public void setPredictionSet(Map<String, PredictedPhenotypeOut> predictionSet) {
-        this.predictionSet = predictionSet;
+    @JsonProperty("classifier_training_set")
+    public void setClassifierTrainingSet(Map<String, ClassifierTrainingSetOut> classifierTrainingSet) {
+        this.classifierTrainingSet = classifierTrainingSet;
     }
 
-    public ClassifierPredictionOutput withPredictionSet(Map<String, PredictedPhenotypeOut> predictionSet) {
-        this.predictionSet = predictionSet;
+    public RastAnnotateTrainingSetOutput withClassifierTrainingSet(Map<String, ClassifierTrainingSetOut> classifierTrainingSet) {
+        this.classifierTrainingSet = classifierTrainingSet;
         return this;
     }
 
@@ -58,7 +58,7 @@ public class ClassifierPredictionOutput {
         this.reportName = reportName;
     }
 
-    public ClassifierPredictionOutput withReportName(java.lang.String reportName) {
+    public RastAnnotateTrainingSetOutput withReportName(java.lang.String reportName) {
         this.reportName = reportName;
         return this;
     }
@@ -73,7 +73,7 @@ public class ClassifierPredictionOutput {
         this.reportRef = reportRef;
     }
 
-    public ClassifierPredictionOutput withReportRef(java.lang.String reportRef) {
+    public RastAnnotateTrainingSetOutput withReportRef(java.lang.String reportRef) {
         this.reportRef = reportRef;
         return this;
     }
@@ -90,7 +90,7 @@ public class ClassifierPredictionOutput {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((("ClassifierPredictionOutput"+" [predictionSet=")+ predictionSet)+", reportName=")+ reportName)+", reportRef=")+ reportRef)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((("RastAnnotateTrainingSetOutput"+" [classifierTrainingSet=")+ classifierTrainingSet)+", reportName=")+ reportName)+", reportRef=")+ reportRef)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

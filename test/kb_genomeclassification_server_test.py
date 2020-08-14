@@ -105,6 +105,15 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # }
         # self.getImpl().upload_trainingset(self.getContext(), params)
 
+    def test_rast_annotate_trainingset(self):
+
+        params =    {
+        "training_set_name": "AgainRefSeq",
+        "description": "whatever",
+        "annotated_trainingset_name": "AnnoatedAgainRefSeq",
+        "workspace": "sagoyal:narrative_1536939130038"
+        }
+        self.getImpl().rast_annotate_trainingset(self.getContext(), params)
 
     def test_build_classifier(self):
         pass
@@ -218,15 +227,16 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # self.getImpl().build_classifier(self.getContext(), params)
 
     def test_predict_phenotype(self):
-        params = {
-        "categorizer_name": "clf_name_k_nearest_neighbors",
-        "annotate": 0,
-        "file_path": "GramDataEdit5.xlsx",
-        "description": "my predict phenotype description",
-        "workspace": "sagoyal:narrative_1536939130038",
-        "workspace_id":"36230"
-        }
-        self.getImpl().predict_phenotype(self.getContext(), params)
+        pass
+        # params = {
+        # "categorizer_name": "clf_name_k_nearest_neighbors",
+        # "annotate": 0,
+        # "file_path": "GramDataEdit5.xlsx",
+        # "description": "my predict phenotype description",
+        # "workspace": "sagoyal:narrative_1536939130038",
+        # "workspace_id":"36230"
+        # }
+        # self.getImpl().predict_phenotype(self.getContext(), params)
 
 
 

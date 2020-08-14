@@ -1,0 +1,113 @@
+{
+  "authors": [
+    "janakakbase",
+    "sagoyal"
+  ],
+  "behavior": {
+    "service-mapping": {
+      "input_mapping": [
+        {
+          "narrative_system_variable": "workspace",
+          "target_property": "workspace"
+        },
+        {
+          "input_parameter": "description",
+          "target_property": "description"
+        },
+        {
+          "input_parameter": "training_set_name",
+          "target_property": "training_set_name"
+        },
+        {
+          "input_parameter": "annotated_trainingset_name",
+          "target_property": "annotated_trainingset_name"
+        }
+      ],
+      "method": "rast_annotate_trainingset",
+      "name": "kb_genomeclassification",
+      "output_mapping": [
+        {
+          "constant_value": "KBaseClassifier.GenomeClassifierTrainingSet",
+          "target_property": "type"
+        },
+        {
+          "service_method_output_path": [
+            0,
+            "report_name"
+          ],
+          "target_property": "report_name"
+        },
+        {
+          "service_method_output_path": [
+            0,
+            "report_ref"
+          ],
+          "target_property": "report_ref"
+        },
+        {
+          "narrative_system_variable": "workspace",
+          "target_property": "ws"
+        }
+      ],
+      "url": ""
+    }
+  },
+  "categories": [
+    "active",
+    "upload"
+  ],
+  "contact": "https://kbase.us/contact-us/",
+  "job_id_output_field": "docker",
+  "parameters": [
+    {
+      "id": "training_set_name",
+      "optional": false,
+      "advanced": false,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "text_options": {
+        "is_output_name": true,
+        "valid_ws_types": [
+          "KBaseClassifier.GenomeClassifierTrainingSet"
+        ]
+      }
+    },
+    {
+      "id": "description",
+      "optional": false,
+      "advanced": false,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "text_options": {
+        "is_output_name": false
+      }
+    },
+    {
+      "id": "annotated_trainingset_name",
+      "optional": false,
+      "advanced": false,
+      "allow_multiple": false,
+      "default_values": [
+        ""
+      ],
+      "field_type": "text",
+      "text_options": {
+        "is_output_name": true,
+        "valid_ws_types": [
+          "KBaseClassifier.GenomeClassifierTrainingSet"
+        ]
+      }
+    }
+  ],
+  "ver": "0.0.1",
+  "widgets": {
+    "input": null,
+    "output": "no-display"
+  }
+}
