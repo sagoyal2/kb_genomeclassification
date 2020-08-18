@@ -54,16 +54,16 @@ class kb_genomeclfUtils(object):
 
 		#Testing Files
 		#params["file_path"] = "/kb/module/data/RealData/GramDataEdit2Ref.xlsx"
-		params["file_path"] = "/kb/module/data/RealData/fake_2_refseq_simple.xlsx"
+		#params["file_path"] = "/kb/module/data/RealData/fake_2_refseq_simple.xlsx"
 		#params["file_path"] = "/kb/module/data/RealData/SingleForJanaka.xlsx"
-		uploaded_df = pd.read_excel(params["file_path"], dtype=str)
+		#uploaded_df = pd.read_excel(params["file_path"], dtype=str)
 		
 		#Case Study Test
 		#params["file_path"] = "/kb/module/data/RealData/respiration-benchmark.csv"
 		#uploaded_df = pd.read_csv(params["file_path"], header=0, dtype=str)
 		
 		#True App
-		#uploaded_df = self.getUploadedFileAsDF(params["file_path"])
+		uploaded_df = self.getUploadedFileAsDF(params["file_path"])
 		(upload_table, classifier_training_set, missing_genomes, genome_label, number_of_genomes, number_of_classes) = self.createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
 
 		self.uploadHTMLContent(params['training_set_name'], params["file_path"], missing_genomes, genome_label, params['phenotype'], upload_table, number_of_genomes, number_of_classes)

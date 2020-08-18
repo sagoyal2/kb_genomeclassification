@@ -3,7 +3,7 @@
 #
 name: Annotate Genomes in a Classifier Training Set
 tooltip: |
-    This module will annotate genomes (using RAST) that are in the Classifier Training Set and output a new training set
+    This module will annotate genomes that are in the Classifier Training Set (using RAST) and output a new training set
 screenshots: []
 
 icon: null
