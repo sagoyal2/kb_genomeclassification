@@ -1731,6 +1731,11 @@ class kb_genomeclfUtils(object):
 		for genome_set_ref in list_genome_set_refs:
 		    self.ws_client.delete_objects([{'workspace': current_ws, 'objid' : genome_set_ref.split("/")[1]}]) #get the objid ie. the 902 in 36230/902/1, 
 
+
+		print("here is split_prefix_names")
+		print(split_prefix_names)
+		print("here is RAST_genome_names")
+		print(RAST_genome_names)
 		#3 rename all output genomes to a standard name
 		for original_name, new_name in zip(split_prefix_names, RAST_genome_names):
 			self.ws_client.rename_object({'obj':{"workspace":current_ws, "name":original_name}, 'new_name': new_name})
