@@ -1733,7 +1733,7 @@ class kb_genomeclfUtils(object):
 
 		#3 rename all output genomes to a standard name
 		for original_name, new_name in zip(split_prefix_names, RAST_genome_names):
-			ws_client.rename_object({'obj':{"workspace":current_ws, "name":original_name}, 'new_name': new_name})
+			self.ws_client.rename_object({'obj':{"workspace":current_ws, "name":original_name}, 'new_name': new_name})
 
 		time.sleep(10)
 
