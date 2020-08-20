@@ -1,6 +1,7 @@
 import os
 import re
 import uuid
+import time
 import pickle
 import operator
 import numpy as np
@@ -9,6 +10,9 @@ import seaborn as sns
 
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
+
+#Add Parllelism
+from concurrent.futures import ThreadPoolExecutor
 
 #Classifier Models
 from sklearn.neighbors import KNeighborsClassifier
@@ -27,6 +31,7 @@ from sklearn.model_selection import StratifiedKFold
 from KBaseReport.KBaseReportClient import KBaseReport
 from DataFileUtil.DataFileUtilClient import DataFileUtil
 from installed_clients.RAST_SDKClient import RAST_SDK
+from installed_clients.kb_SetUtilitiesClient import kb_SetUtilities
 from biokbase.workspace.client import Workspace as workspaceService
 
 
@@ -41,6 +46,7 @@ class kb_genomeclfUtils(object):
 
 		self.dfu = DataFileUtil(self.callback_url)
 		self.rast = RAST_SDK(self.callback_url, service_ver='beta')
+		self.kb_util = kb_SetUtilities(self.callback_url)
 		self.ws_client = workspaceService(self.workspaceURL)
 
 	def fullUpload(self, params, current_ws):
@@ -54,17 +60,17 @@ class kb_genomeclfUtils(object):
 
 		#Testing Files
 		#params["file_path"] = "/kb/module/data/RealData/GramDataEdit2Ref.xlsx"
-		#params["file_path"] = "/kb/module/data/RealData/fake_2_refseq_simple.xlsx"
+		params["file_path"] = "/kb/module/data/RealData/fake_2_refseq_simple.xlsx"
 		#params["file_path"] = "/kb/module/data/RealData/SingleForJanaka.xlsx"
-		#uploaded_df = pd.read_excel(params["file_path"], dtype=str)
+		uploaded_df = pd.read_excel(params["file_path"], dtype=str)
 		
 		#Case Study Test
 		#params["file_path"] = "/kb/module/data/RealData/respiration-benchmark.csv"
 		#uploaded_df = pd.read_csv(params["file_path"], header=0, dtype=str)
 		
 		#True App
-		uploaded_df = self.getUploadedFileAsDF(params["file_path"])
-		(upload_table, classifier_training_set, missing_genomes, genome_label, number_of_genomes, number_of_classes) = self.createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
+		#uploaded_df = self.getUploadedFileAsDF(params["file_path"])
+		#(upload_table, classifier_training_set, missing_genomes, genome_label, number_of_genomes, number_of_classes) = self.createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
 
 		self.uploadHTMLContent(params['training_set_name'], params["file_path"], missing_genomes, genome_label, params['phenotype'], upload_table, number_of_genomes, number_of_classes)
 		html_output_name = self.viewerHTMLContent(folder_name, status_view = True)
@@ -105,12 +111,14 @@ class kb_genomeclfUtils(object):
 
 
 		genome_set_name = "RAST_"+training_set_name
-		self.RASTAnnotateGenome(current_ws, _list_genome_ref, genome_set_name)
+		# self.RASTAnnotateGenome(current_ws, _list_genome_ref, genome_set_name)
 
 		# RAST_genome_names = _list_genome_name
 		# RAST_genome_references = _list_genome_ref
 		#We know a head of time that all names are just old names with .RAST appended to them
 		RAST_genome_names = [genome_set_name + "_" + genome_name  for genome_name in _list_genome_name]
+
+		self.RASTAnnotateGenomeParallel(current_ws, _list_genome_ref, genome_set_name, _list_genome_name, RAST_genome_names)
 
 		#Figure out new RAST references 
 		RAST_genome_references = []
@@ -1343,12 +1351,24 @@ class kb_genomeclfUtils(object):
 			
 			#RAST Annotate the Genome
 			output_genome_set_name = params['training_set_name'] + "_RAST"
-			#output_genome_set_name = params['training_set_name'] + "_GenomeSET"
-			self.RASTAnnotateGenome(current_ws, input_genome_references, output_genome_set_name)
 
-			#We know a head of time that all names are just old names with .RAST appended to them
+			#We know a head of time that altl names are just old names with .RAST appended to them
 			RAST_genome_names = [params['training_set_name'] + "_RAST_" + genome_name  for genome_name in input_genome_names]
-			#RAST_genome_names = [genome_name+".RAST" for genome_name in input_genome_names]
+
+			#output_genome_set_name = params['training_set_name'] + "_GenomeSET"
+			self.RASTAnnotateGenomeParallel(current_ws, input_genome_references, output_genome_set_name, input_genome_names, RAST_genome_names)
+
+			# genome_set_name = "RAST_"+training_set_name
+			# # self.RASTAnnotateGenome(current_ws, _list_genome_ref, genome_set_name)
+
+			# # RAST_genome_names = _list_genome_name
+			# # RAST_genome_references = _list_genome_ref
+			# #We know a head of time that all names are just old names with .RAST appended to them
+			# RAST_genome_names = [genome_set_name + "_" + genome_name  for genome_name in _list_genome_name]
+
+			# self.RASTAnnotateGenomeParallel(current_ws, _list_genome_ref, genome_set_name, _list_genome_name, RAST_genome_names)
+
+			
 			_list_genome_name = RAST_genome_names
 
 			#Figure out new RAST references 
@@ -1635,30 +1655,6 @@ class kb_genomeclfUtils(object):
 		print(params_RAST)
 		output = self.rast.rast_genomes_assemblies(params_RAST)
 
-		# params_RAST = {
-		# "workspace": current_ws,
-		# "input_genomes": [],
-  #       "genome_text": ";".join(input_genomes),
-  #       "call_features_rRNA_SEED": 0,
-  #       "call_features_tRNA_trnascan": 0,
-  #       "call_selenoproteins": 0,
-  #       "call_pyrrolysoproteins": 0,
-  #       "call_features_repeat_region_SEED": 0,
-  #       "call_features_strep_suis_repeat": 0,
-  #       "call_features_strep_pneumo_repeat": 0,
-  #       "call_features_crispr": 0,
-  #       "call_features_CDS_glimmer3": 0,
-  #       "call_features_CDS_prodigal": 0,
-  #       "annotate_proteins_kmer_v2": 1,
-  #       "kmer_v1_parameters": 1,
-  #       "annotate_proteins_similarity": 1,
-  #       "retain_old_anno_for_hypotheticals": 0,
-  #       "resolve_overlapping_features": 0,
-  #       "call_features_prophage_phispy": 0,
-  #       "output_genome": output_genome_set_name
-		# }
-		# print(params_RAST)
-		# output = self.rast.annotate_genomes(params_RAST)
 
 		print("this is output from rast processing")
 		print(output)
@@ -1671,6 +1667,75 @@ class kb_genomeclfUtils(object):
 			print("output is: " + str(output))
 			raise ValueError("for some reason unable to RAST Annotate Genome")
 
+	def RASTAnnotateGenomeParallel(self, current_ws, input_genomes, output_genome_set_name, list_genome_names, RAST_genome_names):
+
+
+		batch_size = 1 # batch_size (ie. number of genomes in a batch)
+		#hello future coder! 
+
+		genome_batches = [input_genomes[ind:ind+batch_size] for ind in range(0, len(input_genomes), batch_size)]
+		#genome_batches something like: [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [11, 12]]
+		
+		lengths_genome_batches = [len(batch) for batch in genome_batches]
+		#lengths_genome_batches something like: [10, 2]
+
+
+		list_genome_set_names = [f'{output_genome_set_name}_{i}' for i in range(len(genome_batches))]
+		#genome_set_name_1, genome_set_name_2, etc.
+
+		broadcasted_prefixes = [item for item, count in zip(list_genome_set_names,lengths_genome_batches) for i in range(count)]
+		#https://stackoverflow.com/questions/33382474/repeat-each-item-in-a-list-a-number-of-times-specified-in-another-list
+		#broadcasted_prefixes is something like: [genome_set_name_1, genome_set_name_1,genome_set_name_1, ..., genome_set_name_2, genome_set_name_2]
+
+		split_prefix_names = [prefix_set_name +"_"+ actual_name for prefix_set_name, actual_name in zip(broadcasted_prefixes, list_genome_names)]
+		#split_prefix_names something like: [genome_set_name_1_actual_genome_name_1, genome_set_name_1_actual_genome_name_2, ...
+		#									 genome_set_name_2_actual_genome_name_11, genome_set_name_2_actual_genome_name_12,]
+
+		#list of dictionary for kwargs for 
+		kwargs = [{'current_ws': current_ws,
+		           'input_genomes': batch,
+		           'output_genome_set_name': output_name} 
+		           for batch, output_name in zip(genome_batches,list_genome_set_names)] 
+
+		#see Alex for details
+		_worker = lambda kwargs: self.RASTAnnotateGenome(**kwargs)
+
+		with ThreadPoolExecutor() as executor:
+		        for _ in executor.map(_worker, kwargs):
+		             continue
+
+		#############################################
+		#Do some housekeeping in the workspace Yay!
+		#############################################
+
+		#1 Merge the genome sets into one genome set
+		#get references of list_genome_set_names
+		list_genome_set_refs = []
+
+		for output_name in list_genome_set_names: #genome_label MUST be "Genome Name"
+			meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': output_name}]})['data'][0]['info']
+			genome_set_ref= str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
+			list_genome_set_refs.append(genome_set_ref)
+
+		merge_params = {
+		"desc": "merging " + ', '.join(list_genome_set_names),
+		"input_refs":list_genome_set_refs,
+		"output_name":output_genome_set_name,
+		"workspace_name":current_ws
+		}
+
+		#do merge call
+		self.kb_util.KButil_Merge_GenomeSets(merge_params)
+
+		#2 Delete the said genome sets
+		for genome_set_ref in list_genome_set_refs:
+		    self.ws_client.delete_objects([{'workspace': current_ws, 'objid' : genome_set_ref.split("/")[1]}]) #get the objid ie. the 902 in 36230/902/1, 
+
+		#3 rename all output genomes to a standard name
+		for original_name, new_name in zip(split_prefix_names, RAST_genome_names):
+			ws_client.rename_object({'obj':{"workspace":current_ws, "name":original_name}, 'new_name': new_name})
+
+		time.sleep(10)
 
 	def createListsForPredictionSet(self, current_ws, params, uploaded_df):
 		"""
@@ -1728,10 +1793,14 @@ class kb_genomeclfUtils(object):
 			output_genome_set_name = params['training_set_name'] + "_RAST"
 			#output_genome_set_name = params['training_set_name'] + "_GenomeSET"
 			self.RASTAnnotateGenome(current_ws, input_genome_references, output_genome_set_name)
-
 			#We know a head of time that all names are just old names with .RAST appended to them
 			RAST_genome_names = [params['training_set_name'] + "_RAST_" + genome_name  for genome_name in input_genome_names]
-			#RAST_genome_names = [genome_name+".RAST" for genome_name in input_genome_names]
+
+
+
+
+
+
 			_list_genome_name = RAST_genome_names
 
 			#Figure out new RAST references 
