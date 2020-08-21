@@ -1031,7 +1031,7 @@ class kb_genomeclfUtils(object):
 
 				try:
 					master_role_list.remove('')
-				except:
+				except:	
 					pass
 			ref_to_indication = {}
 
@@ -2119,7 +2119,7 @@ class kb_genomeclfUtils(object):
 		file.write(scripts)
 		file.close()
 
-	def ulify(elements):
+	def ulify(self, elements):
 	    string = "<ul>\n"
 	    for s in elements:
 	        string += "<li>" + str(s) + "</li>\n"
@@ -2168,7 +2168,7 @@ class kb_genomeclfUtils(object):
 			"""
 		file.write(header)
 
-		list_genome_classifier_object_names =  ulify(genome_classifier_object_names)
+		list_genome_classifier_object_names =  self.ulify(genome_classifier_object_names)
 		file.write(list_genome_classifier_object_names)
 
 		first_sentence = u"<p>Based on the training set """ + str(training_set_name) + """ .</p><p>"""
