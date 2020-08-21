@@ -1834,11 +1834,11 @@ class kb_genomeclfUtils(object):
 
 		if(params["annotate"]):
 
-			#RAST Annotate the Genome
-			output_genome_set_name = params['training_set_name'] + "_RAST"
+			#RAST Annotate the Genome (right now just make the set name off of description)
+			output_genome_set_name = params['description'] + "_RAST"
 
 			#We know a head of time that altl names are just old names with .RAST appended to them
-			RAST_genome_names = [params['training_set_name'] + "_RAST_" + genome_name  for genome_name in input_genome_names]
+			RAST_genome_names = [params['description'] + "_RAST_" + genome_name  for genome_name in input_genome_names]
 
 			self.RASTAnnotateGenomeParallel(current_ws, input_genome_references, output_genome_set_name, input_genome_names, RAST_genome_names)
 
