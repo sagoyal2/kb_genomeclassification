@@ -1028,7 +1028,11 @@ class kb_genomeclfUtils(object):
 			if(master_role_list == None):
 				#we are done looping over all genomes
 				master_role_list = sorted(list(master_role_set))
-				master_role_list.remove('')
+
+				try:
+					master_role_list.remove('')
+				except:
+					pass
 			ref_to_indication = {}
 
 			#make indicator rows for each 
