@@ -83,17 +83,17 @@ class kb_genomeclassificationTest(unittest.TestCase):
         return self.__class__.ctx
 
     def test_upload_trainingset(self):
-        # pass
-        params = {
-        "annotate": 1,
-        "file_path": "fake_2_refseq.xlsx",
-        "description": "my description",
-        "phenotype": "my phenotype",
-        "training_set_name": "AgainRefSeq",
-        "workspace": "sagoyal:narrative_1536939130038",
-        "workspace_id":"36230"
-        }
-        self.getImpl().upload_trainingset(self.getContext(), params)
+        pass
+        # params = {
+        # "annotate": 1,
+        # "file_path": "fake_2_refseq.xlsx",
+        # "description": "my description",
+        # "phenotype": "my phenotype",
+        # "training_set_name": "AgainRefSeq",
+        # "workspace": "sagoyal:narrative_1536939130038",
+        # "workspace_id":"36230"
+        # }
+        # self.getImpl().upload_trainingset(self.getContext(), params)
 
         # params =    {
         # "annotate": 0,
@@ -116,7 +116,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # self.getImpl().rast_annotate_trainingset(self.getContext(), params)
 
     def test_build_classifier(self):
-        pass
+        
         # params = {
         # "description": "my build classifier description",
         # "training_set_name": "to_try_with_build",
@@ -225,6 +225,22 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # "workspace": "sagoyal:narrative_1536939130038"
         # }
         # self.getImpl().build_classifier(self.getContext(), params)
+
+        params = {
+        "description": "benchmark classifier ",
+        "training_set_name": "BenchmarkAnnotatedTSET",
+        "classifier_to_run": "run_all",
+        "genome_attribute": "functional_roles",
+        "k_nearest_neighbors": None,
+        "gaussian_nb": None,
+        "logistic_regression": None,
+        "decision_tree_classifier": None,
+        "support_vector_machine": None,
+        "neural_network": None,
+        "classifier_object_name": "BenchmarkCLF",
+        "workspace": "abrace05:narrative_1597343779407"
+        }
+        self.getImpl().build_classifier(self.getContext(), params)
 
     def test_predict_phenotype(self):
         pass

@@ -997,17 +997,25 @@ class kb_genomeclfUtils(object):
 				list_functional_roles = []
 				for functional_role in location_of_functional_roles:
 					try:
-						role_to_insert = functional_role[function_str]
+						role_to_insert = functional_role[function_str][0]
 						if " @ " in  role_to_insert:
 							list_functional_roles.extend(role_to_insert.split(" @ "))
 						elif " / " in role_to_insert:
 							list_functional_roles.extend(role_to_insert.split(" / "))
 						elif "; " in role_to_insert:
 							list_functional_roles.extend(role_to_insert.split("; "))
+						elif 'hypothetical protein' in role_to_insert:
+							pass
 						else:
-							list_functional_roles.append(functional_role[function_str])
+							list_functional_roles.append(role_to_insert)
 					except (KeyError):
+						# print("this is funcitonal role")
+						# print(functional_role)
+						# print("this is list_functional_roles")
+						# print(list_functional_roles)
+						
 						print("apparently some function list just don't have functions...")
+						#^^ this makes no sense...
 						pass
 
 				#create a mapping from genome_ref to all of its functional roles
