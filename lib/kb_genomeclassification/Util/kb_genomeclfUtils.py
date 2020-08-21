@@ -1099,10 +1099,12 @@ class kb_genomeclfUtils(object):
 		current_categorizer = pickle.load(open(categorizer_file_path, "rb"))
 
 
-		#Load Information from UploadedFile
-		params["file_path"] = "/kb/module/data/RealData/GramDataEdit5.xlsx"
-		uploaded_df = pd.read_excel(params["file_path"], dtype=str)
-		#uploaded_df = self.getUploadedFileAsDF(params["file_path"], forPredict=True)
+		#Testing Files
+		#params["file_path"] = "/kb/module/data/RealData/GramDataEdit5.xlsx"
+		#uploaded_df = pd.read_excel(params["file_path"], dtype=str)
+		
+		#True App
+		uploaded_df = self.getUploadedFileAsDF(params["file_path"], forPredict=True)
 		(missing_genomes, genome_label, subset_uploaded_df, _in_workspace, _list_genome_name, _list_genome_ref) = self.createListsForPredictionSet(current_ws, params, uploaded_df)
 
 		#get functional_roles and make indicator matrix
@@ -1796,7 +1798,7 @@ class kb_genomeclfUtils(object):
 			user uploaded file
 		"""
 
-		(genome_label, all_df_genome, missing_genomes) = self.findMissingGenomes(current_ws, params['workspace_id'], uploaded_df)
+		(genome_label, all_df_genome, missing_genomes) = self.findMissingGenomes(current_ws, params["workspace_id"], uploaded_df)
 		uploaded_df_columns = uploaded_df.columns
 
 		############################################################
@@ -1831,13 +1833,22 @@ class kb_genomeclfUtils(object):
 		"""
 
 		if(params["annotate"]):
-			
+
 			#RAST Annotate the Genome
 			output_genome_set_name = params['training_set_name'] + "_RAST"
-			#output_genome_set_name = params['training_set_name'] + "_GenomeSET"
-			self.RASTAnnotateGenome(current_ws, input_genome_references, output_genome_set_name)
-			#We know a head of time that all names are just old names with .RAST appended to them
+
+			#We know a head of time that altl names are just old names with .RAST appended to them
 			RAST_genome_names = [params['training_set_name'] + "_RAST_" + genome_name  for genome_name in input_genome_names]
+
+			self.RASTAnnotateGenomeParallel(current_ws, input_genome_references, output_genome_set_name, input_genome_names, RAST_genome_names)
+
+			
+			# #RAST Annotate the Genome
+			# output_genome_set_name = params['training_set_name'] + "_RAST"
+			# #output_genome_set_name = params['training_set_name'] + "_GenomeSET"
+			# self.RASTAnnotateGenome(current_ws, input_genome_references, output_genome_set_name)
+			# #We know a head of time that all names are just old names with .RAST appended to them
+			# RAST_genome_names = [params['training_set_name'] + "_RAST_" + genome_name  for genome_name in input_genome_names]
 
 
 			_list_genome_name = RAST_genome_names
@@ -2314,7 +2325,7 @@ class kb_genomeclfUtils(object):
 		file.write(header)
 
 		first_paragraph = 	u"""Since the functional roles are categorical, we further fine tune the Decision Tree \
-							classification Algorithm to seek better metrics. We tune the Decision Tree based on two \
+							classification algorithm to seek better metrics. We tune the Decision Tree based on two \
 							hyperparameters: Tree Depth and Criterion (quality of a split). The two criterion are "gini" which uses \
 							the Gini impurity score and "entropy" which uses information gain score.</p>
 							"""
@@ -2377,15 +2388,16 @@ class kb_genomeclfUtils(object):
 		"""
 		file.write(tuning_str)
 
+
+		dtt_report_df.fillna('', inplace=True)
+		dtt_report_html = dtt_report_df.to_html(index=False, table_id="dtt_report_table", justify='center')
+		file.write(dtt_report_html)
+
 		sentence = u"""<p>Below is a visual reprsentation of the Decision Tree with the highest accuracy. Each node represents\
 						a decision (True or False) that the model predicts during the classification process, if the \
 						functional role is absent the classifier moves left, and if it is present it moves right. Leaf\
 						nodes represent final classifications.</p>"""
 		file.write(sentence)
-
-		dtt_report_df.fillna('', inplace=True)
-		dtt_report_html = dtt_report_df.to_html(index=False, table_id="dtt_report_table", justify='center')
-		file.write(dtt_report_html)
 
 		tree_image = u"""
 					<br>
