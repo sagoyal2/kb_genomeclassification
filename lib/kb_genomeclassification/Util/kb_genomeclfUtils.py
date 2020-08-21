@@ -86,10 +86,10 @@ class kb_genomeclfUtils(object):
 		folder_name = "forAnnotate"
 		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
 
+		#Digest and Load training_set_object information into variables
 		training_set_name = params['training_set_name']
-
 		training_set_object = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': training_set_name}]})["data"]
-	
+
 		phenotype = training_set_object[0]['data']["classification_type"]
 		classes_sorted = training_set_object[0]['data']["classes"]
 
@@ -111,7 +111,6 @@ class kb_genomeclfUtils(object):
 
 
 		genome_set_name = "RAST_"+training_set_name
-		# self.RASTAnnotateGenome(current_ws, _list_genome_ref, genome_set_name)
 
 		# RAST_genome_names = _list_genome_name
 		# RAST_genome_references = _list_genome_ref
@@ -134,7 +133,7 @@ class kb_genomeclfUtils(object):
 															'genome_ref': curr_genome_ref,
 															'phenotype': _list_phenotype[index],
 															'references': _list_references[index],
-															'evidence_types': _list_evidence_types[index]
+															'evidence_types': _list_evidence_types[index],
 														}
 
 		modified_params = {
@@ -1007,7 +1006,7 @@ class kb_genomeclfUtils(object):
 							list_functional_roles.extend(role_to_insert.split("; "))
 						else:
 							list_functional_roles.append(functional_role[function_str])
-					except (RuntimeError, TypeError, ValueError, NameError):
+					except (KeyError):
 						print("apparently some function list just don't have functions...")
 						pass
 
@@ -1355,7 +1354,6 @@ class kb_genomeclfUtils(object):
 			#We know a head of time that altl names are just old names with .RAST appended to them
 			RAST_genome_names = [params['training_set_name'] + "_RAST_" + genome_name  for genome_name in input_genome_names]
 
-			#output_genome_set_name = params['training_set_name'] + "_GenomeSET"
 			self.RASTAnnotateGenomeParallel(current_ws, input_genome_references, output_genome_set_name, input_genome_names, RAST_genome_names)
 
 			# genome_set_name = "RAST_"+training_set_name
@@ -1452,6 +1450,8 @@ class kb_genomeclfUtils(object):
 			list of references
 		_list_evidence_types: str list
 			list of evidence types
+		with_Rast: bool
+			if true add an extra field with "annotated as true"
 		"""
 
 		classification_data = []
@@ -1668,10 +1668,36 @@ class kb_genomeclfUtils(object):
 			raise ValueError("for some reason unable to RAST Annotate Genome")
 
 	def RASTAnnotateGenomeParallel(self, current_ws, input_genomes, output_genome_set_name, list_genome_names, RAST_genome_names):
+		"""
+		The method was suggested by Alex Brace (https://github.com/braceal). It runs the RASTAnnotateGenome (the bulk RAST Annotation
+		Script) in parallel which will allow for a major speed up in term of system runtime. 
 
+		However in order to do this there, needs to be some "accounting" steps that are also taken care off. The first this is that
+		in order to run in parallel we need to have batches sent to the parallel executor, this means that some of the batches may not
+		be the correct size as we expect them to be. This means that if we have lets say 25 genome and batch size of 10 then we will have
+		2 batches of size 10 and 1 batch of size 5. 
 
-		batch_size = 1 # batch_size (ie. number of genomes in a batch)
-		#hello future coder! 
+		This creates a problem since we first to need to send multiple calls to RASTAnnotateGenome which then produces multiple genomes 
+		sets of (enumerated names). Then we need to merges these genome set, delete the old sets, and also rename all of the itermediate
+		annotated genomes that are created.
+
+		Parameter
+		---------
+		current_ws : str
+			current_ws
+		input_genomes : str list
+			list of genome references ["12345/12/2", "12356/13/2", etc.]
+		output_genome_set_name: str
+			name of genome set that will be added to the workspaces: params['training_set_name'] + "_RAST"
+		list_genome_names: str list
+			list of genome names ["GCF_1", "GCF_2", etc,]
+		RAST_genome_names: str list
+			this is the list of NEW genomes the user expects to be produced
+			will always be of the form ["RAST_something_GCF_1", "RAST_something_GCF_2", etc,]
+		"""
+
+		batch_size = 50 # batch_size (ie. number of genomes in a batch)
+		#hello future coder! In the case that this app has become popular we will need to change this batch size
 
 		genome_batches = [input_genomes[ind:ind+batch_size] for ind in range(0, len(input_genomes), batch_size)]
 		#genome_batches something like: [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [11, 12]]
@@ -1732,10 +1758,10 @@ class kb_genomeclfUtils(object):
 		    self.ws_client.delete_objects([{'workspace': current_ws, 'objid' : genome_set_ref.split("/")[1]}]) #get the objid ie. the 902 in 36230/902/1, 
 
 
-		print("here is split_prefix_names")
-		print(split_prefix_names)
-		print("here is RAST_genome_names")
-		print(RAST_genome_names)
+		# print("here is split_prefix_names")
+		# print(split_prefix_names)
+		# print("here is RAST_genome_names")
+		# print(RAST_genome_names)
 		#3 rename all output genomes to a standard name
 		for original_name, new_name in zip(split_prefix_names, RAST_genome_names):
 			self.ws_client.rename_object({'obj':{"workspace":current_ws, "name":original_name}, 'new_name': new_name})
@@ -1800,10 +1826,6 @@ class kb_genomeclfUtils(object):
 			self.RASTAnnotateGenome(current_ws, input_genome_references, output_genome_set_name)
 			#We know a head of time that all names are just old names with .RAST appended to them
 			RAST_genome_names = [params['training_set_name'] + "_RAST_" + genome_name  for genome_name in input_genome_names]
-
-
-
-
 
 
 			_list_genome_name = RAST_genome_names
@@ -2060,7 +2082,7 @@ class kb_genomeclfUtils(object):
 		file.write(header)
 
 		first_paragraph = u"""The following genomes are annotated with RAST annotation algorithm. Additionally, \
-							a genomeSet comprising of all RAST annotated genomes were created \
+							a genome set comprising of all RAST annotated genomes was created \
 							named """ + str(genome_set_name) +  """.</p><p>"""
 		file.write(first_paragraph)
 
