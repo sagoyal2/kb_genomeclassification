@@ -70,9 +70,10 @@ class kb_genomeclfUtils(object):
 		
 		#True App
 		uploaded_df = self.getUploadedFileAsDF(params["file_path"])
+		#Will eventually need to do this params["annotate"] = 0 #explictly make sure there are no annotations happening
 		(upload_table, classifier_training_set, missing_genomes, genome_label, number_of_genomes, number_of_classes) = self.createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
 
-		self.uploadHTMLContent(params['training_set_name'], params["file_path"], missing_genomes, genome_label, params['phenotype'], upload_table, number_of_genomes, number_of_classes)
+		self.uploadHTMLContent(params['training_set_name'], missing_genomes, genome_label, params['phenotype'], upload_table, number_of_genomes, number_of_classes)
 		html_output_name = self.viewerHTMLContent(folder_name, status_view = True)
 		
 		return html_output_name, classifier_training_set
@@ -1098,13 +1099,14 @@ class kb_genomeclfUtils(object):
 
 		current_categorizer = pickle.load(open(categorizer_file_path, "rb"))
 
-
-		#Testing Files
+		#Testing Files (No longer works)
 		#params["file_path"] = "/kb/module/data/RealData/GramDataEdit5.xlsx"
 		#uploaded_df = pd.read_excel(params["file_path"], dtype=str)
 		
 		#True App
-		uploaded_df = self.getUploadedFileAsDF(params["file_path"], forPredict=True)
+		#No longer needed: uploaded_df = self.getUploadedFileAsDF(params["file_path"], forPredict=True)
+		uploaded_df = self.genomeProcessing(params)
+		params["annotate"] = 0 #explictly make sure there are no annotations happening
 		(missing_genomes, genome_label, subset_uploaded_df, _in_workspace, _list_genome_name, _list_genome_ref) = self.createListsForPredictionSet(current_ws, params, uploaded_df)
 
 		#get functional_roles and make indicator matrix
@@ -1163,11 +1165,74 @@ class kb_genomeclfUtils(object):
 													"Probability": _prediction_probabilities
 												})
 		
-		self.predictHTMLContent(params['categorizer_name'], phenotype, genome_attribute, params["file_path"], missing_genomes, genome_label, predict_table)
+		self.predictHTMLContent(params['categorizer_name'], phenotype, genome_attribute, missing_genomes, genome_label, predict_table)
 		html_output_name = self.viewerHTMLContent(folder_name, status_view = True)
 
 		return html_output_name, prediction_set
 
+	def genomeProcessing(self, params):
+
+		#Handle Genome Processing
+		#1. Take all individual genomes and place them into a set
+
+		#check that there is at least one genome in params["input_genome_refs"]
+		single_intermediate_genome_set_ref  = ""
+
+		if(len(params["input_genome_refs"])!=0):
+			#KButil_Build_GenomeSet params_RAST
+			merge_all_single_params = {
+			"input_refs": params["input_genome_refs"],
+			"desc":"merging intemediate genomes",
+			"output_name":"single_intermediate_genome_set"
+			}
+
+			self.kb_util.KButil_Build_GenomeSet(merge_all_single_params)
+
+			#get reference of single_intermediate_genome_set
+			meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': "single_intermediate_genome_set"}]})['data'][0]['info']
+			single_intermediate_genome_set_ref = str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
+
+		#2. Merge all genome sets together
+		#check that there is at least one genome set in params["input_genome_set_refs"]
+		
+		combined_genome_set_ref = None #this is a reference to a genome set that contains all genomes 
+		if(len(params["input_genome_set_refs"]!=0)):
+			#append the single_intermediate_genome_set_ref to input_genome_set_refs
+			merge_all_genome_set_params = {
+			"input_refs":params["input_genome_set_refs"].append(single_intermediate_genome_set_ref),
+			"desc":"merging intemediate genome sets",
+			"output_name":"multiple_intermediate_genome_set"
+			}
+
+			self.kb_util.KButil_Merge_GenomeSets(merge_all_genome_set_params)
+
+			#get reference of multiple_intermediate_genome_set == combined_genome_set_ref
+			meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': "multiple_intermediate_genome_set"}]})['data'][0]['info']
+			combined_genome_set_ref = str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
+
+			#delete the single_intermediate_genome_set, since this isn't required by the users
+			self.ws_client.delete_objects([{'workspace': current_ws, 'objid' : single_intermediate_genome_set_ref.split("/")[1]}]) #get the objid ie. the 902 in 36230/902/1, 
+
+		else:
+			if(single_intermediate_genome_set_ref==""):
+				#this is the case that the user just doesn't pass in a single genome or genome set reference
+
+				#throw error
+				raise ValueError('User must provide a genome or genome set to make predictions for')
+			else:
+				#they don't pass in a genome set but we made one from the singular genomes
+				combined_genome_set_ref = single_intermediate_genome_set_ref
+
+
+		#3. Get only the Genome References and make into a DataFrame
+		genome_set_data = self.ws_client.get_objects2({'objects':[{'ref': combined_genome_set_ref}]})['data'][0]['data']
+		all_references_in_genome_set = list(genome_set_data["elements"].keys())
+		uploaded_df = pd.DataFrame(data={"Genome Reference": all_references_in_genome_set}) 
+
+		#delte the multiple_intermediate_genome_set == combined_genome_set_ref since, this isn't required by the users
+		self.ws_client.delete_objects([{'workspace': current_ws, 'objid' : combined_genome_set_ref.split("/")[1]}]) #get the objid ie. the 902 in 36230/902/1,
+
+		return uploaded_df
 
 	def generateHTMLReport(self, current_ws, folder_name, single_html_name, description, for_build_classifier = False):
 		"""
@@ -2046,7 +2111,7 @@ class kb_genomeclfUtils(object):
 
 		return "viewer.html"
 
-	def uploadHTMLContent(self, training_set_name, selected_file_name, missing_genomes, genome_label, phenotype, upload_table, number_of_genomes, number_of_classes):
+	def uploadHTMLContent(self, training_set_name, missing_genomes, genome_label, phenotype, upload_table, number_of_genomes, number_of_classes):
 		
 		file = open(os.path.join(self.scratch, 'forUpload', 'status.html'), "w")
 		header = u"""
@@ -2442,7 +2507,7 @@ class kb_genomeclfUtils(object):
 		file.write(scripts)
 		file.close()
 
-	def predictHTMLContent(self, categorizer_name, phenotype, selection_attribute, selected_file_name, missing_genomes, genome_label, predict_table):		
+	def predictHTMLContent(self, categorizer_name, phenotype, selection_attribute, missing_genomes, genome_label, predict_table):		
 		file = open(os.path.join(self.scratch, 'forPredict', 'status.html'), u"w")
 		header = u"""
 			<!DOCTYPE html>

@@ -11,12 +11,14 @@
           "target_property": "categorizer_name"
         },
         {
-          "input_parameter": "annotate",
-          "target_property": "annotate"
+          "input_parameter": "input_genome_refs",
+          "target_property": "input_genome_refs",
+          "target_type_transform": "list<resolved-ref>"
         },
         {
-          "input_parameter": "file_path",
-          "target_property": "file_path"
+          "input_parameter": "input_genome_set_refs",
+          "target_property": "input_genome_set_refs",
+          "target_type_transform": "list<resolved-ref>"
         },
         {
           "narrative_system_variable": "workspace",
@@ -68,6 +70,29 @@
   "job_id_output_field": "docker",
   "parameters": [
     {
+      "id": "input_genome_refs",
+      "optional": true,
+      "advanced": false,
+      "allow_multiple": true,
+      "default_values": [ "" ],
+      "field_type": "text",
+      "text_options": {
+          "valid_ws_types": [ "KBaseGenomes.Genome" ]
+      }
+    },
+    {
+      "id": "input_genome_set_refs",
+      "optional": true,
+      "advanced": false,
+      "allow_multiple": true,
+      "default_values": [ "" ],
+      "field_type": "text",
+      "text_options": {
+          "valid_ws_types": [ "KBaseSearch.GenomeSet" ],
+          "is_output_name": false
+          }
+    },
+    {
       "id": "categorizer_name",
       "optional": false,
       "advanced": false,
@@ -81,32 +106,6 @@
           "KBaseClassifier.GenomeCategorizer"
         ]
       }
-    },
-    {
-      "id": "annotate",
-      "optional": false,
-      "advanced": false,
-      "allow_multiple": false,
-      "checkbox_options": {
-        "checked_value": 1,
-        "unchecked_value": 0
-      },
-      "default_values": [
-        "1"
-      ],
-      "field_type": "checkbox",
-      "text_options": {
-        "valid_ws_types": []
-      }
-    },
-    {
-      "id" : "file_path",
-      "optional" : false,
-      "advanced" : false,
-      "allow_multiple" : false,
-      "default_values" : [ "" ],
-      "field_type" : "dynamic_dropdown",
-      "text_options": {}
     },
     {
       "id": "description",
