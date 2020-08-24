@@ -34,7 +34,7 @@ parameters :
             Select the classifier
     input_genome_and_genome_set_refs:
         ui-name : |
-            Genome(s) and Genome Set(s)
+            Genome(s) or Genome Set(s)
         short-hint : |
             Select the Genomes and GenomeSets to make Phenotypic Predictions for.
     description:
