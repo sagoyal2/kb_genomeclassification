@@ -1015,7 +1015,7 @@ class kb_genomeclfUtils(object):
 						# print("this is list_functional_roles")
 						# print(list_functional_roles)
 						
-						print("apparently some function list just don't have functions...")
+						#print("apparently some function list just don't have functions...")
 						#^^ this makes no sense...
 						pass
 
@@ -1042,8 +1042,15 @@ class kb_genomeclfUtils(object):
 				matching_index = [i for i, role in enumerate(master_role_list) if role in set_functional_roles] 
 
 				indicators = np.zeros(len(master_role_list))
-				indicators[np.array(matching_index)] = 1
-
+				try:
+					indicators[np.array(matching_index)] = 1
+				except (IndexError):
+					raise IndexError('The genomes or genomeSet that you have submitted wasn’t annotated using the \
+						RAST annotation pipeline. Please annotate the genomes via ‘Annotate Microbial Genome’ app \
+						(https://narrative.kbase.us/#appcatalog/app/RAST_SDK/reannotate_microbial_genome/release)or \
+						genomeSets via Annotate Multiple Microbial Genomes’ app \
+						(https://narrative.kbase.us/#appcatalog/app/RAST_SDK/reannotate_microbial_genomes/release) and \
+						resubmit the RAST annotated genome/genomeSets into the Predict Phenotype app. (')
 				ref_to_indication[genome_ref] = indicators.astype(int)
 
 
@@ -1279,6 +1286,8 @@ class kb_genomeclfUtils(object):
 			genome_names.append(name)
 
 		uploaded_df = pd.DataFrame(data={"Genome Name": genome_names}) 
+		print("here is uploaded_df")
+		print(uploaded_df)
 
 		#delte the multiple_intermediate_genome_set == combined_genome_set_ref since, this isn't required by the users
 		self.ws_client.delete_objects([{'workspace': current_ws, 'objid' : combined_genome_set_ref.split("/")[1]}]) #get the objid ie. the 902 in 36230/902/1,
