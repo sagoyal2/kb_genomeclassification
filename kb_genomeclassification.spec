@@ -162,8 +162,9 @@ module kb_genomeclassification {
         string workspace;
         string categorizer_name;
         string description;
-        string file_path;
-        int annotate;
+        string workspace_id;
+        list<string> input_genome_refs;
+        list<string> input_genome_set_refs;
     } ClassifierPredictionInput;
 
 

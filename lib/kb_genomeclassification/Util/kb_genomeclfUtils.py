@@ -1105,7 +1105,7 @@ class kb_genomeclfUtils(object):
 		
 		#True App
 		#No longer needed: uploaded_df = self.getUploadedFileAsDF(params["file_path"], forPredict=True)
-		uploaded_df = self.genomeProcessing(params)
+		uploaded_df = self.genomeProcessing(current_ws, params)
 		params["annotate"] = 0 #explictly make sure there are no annotations happening
 		(missing_genomes, genome_label, subset_uploaded_df, _in_workspace, _list_genome_name, _list_genome_ref) = self.createListsForPredictionSet(current_ws, params, uploaded_df)
 
@@ -1170,7 +1170,7 @@ class kb_genomeclfUtils(object):
 
 		return html_output_name, prediction_set
 
-	def genomeProcessing(self, params):
+	def genomeProcessing(self, current_ws, params):
 
 		#Handle Genome Processing
 		#1. Take all individual genomes and place them into a set
@@ -1183,7 +1183,8 @@ class kb_genomeclfUtils(object):
 			merge_all_single_params = {
 			"input_refs": params["input_genome_refs"],
 			"desc":"merging intemediate genomes",
-			"output_name":"single_intermediate_genome_set"
+			"output_name":"single_intermediate_genome_set",
+			"workspace_name":current_ws
 			}
 
 			self.kb_util.KButil_Build_GenomeSet(merge_all_single_params)
@@ -1196,12 +1197,13 @@ class kb_genomeclfUtils(object):
 		#check that there is at least one genome set in params["input_genome_set_refs"]
 		
 		combined_genome_set_ref = None #this is a reference to a genome set that contains all genomes 
-		if(len(params["input_genome_set_refs"]!=0)):
+		if(len(params["input_genome_set_refs"])!=0):
 			#append the single_intermediate_genome_set_ref to input_genome_set_refs
 			merge_all_genome_set_params = {
 			"input_refs":params["input_genome_set_refs"].append(single_intermediate_genome_set_ref),
 			"desc":"merging intemediate genome sets",
-			"output_name":"multiple_intermediate_genome_set"
+			"output_name":"multiple_intermediate_genome_set",
+			"workspace_name":current_ws
 			}
 
 			self.kb_util.KButil_Merge_GenomeSets(merge_all_genome_set_params)
@@ -1227,7 +1229,14 @@ class kb_genomeclfUtils(object):
 		#3. Get only the Genome References and make into a DataFrame
 		genome_set_data = self.ws_client.get_objects2({'objects':[{'ref': combined_genome_set_ref}]})['data'][0]['data']
 		all_references_in_genome_set = list(genome_set_data["elements"].keys())
-		uploaded_df = pd.DataFrame(data={"Genome Reference": all_references_in_genome_set}) 
+		
+		#go from references to names (easier for user)
+		genome_names = []
+		for genome_ref in all_references_in_genome_set:
+			name = str(self.ws_client.get_objects2({'objects' : [{'ref':genome_ref}]})['data'][0]['info'][1])
+			genome_names.append(name)
+
+		uploaded_df = pd.DataFrame(data={"Genome Name": genome_names}) 
 
 		#delte the multiple_intermediate_genome_set == combined_genome_set_ref since, this isn't required by the users
 		self.ws_client.delete_objects([{'workspace': current_ws, 'objid' : combined_genome_set_ref.split("/")[1]}]) #get the objid ie. the 902 in 36230/902/1,
