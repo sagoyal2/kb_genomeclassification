@@ -1171,8 +1171,44 @@ class kb_genomeclfUtils(object):
 		return html_output_name, prediction_set
 
 	def genomeProcessing(self, current_ws, params):
+		"""
+		A user can ONLY use this application if they can pass in either a genome or genome set (no files several arguments about this but whatever),
+		anyways... so the params has a field called input_genome_and_genome_set_refs.
+
+		This field input_genome_and_genome_set_refs is a list that holds references ["1/2/3", "4/5/6", etc.] of both genomes
+		and genome references. From here we need to do a couple things 
+
+		0. From the list of genome and genome references separate out each
+		1. Take all individual genomes and place them into a set
+		2. Merge all genome sets together
+		3. Get only the Genome References and make into a DataFrame
+
+		After this we can use the rest of the fullPredict pipeline as usual
+
+		Parameter
+		---------
+		current_ws : str
+			current_ws
+		params: dict
+			only key we need from here is input_genome_and_genome_set_refs
+		"""
 
 		#Handle Genome Processing
+		#0. From input_genome_and_genome_set_refs we need to figure out which ones are input_genome_refs and which ones are input_genome_set_refs
+		#what that means is that from the the list of references that are passed in from the user, we need to figure out which ones are genomes,
+		#and which ones are genome sets
+		params["input_genome_refs"] = []
+		params["input_genome_set_refs"] = []
+
+		for any_ref in params["input_genome_and_genome_set_refs"]:
+			any_object = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'objid': any_ref.split("/")[1]}]})#get the objid ie. the 902 in 36230/902/1,
+			object_type = any_object["data"][0]["info"][2]
+			if("KBaseSearch.GenomeSet" in object_type):
+				params["input_genome_set_refs"].append(any_ref)
+			else:
+				params["input_genome_refs"].append(any_ref)
+
+
 		#1. Take all individual genomes and place them into a set
 
 		#check that there is at least one genome in params["input_genome_refs"]

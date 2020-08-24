@@ -163,8 +163,7 @@ module kb_genomeclassification {
         string categorizer_name;
         string description;
         string workspace_id;
-        list<string> input_genome_refs;
-        list<string> input_genome_set_refs;
+        list<string> input_genome_and_genome_set_refs;
     } ClassifierPredictionInput;
 
 

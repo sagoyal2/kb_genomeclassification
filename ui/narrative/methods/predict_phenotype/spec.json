@@ -11,13 +11,8 @@
           "target_property": "categorizer_name"
         },
         {
-          "input_parameter": "input_genome_refs",
-          "target_property": "input_genome_refs",
-          "target_type_transform": "list<resolved-ref>"
-        },
-        {
-          "input_parameter": "input_genome_set_refs",
-          "target_property": "input_genome_set_refs",
+          "input_parameter": "input_genome_and_genome_set_refs",
+          "target_property": "input_genome_and_genome_set_refs",
           "target_type_transform": "list<resolved-ref>"
         },
         {
@@ -70,27 +65,19 @@
   "job_id_output_field": "docker",
   "parameters": [
     {
-      "id": "input_genome_refs",
-      "optional": true,
-      "advanced": false,
-      "allow_multiple": true,
-      "default_values": [ "" ],
-      "field_type": "text",
-      "text_options": {
-          "valid_ws_types": [ "KBaseGenomes.Genome" ]
-      }
-    },
-    {
-      "id": "input_genome_set_refs",
-      "optional": true,
-      "advanced": false,
-      "allow_multiple": true,
-      "default_values": [ "" ],
-      "field_type": "text",
-      "text_options": {
-          "valid_ws_types": [ "KBaseSearch.GenomeSet" ],
-          "is_output_name": false
-          }
+     "id" : "input_genome_and_genome_set_refs",
+     "default_values" : [
+        ""
+     ],
+     "advanced" : false,
+     "field_type" : "text",
+     "optional" : false,
+     "allow_multiple" : true,
+     "text_options" : {
+        "valid_ws_types" : [
+           "KBaseGenomes.Genome","KBaseSearch.GenomeSet"
+        ]
+     }
     },
     {
       "id": "categorizer_name",

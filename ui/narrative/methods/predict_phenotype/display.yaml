@@ -32,16 +32,11 @@ parameters :
             Genome Categorizer
         short-hint : |
             Select the classifier
-    input_genome_refs:
+    input_genome_and_genome_set_refs:
         ui-name : |
-            Genomes
+            Genome(s) and Genome Set(s)
         short-hint : |
-            Select the Genomes to make Phenotypic Predictions for.
-    input_genome_set_refs:
-        ui-name : |
-            GenomeSets
-        short-hint : |
-            Select the GenomeSets to make Phenotypic Predictions for.
+            Select the Genomes and GenomeSets to make Phenotypic Predictions for.
     description:
         ui-name : |
             Description

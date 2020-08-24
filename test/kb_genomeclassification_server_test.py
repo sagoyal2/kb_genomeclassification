@@ -254,8 +254,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # self.getImpl().predict_phenotype(self.getContext(), params)
 
         params = {
-        "input_genome_refs": ["36230/1186/1", "36230/1185/1"],
-        "input_genome_set_refs": [],
+        "input_genome_and_genome_set_refs": ["36230/1186/1", "36230/1185/1"],
         "categorizer_name": "BenchmarkCLF_logistic_regression",
         "description": "Testing out Genome Processing",
         "workspace": "sagoyal:narrative_1536939130038",
