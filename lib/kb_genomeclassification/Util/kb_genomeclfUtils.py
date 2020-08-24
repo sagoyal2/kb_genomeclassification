@@ -1217,8 +1217,9 @@ class kb_genomeclfUtils(object):
 			meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': "multiple_intermediate_genome_set"}]})['data'][0]['info']
 			combined_genome_set_ref = str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
 
-			#delete the single_intermediate_genome_set, since this isn't required by the users
-			self.ws_client.delete_objects([{'workspace': current_ws, 'objid' : single_intermediate_genome_set_ref.split("/")[1]}]) #get the objid ie. the 902 in 36230/902/1, 
+			if(single_intermediate_genome_set_ref != ""):
+				#delete the single_intermediate_genome_set, since this isn't required by the users
+				self.ws_client.delete_objects([{'workspace': current_ws, 'objid' : single_intermediate_genome_set_ref.split("/")[1]}]) #get the objid ie. the 902 in 36230/902/1, 
 
 		else:
 			if(single_intermediate_genome_set_ref==""):
