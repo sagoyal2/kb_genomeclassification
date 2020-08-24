@@ -1199,8 +1199,13 @@ class kb_genomeclfUtils(object):
 		combined_genome_set_ref = None #this is a reference to a genome set that contains all genomes 
 		if(len(params["input_genome_set_refs"])!=0):
 			#append the single_intermediate_genome_set_ref to input_genome_set_refs
+			if(single_intermediate_genome_set_ref != ""):
+				input_refs = params["input_genome_set_refs"].append(single_intermediate_genome_set_ref)
+			else:
+				input_refs = params["input_genome_set_refs"]
+
 			merge_all_genome_set_params = {
-			"input_refs":params["input_genome_set_refs"].append(single_intermediate_genome_set_ref),
+			"input_refs":input_refs,
 			"desc":"merging intemediate genome sets",
 			"output_name":"multiple_intermediate_genome_set",
 			"workspace_name":current_ws
