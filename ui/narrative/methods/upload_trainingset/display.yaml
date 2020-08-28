@@ -32,11 +32,6 @@ parameters :
             File Path
         short-hint : |
             File Path that is found by uploading via the staging area (only accepts excel, csv, tsv)
-    annotate :
-        ui-name : |
-            Annotate Genomes as RAST
-        short-hint : |
-            If checked genomes will be RAST annotated and then placed into Training Set Object, otherwise genomes will be used as is (assuming they are already RAST annotated)
     description:
         ui-name : |
             Description

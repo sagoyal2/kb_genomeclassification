@@ -7,10 +7,6 @@
     "service-mapping": {
       "input_mapping": [
         {
-          "input_parameter": "annotate",
-          "target_property": "annotate"
-        },
-        {
           "input_parameter": "file_path",
           "target_property": "file_path"
         },
@@ -71,23 +67,6 @@
   "contact": "https://kbase.us/contact-us/",
   "job_id_output_field": "docker",
   "parameters": [
-    {
-      "id": "annotate",
-      "optional": false,
-      "advanced": false,
-      "allow_multiple": false,
-      "checkbox_options": {
-        "checked_value": 1,
-        "unchecked_value": 0
-      },
-      "default_values": [
-        "1"
-      ],
-      "field_type": "checkbox",
-      "text_options": {
-        "valid_ws_types": []
-      }
-    },
     {
       "id" : "file_path",
       "optional" : false,

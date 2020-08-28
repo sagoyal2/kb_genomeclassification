@@ -71,6 +71,7 @@ class kb_genomeclfUtils(object):
 		#True App
 		uploaded_df = self.getUploadedFileAsDF(params["file_path"])
 		#Will eventually need to do this params["annotate"] = 0 #explictly make sure there are no annotations happening
+		params["annotate"] = 0
 		(upload_table, classifier_training_set, missing_genomes, genome_label, number_of_genomes, number_of_classes) = self.createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
 
 		self.uploadHTMLContent(params['training_set_name'], missing_genomes, genome_label, params['phenotype'], upload_table, number_of_genomes, number_of_classes)
