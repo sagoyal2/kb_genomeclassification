@@ -85,6 +85,16 @@ class kb_genomeclassificationTest(unittest.TestCase):
     def test_upload_trainingset(self):
         pass
         # params = {
+        # "file_path": "fake_2_refseq.xlsx",
+        # "description": "my description",
+        # "phenotype": "my phenotype",
+        # "training_set_name": "AgainRefSeq",
+        # "workspace": "sagoyal:narrative_1598636841293",
+        # "workspace_id":"70875"
+        # }
+        # self.getImpl().upload_trainingset(self.getContext(), params)
+
+        # params = {
         # "annotate": 1,
         # "file_path": "fake_2_refseq.xlsx",
         # "description": "my description",
@@ -243,6 +253,7 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # self.getImpl().build_classifier(self.getContext(), params)
 
     def test_predict_phenotype(self):
+        
         # params = {
         # "categorizer_name": "clf_name_k_nearest_neighbors",
         # "annotate": 0,
@@ -253,16 +264,35 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # }
         # self.getImpl().predict_phenotype(self.getContext(), params)
 
-        params = {
-        # "input_genome_and_genome_set_refs": ["36230/1186/1", "36230/1185/1"],
-        "input_genome_and_genome_set_refs": ["36230/1187/1", "36230/1029/1"],
-        "categorizer_name": "BenchmarkCLF_logistic_regression",
-        "description": "Testing out Genome Processing",
-        "workspace": "sagoyal:narrative_1536939130038",
-        "workspace_id":"36230"
-        }
-        self.getImpl().predict_phenotype(self.getContext(), params)
+        # params = {
+        # # "input_genome_and_genome_set_refs": ["36230/1186/1", "36230/1185/1"],
+        # "input_genome_and_genome_set_refs": ["36230/1187/1", "36230/1029/1"],
+        # "categorizer_name": "BenchmarkCLF_logistic_regression",
+        # "description": "Testing out Genome Processing",
+        # "workspace": "sagoyal:narrative_1536939130038",
+        # "workspace_id":"36230"
+        # }
+        # self.getImpl().predict_phenotype(self.getContext(), params)
+        
+        # Respiration Test
+        # params = {
+        # "input_genome_and_genome_set_refs": ["70875/805/1"],
+        # "categorizer_name": "RespirationCLF_gaussian_nb",
+        # "description": "Predictions for Respiration",
+        # "workspace": "sagoyal:narrative_1598636841293",
+        # "workspace_id":"70875"
+        # }
 
+        # Gram Stain Test
+        params = {
+        "input_genome_and_genome_set_refs": ["70880/349/1", "70880/333/1"],
+        "categorizer_name": "GramStainCLF_k_nearest_neighbors",
+        "description": "Predictions for Gram Stain",
+        "workspace": "sagoyal:narrative_1598644028695",
+        "workspace_id":"70880"
+        }
+
+        self.getImpl().predict_phenotype(self.getContext(), params)
 
 
 

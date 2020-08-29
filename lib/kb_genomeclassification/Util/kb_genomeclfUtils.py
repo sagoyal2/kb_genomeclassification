@@ -1233,6 +1233,7 @@ class kb_genomeclfUtils(object):
 
 			self.kb_util.KButil_Build_GenomeSet(merge_all_single_params)
 
+			time.sleep(10)
 			#get reference of single_intermediate_genome_set
 			meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': "single_intermediate_genome_set"}]})['data'][0]['info']
 			single_intermediate_genome_set_ref = str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
@@ -1248,18 +1249,25 @@ class kb_genomeclfUtils(object):
 			else:
 				input_refs = params["input_genome_set_refs"]
 
-			merge_all_genome_set_params = {
-			"input_refs":input_refs,
-			"desc":"merging intemediate genome sets",
-			"output_name":"multiple_intermediate_genome_set",
-			"workspace_name":current_ws
-			}
+			if(len(params["input_genome_set_refs"])==1):
+				pass
+			else:
+				merge_all_genome_set_params = {
+				"input_refs":input_refs,
+				"desc":"merging intemediate genome sets",
+				"output_name":"multiple_intermediate_genome_set",
+				"workspace_name":current_ws
+				}
 
-			self.kb_util.KButil_Merge_GenomeSets(merge_all_genome_set_params)
+				self.kb_util.KButil_Merge_GenomeSets(merge_all_genome_set_params)
 
-			#get reference of multiple_intermediate_genome_set == combined_genome_set_ref
-			meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': "multiple_intermediate_genome_set"}]})['data'][0]['info']
-			combined_genome_set_ref = str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
+			#handle the case of only 1 genome set and nothing else:
+			if(len(params["input_genome_set_refs"])==1):
+				combined_genome_set_ref = params["input_genome_set_refs"][0]
+			else:
+				#get reference of multiple_intermediate_genome_set == combined_genome_set_ref
+				meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': "multiple_intermediate_genome_set"}]})['data'][0]['info']
+				combined_genome_set_ref = str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
 
 			if(single_intermediate_genome_set_ref != ""):
 				#delete the single_intermediate_genome_set, since this isn't required by the users
@@ -1290,9 +1298,12 @@ class kb_genomeclfUtils(object):
 		print("here is uploaded_df")
 		print(uploaded_df)
 
-		#delte the multiple_intermediate_genome_set == combined_genome_set_ref since, this isn't required by the users
-		self.ws_client.delete_objects([{'workspace': current_ws, 'objid' : combined_genome_set_ref.split("/")[1]}]) #get the objid ie. the 902 in 36230/902/1,
-
+		if(len(params["input_genome_set_refs"])==1):
+			pass
+		else:
+			#delte the multiple_intermediate_genome_set == combined_genome_set_ref since, this isn't required by the users
+			self.ws_client.delete_objects([{'workspace': current_ws, 'objid' : combined_genome_set_ref.split("/")[1]}]) #get the objid ie. the 902 in 36230/902/1,
+			
 		return uploaded_df
 
 	def generateHTMLReport(self, current_ws, folder_name, single_html_name, description, for_build_classifier = False):
