@@ -299,9 +299,10 @@ class kb_genomeclfUtils(object):
 
 		elif classifier_type == "logistic_regression":
 			if(params == None):
-				return LogisticRegression( class_weight = "balanced", random_state=0)
+				return LogisticRegression( random_state=0, class_weight = "balanced")
 			else:
-				return LogisticRegression(	class_weight = "balanced",
+				return LogisticRegression(	random_state=0,
+											class_weight = "balanced",
 											penalty = params["penalty"],
 											dual = self.getBool(params["dual"]),
 											tol = params["lr_tolerance"],
@@ -315,10 +316,11 @@ class kb_genomeclfUtils(object):
 
 		elif classifier_type == "decision_tree_classifier":
 			if(params == None):
-				return DecisionTreeClassifier(class_weight = "balanced", random_state=0)
+				return DecisionTreeClassifier(random_state=0, class_weight = "balanced")
 			else:
 
-				return DecisionTreeClassifier(	class_weight = "balanced",
+				return DecisionTreeClassifier(	random_state=0,
+												class_weight = "balanced",
 												criterion = params["criterion"],
 												splitter = params["splitter"],
 												max_depth = params["max_depth"],
@@ -331,9 +333,10 @@ class kb_genomeclfUtils(object):
 
 		elif classifier_type == "support_vector_machine":
 			if(params == None):
-				return svm.SVC(class_weight = "balanced", kernel = "linear",random_state=0)
+				return svm.SVC(random_state=0, class_weight = "balanced", kernel = "linear")
 			else:
-				return svm.SVC(	class_weight = "balanced",
+				return svm.SVC(	random_state=0,
+								class_weight = "balanced",
 								C = params["svm_C"],
 								kernel = params["kernel"],
 								degree = params["degree"],
@@ -351,7 +354,8 @@ class kb_genomeclfUtils(object):
 			if(params == None):
 				return MLPClassifier(random_state=0)
 			else:
-				return MLPClassifier(	hidden_layer_sizes = (int(params["hidden_layer_sizes"]),),
+				return MLPClassifier(	random_state=0,
+										hidden_layer_sizes = (int(params["hidden_layer_sizes"]),),
 										activation = params["activation"],
 										solver = params["mlp_solver"],
 										alpha = params["alpha"],
@@ -684,7 +688,7 @@ class kb_genomeclfUtils(object):
 
 		for tree_depth in range(range_start, iterations):#notice here that tree depth must start at 1
 			
-			classifier = DecisionTreeClassifier(random_state=0, max_depth=tree_depth, criterion=u'gini')
+			classifier = DecisionTreeClassifier(random_state=0, class_weight = "balanced", max_depth=tree_depth, criterion=u'gini')
 			train_score = []
 			validate_score = []
 
@@ -721,7 +725,7 @@ class kb_genomeclfUtils(object):
 		best_gini_accuracy_score = np.max(validation_avg)
 
 		#Create Gini Genome Categorizer
-		current_classifier_object = {	"classifier_to_execute": DecisionTreeClassifier(random_state=0, max_depth=best_gini_depth, criterion='gini'),
+		current_classifier_object = {	"classifier_to_execute": DecisionTreeClassifier(random_state=0, class_weight = "balanced", max_depth=best_gini_depth, criterion='gini'),
 										"classifier_type": "decision_tree_classifier_gini",
 										"classifier_name": classifier_object_name + "_" + "decision_tree_classifier_gini"
 									}
@@ -739,7 +743,7 @@ class kb_genomeclfUtils(object):
 		validation_std = []
 
 		for tree_depth in range(range_start, iterations):#notice here that tree depth must start at 1
-			classifier = DecisionTreeClassifier(random_state=0, max_depth=tree_depth, criterion=u'entropy')
+			classifier = DecisionTreeClassifier(random_state=0, class_weight = "balanced", max_depth=tree_depth, criterion=u'entropy')
 			train_score = []
 			validate_score = []
 
@@ -775,7 +779,7 @@ class kb_genomeclfUtils(object):
 		best_entropy_accuracy_score = np.max(validation_avg)
 
 		#Create Gini Genome Categorizer
-		current_classifier_object = {	"classifier_to_execute": DecisionTreeClassifier(random_state=0, max_depth=best_entropy_depth, criterion='entropy'),
+		current_classifier_object = {	"classifier_to_execute": DecisionTreeClassifier(random_state=0, class_weight = "balanced", max_depth=best_entropy_depth, criterion='entropy'),
 										"classifier_type": "decision_tree_classifier_entropy",
 										"classifier_name": classifier_object_name + "_" + "decision_tree_classifier_entropy" 
 									}
@@ -786,9 +790,9 @@ class kb_genomeclfUtils(object):
 		dtt_classifier_info.append(individual_classifier_info)
 
 		if best_gini_accuracy_score > best_entropy_accuracy_score:
-			top_20 = self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=best_gini_depth, criterion='gini'), common_classifier_information)
+			top_20 = self.tree_code(DecisionTreeClassifier(random_state=0, class_weight = "balanced", max_depth=best_gini_depth, criterion='gini'), common_classifier_information)
 		else:
-			top_20 = self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=best_entropy_depth, criterion='entropy'), common_classifier_information)
+			top_20 = self.tree_code(DecisionTreeClassifier(random_state=0, class_weight = "balanced", max_depth=best_entropy_depth, criterion='entropy'), common_classifier_information)
 		
 		return (ddt_dict_classification_report_dict, dtt_classifier_info, top_20)
 
