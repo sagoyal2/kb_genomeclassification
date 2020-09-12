@@ -11,12 +11,12 @@ from os import environ
 
 
 try:
-    from ConfigParser import ConfigParser  # py2
+    from configparser import ConfigParser  # py2 
 except:
     from configparser import ConfigParser  # py3
 
 
-from pprint import pprint  # noqa: F401
+from pprint import pprint 
 
 from biokbase.workspace.client import Workspace as workspaceService
 from kb_genomeclassification.kb_genomeclassificationImpl import kb_genomeclassification
@@ -82,175 +82,56 @@ class kb_genomeclassificationTest(unittest.TestCase):
     def getContext(self):
         return self.__class__.ctx
 
-    def test_predict_phenotype(self):
-        """
-        params = {        
-        "Annotated": 1,
-        "shock_id": "",
-        "list_name": "Genome_ID	Classification\n262543.4	facultative\n1134785.3	facultative\n269798.12	aerobic\n309807.19	aerobic\n411154.5	aerobic\n485917.5	aerobic\n485918.5	aerobic\n457391.3	anaerobic\n470145.6	anaerobic\n665954.3	anaerobic\n679190.3	anaerobic",
-        "description": "myFullGotest",
-        "classifier_name": "myFullGoCLF",
-        "attribute": "functional_roles",
-        "phenotypeclass": "Respiration",
-        "workspace" : "sagoyal:narrative_1536939130038"
-        }
-        """
-        
-        """
-        params = {
-        "Annotated": 1,
-        "shock_id": "a753ec76-df84-4447-95f5-7186a755fc3b",
-        "list_name": "",
-        "description": "myFullGoFail",
-        "classifier_name": "myFullGoCLF",
-        "attribute": "functional_roles",
-        "phenotypeclass": "Respiration",
-        "workspace" : "sagoyal:narrative_1536939130038"
-        }
-        """
-
-        # params = {
-        # "Annotated": 1,
-        # "list_name": "Genome_ID\n204669.6\n234267.13\n240015.3\n1806.1",
-        # "description": "Genomes to Predict",
-        # "classifier_name": "myWayCLF_NeuralNetwork",
-        # "attribute": "functional_roles",
-        # "phenotypeclass": "Respiration",
-        # "workspace" : "sagoyal:narrative_1536939130038"
-        # }
-        # self.getImpl().predict_phenotype(self.getContext(), params)
-
-        # params = {
-        # "classifier_name": "FridayMeetingCLF",
-        # "description": "trial",
-        # "attribute": "functional_roles",
-        # "phenotypeclass": "trial",
-        # "list_name": "Genome_ID\nGCF_000216435.1\nGCF_000611305.1\nGCF_000216515.1\nGCF_000216495.1\nGCF_000216475.1",
-        # "Annotated": 1,
-        # "Upload_File": "",
-        # "workspace" : "sagoyal:narrative_1534292322496"
-        # }
-        # self.getImpl().predict_phenotype(self.getContext(), params)
-        # params = {
-        # "classifier_name": "fridayCLF2",
-        # "description": "slkdf",
-        # "attribute": "functional_roles",
-        # "phenotypeclass": "respir",
-        # "list_name": "Genome_ID\n211586.1\n94122.5\n60480.16\n584.1\n615.1\n523791.4\n498211.3\n484022.4",
-        # "Annotated": 1,
-        # "Upload_File": "",
-        # "workspace" : "sagoyal:narrative_1536939130038"
-        # }
-        # self.getImpl().predict_phenotype(self.getContext(), params)
+    def test_upload_trainingset(self):
         pass
+        # params = {
+        # "file_path": "fake_2_refseq.xlsx",
+        # "description": "my description",
+        # "phenotype": "my phenotype",
+        # "training_set_name": "AgainRefSeq",
+        # "workspace": "sagoyal:narrative_1598636841293",
+        # "workspace_id":"70875"
+        # }
+        # self.getImpl().upload_trainingset(self.getContext(), params)
+
+        # params = {
+        # "annotate": 1,
+        # "file_path": "fake_2_refseq.xlsx",
+        # "description": "my description",
+        # "phenotype": "my phenotype",
+        # "training_set_name": "AgainRefSeq",
+        # "workspace": "sagoyal:narrative_1536939130038",
+        # "workspace_id":"36230"
+        # }
+        # self.getImpl().upload_trainingset(self.getContext(), params)
+
+        # params =    {
+        # "annotate": 0,
+        # "file_path": "full_genomeid_classification.xlsx",
+        # "description": "full test 1",
+        # "phenotype": "Respiration",
+        # "training_set_name": "RespirationTrainingSet",
+        # "workspace": "sagoyal:narrative_1536939130038"
+        # }
+        # self.getImpl().upload_trainingset(self.getContext(), params)
+
+    def test_rast_annotate_trainingset(self):
+        pass
+        # params =    {
+        # "training_set_name": "AgainRefSeq",
+        # "description": "whatever",
+        # "annotated_trainingset_name": "AnnoatedAgainRefSeq",
+        # "workspace": "sagoyal:narrative_1536939130038"
+        # }
+        # self.getImpl().rast_annotate_trainingset(self.getContext(), params)
 
     def test_build_classifier(self):
-    
-        """
-        params = {
-        "save_ts": 1,
-        "description": "Respiration Classifier",
-        "trainingset_name": "TrainingRespiration",
-        "phenotypeclass": "Respiration",
-        "classifier": "run_all",
-        "attribute": "functional_roles",
-        "k_nearest_neighbors": None,
-        "gaussian_nb": None,
-        "logistic_regression": None,
-        "decision_tree_classifier": None,
-        "support_vector_machine": None,
-        "neural_network": None,
-        "ensemble_model": None,
-        "classifier_out": "myRCLF",
-        "workspace" : "sagoyal:narrative_1534259992668"
-        }
-        """
-
-        """
-        params = {
-        "save_ts": 1,
-        "description": "Gram Classifier",
-        "trainingset_name": "TrainingGram",
-        "phenotypeclass": "Gram",
-        "classifier": "run_all",
-        "attribute": "functional_roles",
-        "k_nearest_neighbors": None,
-        "gaussian_nb": None,
-        "logistic_regression": None,
-        "decision_tree_classifier": None,
-        "support_vector_machine": None,
-        "neural_network": None,
-        "ensemble_model": None,
-        "classifier_out": "myGCLF",
-        "workspace" : "sagoyal:narrative_1534259992668"
-        }
-        """
-
-        """
-        params = {
-        "save_ts": 1,
-        "description": "my Phylum Classifier",
-        "trainingset_name": "WorkingPSET",
-        "phenotypeclass": "Phylum",
-        "classifier": "run_all",
-        "attribute": "functional_roles",
-        "k_nearest_neighbors": None,
-        "gaussian_nb": None,
-        "logistic_regression": None,
-        "decision_tree_classifier": None,
-        "support_vector_machine": None,
-        "neural_network": None,
-        "ensemble_model": None,
-        "classifier_out": "trialPhy",
-        "workspace" : "sagoyal:narrative_1534259992668"
-        }
-        """
-        """
-        params = {
-        "save_ts": 1,
-        "description": "my description",
-        "trainingset_name": "fromTerminal",
-        "phenotypeclass": "phenoterminal",
-        "classifier": "run_all",
-        "attribute": "functional_roles",
-        "k_nearest_neighbors": None,
-        "gaussian_nb": None,
-        "logistic_regression": None,
-        "decision_tree_classifier": None,
-        "support_vector_machine": None,
-        "neural_network": None,
-        "ensemble_model": None,
-        "classifier_out": "CLFfromTerminal",
-        "workspace" : "sagoyal:narrative_1534292322496"
-        }
-        """
-            
-        
-        # params =   {
-        # "save_ts": 1,
-        # "description": "testingAgain",
-        # "trainingset_name": "biggerThursday",
-        # "phenotypeclass": "myPhenotype",
-        # "classifier": "run_all",#"GaussianNB",#"KNeighborsClassifier",
-        # "attribute": "functional_roles",
-        # "k_nearest_neighbors": None,
-        # "gaussian_nb": None,
-        # "logistic_regression": None,
-        # "decision_tree_classifier": None,
-        # "support_vector_machine": None,
-        # "neural_network": None,
-        # "ensemble_model": None,
-        # "classifier_out": "MaysevenGaussianNB",
-        # "workspace" : "sagoyal:narrative_1536939130038"
-        # }
-
+        pass
         # params = {
-        # "save_ts": 1,
-        # "description": "myFullGoEverything",
-        # "trainingset_name": "myFullGo",
-        # "phenotypeclass": "Respiration",
-        # "classifier": "run_all",
-        # "attribute": "functional_roles",
+        # "description": "my build classifier description",
+        # "training_set_name": "to_try_with_build",
+        # "classifier_to_run": "run_all",
+        # "genome_attribute": "functional_roles",
         # "k_nearest_neighbors": None,
         # "gaussian_nb": None,
         # "logistic_regression": None,
@@ -258,126 +139,180 @@ class kb_genomeclassificationTest(unittest.TestCase):
         # "support_vector_machine": None,
         # "neural_network": None,
         # "ensemble_model": None,
-        # "classifier_out": "myFullGoEverythingCLF",
-        # "workspace" : "sagoyal:narrative_1536939130038"
+        # "classifier_object_name": "clf_name",
+        # "workspace": "sagoyal:narrative_1536939130038"
         # }
-
-        params = {
-        "save_ts": 1,
-        "description": "mywaydescription",
-        "trainingset_name": "friday",
-        "phenotypeclass": "fridayCLF3",
-        "classifier": "run_all",
-        "attribute": "functional_roles",
-        "k_nearest_neighbors": None,
-        "gaussian_nb": None,
-        "logistic_regression": None,
-        "decision_tree_classifier": None,
-        "support_vector_machine": None,
-        "neural_network": None,
-        "ensemble_model": None,
-        "classifier_out": "fridayCLF3",
-        "workspace" : "sagoyal:narrative_1536939130038"
-        }
-        self.getImpl().build_classifier(self.getContext(), params)
-
         # params = {
-        # "save_ts": 1,
-        # "description": "mywaydescription",
-        # "trainingset_name": "Friday",
-        # "phenotypeclass": "myway",
-        # "classifier": "KNeighborsClassifier",
-        # "attribute": "functional_roles",
-        # "k_nearest_neighbors": None,
-        # "gaussian_nb": None,
-        # "logistic_regression": None,
-        # "decision_tree_classifier": None,
-        # "support_vector_machine": None,
-        # "neural_network": None,
-        # "ensemble_model": None,
-        # "classifier_out": "FridayMeetingCLF",
-        # "workspace" : "sagoyal:narrative_1534292322496"
+        # "description": "my build classifier description",
+        # "training_set_name": "to_try_with_build",
+        # "classifier_to_run": "run_all",
+        # "genome_attribute": "functional_roles",
+        # "k_nearest_neighbors": {
+        #     "n_neighbors": 5,
+        #     "weights": "uniform",
+        #     "algorithm": "auto",
+        #     "leaf_size": 30,
+        #     "p": 2,
+        #     "metric": "minkowski",
+        # },
+        # "gaussian_nb": {
+        #     "priors": "None"
+        # },
+        # "logistic_regression": {
+        #     "penalty": "l2",
+        #     "dual": "False",
+        #     "lr_tolerance": 0.0001,
+        #     "lr_C": 1,
+        #     "fit_intercept": "True",
+        #     "intercept_scaling": 1,
+        #     "lr_solver": "newton-cg",
+        #     "lr_max_iter": 100,
+        #     "multi_class": "ovr",
+        # },
+        # "decision_tree_classifier": {
+        #     "criterion": "gini",
+        #     "splitter": "best",
+        #     "max_depth": None,
+        #     "min_samples_split": 2,
+        #     "min_samples_leaf": 1,
+        #     "min_weight_fraction_leaf": 0,
+        #     "max_leaf_nodes": None,
+        #     "min_impurity_decrease": 0
+        # },
+        # "support_vector_machine": {
+        #     "svm_C": 1,
+        #     "kernel": "linear",
+        #     "degree": 3,
+        #     "gamma": "auto",
+        #     "coef0": 0,
+        #     "probability": "False",
+        #     "shrinking": "True",
+        #     "svm_tolerance": 0.001,
+        #     "cache_size": 200,
+        #     "svm_max_iter": -1,
+        #     "decision_function_shape": "ovr"
+        # },
+        # "neural_network": {
+        #     "hidden_layer_sizes": "100",
+        #     "activation": "relu",
+        #     "mlp_solver": "adam",
+        #     "alpha": 0.0001,
+        #     "batch_size": "auto",
+        #     "learning_rate": "constant",
+        #     "learning_rate_init": 0.001,
+        #     "power_t": 0.05,
+        #     "mlp_max_iter": 200,
+        #     "shuffle": "True",
+        #     "mlp_random_state": 0,
+        #     "mlp_tolerance": 0.0001,
+        #     "mlp_verbose": "False",
+        #     "mlp_warm_start": "False",
+        #     "momentum": 0.9,
+        #     "nesterovs_momentum": "True",
+        #     "early_stopping": "False",
+        #     "validation_fraction": 0.1,
+        #     "beta_1": 0.9,
+        #     "beta_2": 0.999,
+        #     "epsilon": 1e-8
+        # },
+        # "classifier_object_name": "clf_name",
+        # "workspace": "sagoyal:narrative_1536939130038"
         # }
         # self.getImpl().build_classifier(self.getContext(), params)
-       
-
-    def test_upload_trainingset(self):
-        
-        """
-        params = {
-        "shock_id": "1b23efad-fe6d-4e41-b180-37fc6dcb558d",
-        "list_name": "Genome_ID Classification\nShewanella_ondeisensis_MR-1_GenBank Aerobic\ngenBankG5O Anaerobic\nNC_003197    Facultative\nGCF_000010525.1    Facultative\nGCF_000007365.1    Aerobic\nGCF_000007725.1    Anaerobic\nGCF_000009605.1  Aerobic\nGCF_000021065.1    Anaerobic\nGCF_000021085.1  Facultative\nGCF_000090965.1    Facultative\nGCF_000174075.1    Aerobic\nGCF_000183225.1    Aerobic\nGCF_000183245.1    Facultative\nGCF_000183285.1    Facultative\nGCF_000183305.1    Anaerobic\nGCF_000217635.1  Aerobic\nGCF_000225445.1    Aerobic\nGCF_000225465.1    Anaerobic\nGCF_000521525.1  Anaerobic\nGCF_000521545.1  Aerobic\nGCF_000521565.1    Aerobic\nGCF_000521585.1    Facultative\nGCF_001280225.1    Anaerobic\nGCF_001648115.1  Facultative\nGCF_001700895.1    Aerobic\nGCF_001939165.1    Anaerobic\nGCF_003099975.1  Facultative\nGCF_900016785.1    Facultative\nGCF_900128595.1    Aerobic\nGCF_900128725.1    Anaerobic\nGCF_900128735.1  Aerobic\nGCF_000218545.1    Anaerobic\nGCF_000020965.1  Facultative\nGCF_000378225.1    Facultative\nGCF_000012885.1    Aerobic\nGCF_001375595.1    Aerobic\nGCF_000518705.1    Facultative\nGCF_001735525.1    Facultative\nGCF_000016585.1    Anaerobic\nGCF_000169215.2  Aerobic\nGCF_000519065.1    Aerobic\nGCF_001591325.1    Anaerobic\nGCF_002157365.1  Facultative\nGCF_003315425.1    Aerobic\nGCF_000219105.1    Aerobic\nGCF_000988565.1    Aerobic\nGCF_900111765.1    Anaerobic\nGCF_000012685.1  Facultative\nGCF_000278585.1    Anaerobic",
-        "description": "trial description in terminal",
-        "phenotypeclass": "newTest",
-        "training_set_out": "fourColumn",
-        "workspace" : "sagoyal:narrative_1534292322496"
-        }
-        """
-        """
-        params = {
-        "shock_id": "502d096b-4236-462b-addf-9b7b56ff7b64",#"c2203dc8-01db-45a7-a246-09e9fade7d7a",
-        "list_name": "",
-        "description": "rast testing",
-        "phenotypeclass": "RASTPheno",
-        "training_set_out": "rastOut",
-        "workspace" : "sagoyal:narrative_1536939130038" #"sagoyal:narrative_1534292322496"
-        }
-        """
-        
-        """
-        params = {
-        "Annotated": 0,
-        # "shock_id": "",
-        "Upload_File" : "/kb/module/data/testingData/prodTrial.xlsx",
-        # "list_name": "Genome_ID Classification\n679190.3.RAST   facultative\n665954.3.RAST  facultative\n470145.6.RAST  aerobic\n457391.3.RAST  aerobic\n485918.5.RAST  anaerobic\n411154.5.RAST    anaerobic\n309807.19.RAST   facultative\n269798.12.RAST aerobic\n216432.3.RAST  anaerobic",
-        "description": "myRASTtest",
-        "phenotypeclass": "respiration",
-        "training_set_out": "FullGo",
-        "workspace" : "sagoyal:narrative_1536939130038"
-        }
-        """
-        
-        # params = {
-        # "Annotated": 1,
-        # "Upload_File": "prodTrialRAST.xlsx",
-        # "list_name": "Genome_ID	Classification\n262543.4.RAST	facultative\n1134785.3.RAST	facultative\n216432.3.RAST	aerobic\n269798.12.RAST	aerobic\n309807.19.RAST	aerobic\n411154.5.RAST	aerobic\n485917.5.RAST	aerobic\n485918.5.RAST	aerobic\n457391.3.RAST	anaerobic\n470145.6.RAST	anaerobic\n665954.3.RAST	anaerobic\n679190.3.RAST	anaerobic",
-        # "description": "myStagingTrial",
-        # "phenotypeclass": "Respiration",
-        # "training_set_out": "StagingRespiration",
-        # "workspace" : "sagoyal:narrative_1536939130038"
-        # }
-
-        # self.getImpl().upload_trainingset(self.getContext(), params)
 
         # params = {
-        # "Annotated": 1,
-        # "Upload_File": "",
-        # "list_name": "Genome_ID Classification\nGCF_000010525.1    Facultative\nGCF_000007365.1    Aerobic\nGCF_000007725.1    Anaerobic\nGCF_000009605.1  Aerobic\nGCF_000021065.1    Anaerobic\nGCF_000021085.1  Facultative\nGCF_000090965.1    Facultative\nGCF_000174075.1    Aerobic\nGCF_000183225.1    Aerobic\nGCF_000183245.1    Facultative\nGCF_000183285.1    Facultative\nGCF_000183305.1    Anaerobic\nGCF_000217635.1  Aerobic\nGCF_000225445.1    Aerobic\nGCF_000225465.1    Anaerobic\nGCF_000521525.1  Anaerobic\nGCF_000521545.1  Aerobic\nGCF_000521565.1    Aerobic\nGCF_000521585.1    Facultative\nGCF_001280225.1    Anaerobic\nGCF_001648115.1  Facultative",
-        # "description": "talk with tian",
-        # "phenotypeclass": "Respiration",
-        # "training_set_out": "FridayMeeting",
-        # "workspace" : "sagoyal:narrative_1534292322496"
+        # "description": "Tree Figure Testing",
+        # "training_set_name": "RespirationTrainingSet",
+        # "classifier_to_run": "decision_tree_classifier",
+        # "genome_attribute": "functional_roles",
+        # "k_nearest_neighbors": None,
+        # "gaussian_nb": None,
+        # "logistic_regression": None,
+        # "decision_tree_classifier": None,
+        # "support_vector_machine": None,
+        # "neural_network": None,
+        # "classifier_object_name": "TreeFigureTest",
+        # "workspace": "sagoyal:narrative_1536939130038"
+        # }
+        # self.getImpl().build_classifier(self.getContext(), params)
+
+        # params = {
+        # "description": "benchmark classifier ",
+        # "training_set_name": "BenchmarkAnnotatedTSET",
+        # "classifier_to_run": "run_all",
+        # "genome_attribute": "functional_roles",
+        # "k_nearest_neighbors": None,
+        # "gaussian_nb": None,
+        # "logistic_regression": None,
+        # "decision_tree_classifier": None,
+        # "support_vector_machine": None,
+        # "neural_network": None,
+        # "classifier_object_name": "BenchmarkCLF",
+        # "workspace": "abrace05:narrative_1597343779407  "
+        # }
+        # self.getImpl().build_classifier(self.getContext(), params)
+
+    def test_predict_phenotype(self):
+        
+        # params = {
+        # "categorizer_name": "clf_name_k_nearest_neighbors",
+        # "annotate": 0,
+        # "file_path": "GramDataEdit5.xlsx",
+        # "description": "my predict phenotype description",
+        # "workspace": "sagoyal:narrative_1536939130038",
+        # "workspace_id":"36230"
+        # }
+        # self.getImpl().predict_phenotype(self.getContext(), params)
+
+        # params = {
+        # # "input_genome_and_genome_set_refs": ["36230/1186/1", "36230/1185/1"],
+        # "input_genome_and_genome_set_refs": ["36230/1187/1", "36230/1029/1"],
+        # "categorizer_name": "BenchmarkCLF_logistic_regression",
+        # "description": "Testing out Genome Processing",
+        # "workspace": "sagoyal:narrative_1536939130038",
+        # "workspace_id":"36230"
+        # }
+        # self.getImpl().predict_phenotype(self.getContext(), params)
+        
+        # Respiration Test
+        # params = {
+        # "input_genome_and_genome_set_refs": ["70875/805/1"],
+        # "categorizer_name": "RespirationCLF_gaussian_nb",
+        # "description": "Predictions for Respiration",
+        # "workspace": "sagoyal:narrative_1598636841293",
+        # "workspace_id":"70875"
         # }
 
-        # self.getImpl().upload_trainingset(self.getContext(), params)
-        pass
+        # Gram Stain Test
+        params = {
+        "input_genome_and_genome_set_refs": ["70880/349/1", "70880/333/1"],
+        "categorizer_name": "GramStainCLF_k_nearest_neighbors",
+        "description": "Predictions for Gram Stain",
+        "workspace": "sagoyal:narrative_1598644028695",
+        "workspace_id":"70880"
+        }
 
-    # def test_test(self):
-    #     self.dfu = DataFileUtil(self.callback_url)
-    #     handle_id = 'KBH_93785'
+        self.getImpl().predict_phenotype(self.getContext(), params)
 
-    #     print("here now 1")
-    #     dir_path = os.path.join(self.scratch, str(uuid.uuid4()))
-    #     os.mkdir(dir_path)
 
-    #     file_path = self.dfu.shock_to_file({'handle_id': handle_id,
-    #                                         'file_path': dir_path})['file_path']
-    #     print("file_path: {}".format(file_path))
 
-    #     print("here now 2")
-    #     with open(file_path, "rb") as f:
-    #         first_line = f.readline()
-    #         print (first_line)
 
-    #     pickle_in = open(file_path, "rb")
-    #     after_classifier = pickle.load(pickle_in)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

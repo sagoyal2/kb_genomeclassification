@@ -13,10 +13,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
  * <p>Original spec-file type: ClassifierTrainingSet</p>
- * <pre>
- * typedef string genome_id;
- * typedef string phenotype;
- * </pre>
+ * 
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)

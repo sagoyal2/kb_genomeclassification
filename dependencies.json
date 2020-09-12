@@ -3,11 +3,15 @@
   "type" : "sdk",
   "version_tag" : "release"
 }, {
+  "module_name" : "kb_SetUtilities",
+  "type" : "sdk",
+  "version_tag" : "release"
+}, {
   "module_name" : "KBaseReportPy",
   "type" : "sdk",
   "version_tag" : "release"
 }, {
   "module_name" : "RAST_SDK",
   "type" : "sdk",
-  "version_tag" : "release"
+  "version_tag" : "beta"
 } ]

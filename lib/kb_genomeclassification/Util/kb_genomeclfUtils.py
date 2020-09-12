@@ -1,55 +1,41 @@
-# -*- coding: utf-8 -*-
-#BEGIN_HEADER
-# The header block is where all import statments should live
-
-from __future__ import division
-
-import io
 import os
 import re
-import sys
-import ast
 import uuid
-import xlrd
-import json
-import random
-import codecs
-import graphviz
-import itertools
-import xlsxwriter
+import time
 import pickle
+import operator
 import numpy as np
 import pandas as pd
 import seaborn as sns
 
-#classifier models
-from sklearn import svm
+import matplotlib.pyplot as plt
+plt.switch_backend('agg')
+
+#Add Parllelism
+from concurrent.futures import ThreadPoolExecutor
+
+#Classifier Models
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
+from sklearn import svm
 from sklearn.neural_network import MLPClassifier
-from sklearn.ensemble import VotingClassifier
 
 #additional classifier methods
 from sklearn.tree import export_graphviz
 from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
 from sklearn.model_selection import StratifiedKFold
-
-#Switch the backend to plot confusion matrix figure
-import matplotlib.pyplot as plt
-plt.switch_backend('agg')
-#needed to display ipython notebook
-#%matplotlib inlines
 
 from KBaseReport.KBaseReportClient import KBaseReport
 from DataFileUtil.DataFileUtilClient import DataFileUtil
-from RAST_SDK.RAST_SDKClient import RAST_SDK
+from installed_clients.RAST_SDKClient import RAST_SDK
+from installed_clients.kb_SetUtilitiesClient import kb_SetUtilities
 from biokbase.workspace.client import Workspace as workspaceService
 
 
 class kb_genomeclfUtils(object):
-	"""docstring for ClassName"""
 	def __init__(self, config):
 
 		self.workspaceURL = config['workspaceURL']
@@ -59,2631 +45,797 @@ class kb_genomeclfUtils(object):
 		self.ctx = config['ctx']
 
 		self.dfu = DataFileUtil(self.callback_url)
-		self.rast = RAST_SDK(self.callback_url)
+		self.rast = RAST_SDK(self.callback_url, service_ver='beta')
+		self.kb_util = kb_SetUtilities(self.callback_url)
 		self.ws_client = workspaceService(self.workspaceURL)
 
-		self.list_name = []
-		self.list_statistics = []
+	def fullUpload(self, params, current_ws):
+		"""
+		workhorse function for upload_trainingset
+		"""
+
+		#create folder
+		folder_name = "forUpload"
+		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
+
+		#Testing Files
+		#params["file_path"] = "/kb/module/data/RealData/GramDataEdit2Ref.xlsx"
+		#params["file_path"] = "/kb/module/data/RealData/fake_2_refseq_simple.xlsx"
+		#params["file_path"] = "/kb/module/data/RealData/SingleForJanaka.xlsx"
+		#uploaded_df = pd.read_excel(params["file_path"], dtype=str)
+		
+		#Case Study Test
+		#params["file_path"] = "/kb/module/data/RealData/respiration-benchmark.csv"
+		#uploaded_df = pd.read_csv(params["file_path"], header=0, dtype=str)
+		
+		#True App
+		uploaded_df = self.getUploadedFileAsDF(params["file_path"])
+		#Will eventually need to do this params["annotate"] = 0 #explictly make sure there are no annotations happening
+		params["annotate"] = 0
+		(upload_table, classifier_training_set, missing_genomes, genome_label, number_of_genomes, number_of_classes) = self.createAndUseListsForTrainingSet(current_ws, params, uploaded_df)
+
+		self.uploadHTMLContent(params['training_set_name'], missing_genomes, genome_label, params['phenotype'], upload_table, number_of_genomes, number_of_classes)
+		html_output_name = self.viewerHTMLContent(folder_name, status_view = True)
+		
+		return html_output_name, classifier_training_set
+
+	def fullAnnotate(self, params, current_ws):
+		"""
+		workhorse function for rast_annotate_trainingset
+		"""
+
+		#create folder
+		folder_name = "forAnnotate"
+		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
+
+		#Digest and Load training_set_object information into variables
+		training_set_name = params['training_set_name']
+		training_set_object = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': training_set_name}]})["data"]
+
+		phenotype = training_set_object[0]['data']["classification_type"]
+		classes_sorted = training_set_object[0]['data']["classes"]
+
+		training_set_object_data = training_set_object[0]['data']['classification_data']
+		training_set_object_reference = training_set_object[0]['path'][0]
+
+		_list_genome_name = []
+		_list_genome_ref = []
+		_list_phenotype = []
+		_list_references = []
+		_list_evidence_types = []
+
+		for genome in training_set_object_data:
+			_list_genome_name.append(genome["genome_name"])
+			_list_genome_ref.append(genome["genome_ref"])
+			_list_phenotype.append(genome["genome_classification"])
+			_list_references.append(genome["references"])
+			_list_evidence_types.append(genome["evidence_types"])
 
 
-	#### MAIN Methods below are called from KBASE apps ###
+		genome_set_name = "RAST_"+training_set_name
+
+		# RAST_genome_names = _list_genome_name
+		# RAST_genome_references = _list_genome_ref
+		#We know a head of time that all names are just old names with .RAST appended to them
+		RAST_genome_names = [genome_set_name + "_" + genome_name  for genome_name in _list_genome_name]
+
+		self.RASTAnnotateGenomeParallel(current_ws, _list_genome_ref, genome_set_name, _list_genome_name, RAST_genome_names)
+
+		#Figure out new RAST references 
+		RAST_genome_references = []
+		for RAST_genome in RAST_genome_names:
+			meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': RAST_genome}]})['data'][0]['info']
+			genome_ref = str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
+			RAST_genome_references.append(genome_ref)
+
+		# make the classifier_training_set (only need to make it from present genomes)
+		classifier_training_set = {}
+		for index, curr_genome_ref in enumerate(RAST_genome_references):
+			classifier_training_set[curr_genome_ref] = { 	'genome_name': RAST_genome_names[index],
+															'genome_ref': curr_genome_ref,
+															'phenotype': _list_phenotype[index],
+															'references': _list_references[index],
+															'evidence_types': _list_evidence_types[index],
+														}
+
+		modified_params = {
+		'training_set_name': params["annotated_trainingset_name"],
+		'description': "We RAST Annotated " + training_set_name,
+		'phenotype': phenotype
+		}
+
+		self.createTrainingSetObject(current_ws, modified_params, RAST_genome_names, RAST_genome_references, _list_phenotype, _list_references, _list_evidence_types, with_Rast=True)
+
+
+		#Make Report Table
+		report_table = pd.DataFrame.from_dict({	"Genome Name": _list_genome_name,
+												"Annotated Genome Name": RAST_genome_names,
+												})	
+
+		self.annotateHTMLContent(params["annotated_trainingset_name"], genome_set_name, report_table)
+		html_output_name = self.viewerHTMLContent(folder_name, status_view = True)
+		
+		return html_output_name, classifier_training_set
+
+
 	def fullClassify(self, params, current_ws):
 		"""
-		args:
-		---params from build_classifier
-		---current_ws which is a narrative enviornment variable necessary to access the KBase workspace
-		does:
-		---first it sets up the Xs and Ys in dataframe (the columns are masterRole which are all the function rolls and the indexes are the Genome_IDs the rest is a matrix of 1's and 0s
-														that that have a classification stored in the last column)
-		---runs the classifers based on the classifier_type (either run_all, Decision Tree, or single selection)
-			---if run_all or Decision Tree is selected then a second 'tab' is also created in the html page base on tuning of the Decision Tree
-		---creates html pages with 'tabs' that show the main classifcation and statistics on the classification
-		return:
-		---an htmloutput_name which is the name of the html report that get created from makeHtmlReport
-		--- 
-		"""
-		
-		#SETUP of X & Y trainging and testing sets
-
-		#params = self.editBuildArguments(params)
-
-		print ('Frist Print')
-		#print(self.editBuildArguments(params))
-
-		params = self.editBuildArguments(params)
-
-		print("here are my curret params:")
-		print(params)
-
-		#print "Below is the classifierAdvanced_params"
-		#print(self.editBuildArguments(params)["classifierAdvanced_params"])
-
-		toEdit_all_classifications, training_set_ref, num_classes, listOfRefs = self.unloadGenomeClassifierTrainingSet(current_ws, params['trainingset_name'])
-		listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
-		all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws, params['attribute'], refs = listOfRefs)
-	
-
-		if params.get('save_ts') != 1:
-			training_set_ref = 'User Denied'
-
-
-		#Load in 'cached' data from the data folder
-		
-		"""
-		training_set_ref = '35424/384/1'
-		#pickle_in = open("/kb/module/data/Classifications_DF.pickle", "rb")
-		pickle_in = open("/kb/module/data/myPhylumDF.pickle", "rb")
-		all_classifications = pickle.load(pickle_in)
-		listOfNames = all_classifications.index
-
-		pickle_in = open("/kb/module/data/fromKBASE_Phylum_MR.pickle", "rb")
-		master_Role = pickle.load(pickle_in)
-
-		pickle_in = open("/kb/module/data/fromKBASE_Phylum_attributes.pickle", "rb")
-		all_attributes = pickle.load(pickle_in)
+		workhorse function for build_classifier
 		"""
 
-		all_attributes = all_attributes.T[listOfNames].T
-		
+		#create folder for images and data
+		folder_name = "forBuild"
+		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
+		os.makedirs(os.path.join(self.scratch, folder_name, "images"), exist_ok=True)
+		os.makedirs(os.path.join(self.scratch, folder_name, "data"), exist_ok=True)
 
-		#mapping of string classes to integers
-		correctClassifications_list = []
+		#unload the training_set_object
+		#class_enumeration : {'N': 0, 'P': 1}
+		#uploaded_df is four columns: Genome Name | Genome Reference | Phenotype | Phenotype Enumeration
+		(phenotype, class_enumeration, uploaded_df, training_set_object_reference) = self.unloadTrainingSet(current_ws, params['training_set_name'])
 
-		for index in range(len(all_classifications['Classification'])):
-			correctClassifications_list.append(all_classifications['Classification'][index])
-			
-		class_list = list(set(correctClassifications_list))
+		#get functional_roles and make indicator matrix
+		(indicator_matrix, master_role_list) = self.createIndicatorMatrix(uploaded_df, params["genome_attribute"])
 
-		my_mapping = {} #my_mapping = {'aerobic': '0', 'anaerobic': '1', 'facultative': '2'}
-		for current_class,num in zip(class_list, range(0, len(class_list))):
-			my_mapping[current_class] = num
+		#split up training data
+		splits = 10
+		whole_X = indicator_matrix[master_role_list].values
+		whole_Y = uploaded_df["Phenotype Enumeration"].values
+		(list_train_index, list_test_index) = self.getKSplits(splits, whole_X, whole_Y)
 
-		my_class_mapping = []
-
-		for index in range(len(correctClassifications_list)):
-			my_class_mapping.append(my_mapping[correctClassifications_list[index]])
-			
-		print(len(my_class_mapping))
-
-		all_attributes = all_attributes.values.astype(int)
-		all_classifications = np.array(my_class_mapping)
-		
-		"""
-		training_set_ref = '35424/320/1'
-		all_attributes = np.load("/kb/module/data/random_attribute_array.npy")
-		all_classifications = np.load("/kb/module/data/random_classification_array.npy")
-		class_list = ["A", "B", "C", "D", "E", "F", "G"]
-		my_mapping = {}
-
-		pickle_in = open("/kb/module/data/fromKBASE_MR.pickle", "rb")
-		master_Role = pickle.load(pickle_in)
-		"""
-
-		"""
-		full_dataFrame = pd.concat([all_attributes, all_classifications], axis = 1, sort=True)
-
-		print "Below is full_dataFrame"
-		print full_dataFrame
-
-		class_list = list(set(full_dataFrame['Classification']))
-
-		#create a mapping
-		my_mapping = {}
-		for current_class,num in zip(class_list, range(0, len(class_list))):
-			my_mapping[current_class] = num
-
-		for index in full_dataFrame.index:
-			full_dataFrame.at[index, 'Classification'] = my_mapping[full_dataFrame.at[index, 'Classification']]
-
-		all_classifications = full_dataFrame['Classification']
-
-		print "Below is full_attribute_array and full_classification_array"
-
-		all_attributes = all_attributes.values.astype(int)
-		all_classifications = all_classifications.values.astype(int)
-
-		print "Below is full_attribute_array and full_classification_array round 2"
-		print all_attributes
-		print all_classifications
-		"""
-
-		#np.save(os.path.join(self.scratch,'full_attribute_array.npy'), all_attributes)
-		#np.save(os.path.join(self.scratch, 'full_classification_array.npy'), all_classifications)
-
-		#pickle_out = open(os.path.join(self.scratch,"attribute_list.pickle"), "wb")
-		#pickle.dump(master_Role, pickle_out)
-
-		self.createHoldingDirs()
-
-		ctx = self.ctx
-		token = ctx['token']
-
-		classifier_type = params.get('classifier')
-		global_target = params.get('phenotypeclass')
-		classifier_name = params.get('classifier_out')
-
-		folderhtml1 = "html1folder/"
-		folderhtml2 = "html2folder/"
-		folderhtml4 = "html4folder/"
-
-
-		train_index = []
-		test_index = []
-
-		splits = 2 #10 #10 #2
-
-		#This cross-validation object is a variation of KFold that returns stratified folds. The folds are made by preserving the percentage of samples for each class.
-		skf = StratifiedKFold(n_splits=splits, random_state=0, shuffle=True)
-		for train_idx, test_idx in skf.split(all_attributes, all_classifications):
-			train_index.append(train_idx)
-			test_index.append(test_idx)
-
-		classifierTest_params = {
-				'ctx' : ctx,
-				'current_ws' : current_ws,
-				#'classifier' : ,
-				'classifier_type' : classifier_type,
-				'classifier_name' : classifier_name,
-				'my_mapping' : my_mapping,
-				'master_Role' : master_Role,
-				'splits' : splits,
-				'train_index' : train_index,
-				'test_index' : test_index,
-				'all_attributes' : all_attributes,
-				'all_classifications' : all_classifications,
-				'class_list' : class_list,
-				'htmlfolder' : folderhtml1,
-				'print_cfm' : True,
-				'training_set_ref' : training_set_ref,
+		#figure out which classifier is getting made
+		common_classifier_information = {
+				'class_list_mapping' : class_enumeration,
+				'attribute_data' : master_role_list,
+				'attribute_type': params["genome_attribute"],
+				'splits': splits,
+				'list_train_index' : list_train_index,
+				'list_test_index' : list_test_index,
+				'whole_X' : whole_X,
+				'whole_Y' : whole_Y,
+				'training_set_ref' : training_set_object_reference,
 				'description' : params["description"]
 				}
 
-		#RUNNING the classifiers depending on classifier_type
-
 		classifier_info_list = []
 
-		if classifier_type == u"run_all":
-	# 			typedef structure{
-	# 	string classifier_name;
-	# 	string classifier_ref;
-	# 	list<phenotypeClassInfo> phenotype_class_info;
-	# 	float averagef1;
-	# }classifierInfo;
+		dict_classification_report_dict = {}
+		genome_classifier_object_names = []
+		classifier_to_run = params["classifier_to_run"]
+		if(classifier_to_run == "run_all"):
 
-			listRunAll = ['KNeighborsClassifier', 'GaussianNB', 'LogisticRegression', 'DecisionTreeClassifier', 'SVM', 'NeuralNetwork']
-			all_advanced = ["k_nearest_neighbors", "gaussian_nb", "logistic_regression", "decision_tree_classifier", "support_vector_machine", "neural_network"]
+			list_classifier_types = ["k_nearest_neighbors", "gaussian_nb", "logistic_regression", "decision_tree_classifier", "support_vector_machine", "neural_network"]
+			for classifier_type in list_classifier_types:
+				current_classifier_object = {	"classifier_to_execute": self.getCurrentClassifierObject(classifier_type, params[classifier_type]),
+												"classifier_type": classifier_type,
+												"classifier_name": params["classifier_object_name"] + "_" + classifier_type
+											}
+				genome_classifier_object_names.append(current_classifier_object["classifier_name"])
 
-			for run, advanced in zip(listRunAll, all_advanced):
-				#classifierTest_params['classifier'] = self.whichClassifier(run)
-				classifier_info_list_mapping = {}
-
-				classifierTest_params['classifier'] = self.whichClassifierAdvanced(run, params[advanced])
-				classifierTest_params['classifier_type'] = run
-				classifierTest_params['classifier_name'] = classifier_name + u'_' + run
-				classifierTest_params['htmlfolder'] = folderhtml1
+				#this is a dictionary containing 'class 0': {'precision': 0.5, 'recall': 1.0, 'f1-score': 0.2}, 'accuracy'
+				(classification_report_dict,individual_classifier_info) = self.executeClassifier(current_ws, common_classifier_information, current_classifier_object, folder_name)
+				dict_classification_report_dict[classifier_type] = classification_report_dict
+				classifier_info_list.append(individual_classifier_info)
 
 
-				classifier_info_list_mapping['classifier_name'] = classifierTest_params['classifier_name']
-				(test_av, test_std, val_av, val_std), phenotype_class_info_list, avgf1 = self.classifierTest(classifierTest_params)
-				classifier_info_list_mapping['phenotype_class_info'] = phenotype_class_info_list
-				classifier_info_list_mapping['classifier_ref'] = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': classifierTest_params['classifier_name'] }])[0]['refs'][0])
-				classifier_info_list_mapping['averagef1'] = avgf1
+			#handle Decision Tree Case
+			(ddt_dict_classification_report_dict, dtt_classifier_info, top_20) = self.tuneDecisionTree(current_ws, common_classifier_information, params["classifier_object_name"], folder_name)
+			dict_classification_report_dict["decision_tree_classifier_gini"] = ddt_dict_classification_report_dict["decision_tree_classifier_gini"]
+			dict_classification_report_dict["decision_tree_classifier_entropy"] = ddt_dict_classification_report_dict["decision_tree_classifier_entropy"]
+			classifier_info_list.append(dtt_classifier_info[0])
+			classifier_info_list.append(dtt_classifier_info[1])
 
-				classifier_info_list.append(classifier_info_list_mapping)
 
-				del classifier_info_list_mapping
+		else:
+			current_classifier_object = {	"classifier_to_execute": self.getCurrentClassifierObject(classifier_to_run, params[classifier_to_run]),
+											"classifier_type": classifier_to_run,
+											"classifier_name": params["classifier_object_name"] + "_" + classifier_to_run
+										}
+			genome_classifier_object_names.append(current_classifier_object["classifier_name"])
 
-			best_classifier_str = self.to_HTML_Statistics(class_list, classifier_name)
+			(classification_report_dict,individual_classifier_info)  = self.executeClassifier(current_ws, common_classifier_information, current_classifier_object, folder_name)
+			dict_classification_report_dict[classifier_to_run] = classification_report_dict
+			classifier_info_list.append(individual_classifier_info)
 
-			print("This is the best_classifier_str")
-			print(best_classifier_str)
+			if(classifier_to_run == "decision_tree_classifier"):
+				(ddt_dict_classification_report_dict, dtt_classifier_info, top_20) = self.tuneDecisionTree(current_ws, common_classifier_information, params["classifier_object_name"], folder_name)
+				dict_classification_report_dict["decision_tree_classifier_gini"] = ddt_dict_classification_report_dict["decision_tree_classifier_gini"]
+				dict_classification_report_dict["decision_tree_classifier_entropy"] = ddt_dict_classification_report_dict["decision_tree_classifier_entropy"]
+				classifier_info_list.append(dtt_classifier_info[0])
+				classifier_info_list.append(dtt_classifier_info[1])
 
-			#best_classifier_str = classifier_name+u"_LogisticRegression"
-			best_classifier_type = best_classifier_str[classifier_name.__len__() + 1:] #extract just the classifier_type aka. "LogisticRegression" from "myName_LogisticRegression"
-			best_classifier_type_index = listRunAll.index(best_classifier_type)
-			#to create another "best in html2"
-			
-			#classifierTest_params['classifier'] = self.whichClassifier(best_classifier_type)
-			
-			classifierTest_params['classifier'] = self.whichClassifierAdvanced(best_classifier_type, params[all_advanced[best_classifier_type_index]], True)
-			classifierTest_params['classifier_type'] = best_classifier_type
-			classifierTest_params['classifier_name'] = classifier_name+u"_" + best_classifier_type
-			classifierTest_params['htmlfolder'] = folderhtml2
-			self.classifierTest(classifierTest_params)
 
-			self.html_report_1(global_target, classifier_type, classifier_name, params['phenotypeclass'], num_classes, best_classifier_str= best_classifier_str)
+		#generate table from dict_classification_report_dict
+		main_report_df_flag = False
+		dtt_report_df_flag = False
 
-			classifierTest_params['classifier_name'] = classifier_name
-			classifierTest_params['htmlfolder'] = folderhtml2
+		(main_report_df, dtt_report_df, best_classifier_type_nice, genome_dtt_classifier_object_names) = self.handleClassificationReports(dict_classification_report_dict, list(common_classifier_information["class_list_mapping"].keys()), params["classifier_object_name"] )
+		if(len(main_report_df.keys()) > 1):
+			main_report_df_flag = True
+			self.buildMainHTMLContent(params['training_set_name'], main_report_df, genome_classifier_object_names, phenotype, best_classifier_type_nice)
+		if(len(dtt_report_df.keys()) > 0):
+			dtt_report_df_flag = True
+			self.buildDTTHTMLContent(dtt_report_df, top_20, genome_dtt_classifier_object_names, best_classifier_type_nice)
 
-			classifier_info_list_mapping_fromDTentropy, classifier_info_list_mapping_fromDTgini, weight_list  = self.tune_Decision_Tree(classifierTest_params, current_ws)
-			classifier_info_list.append(classifier_info_list_mapping_fromDTentropy)
-			classifier_info_list.append(classifier_info_list_mapping_fromDTgini)
+		html_output_name = self.viewerHTMLContent(folder_name, main_report_view = main_report_df_flag, decision_tree_view = dtt_report_df_flag)
 
-			self.html_report_2(global_target, classifier_name, num_classes, best_classifier_str)
+		return html_output_name, classifier_info_list
 
-			classifierTest_params['classifier'], estimators_inHTML = self.ensembleCreation(params["ensemble_model"], params)
-			
-			if classifierTest_params['classifier'] == "No_Third":
-				htmloutput_name = self.html_dual_12()
+	def getCurrentClassifierObject(self, classifier_type, params):
+		"""
+		Takes user selected classifier_type (as string from dropdown) and
+		returns corresponding sklearn classfifier with user selected parameters (or defaults)
 
+		Parameter
+		---------
+		classifier_type : str
+			"k_nearest_neighbors, gaussian_nb, etc."
+		params : dict
+			parameters for sklearn classifier
+		"""
+
+		if classifier_type == "k_nearest_neighbors":
+			if(params == None):
+				return KNeighborsClassifier()
 			else:
-				classifierTest_params['classifier_type'] = "Ensemble_Model"
-				classifierTest_params['classifier_name'] = classifier_name+u"_" + "Ensemble_Model"
-				classifierTest_params['htmlfolder'] = folderhtml4
-
-				classifier_info_list_mapping = {}
-				classifier_info_list_mapping['classifier_name'] = classifierTest_params['classifier_name']
-				(test_av, test_std, val_av, val_std), phenotype_class_info_list, avgf1 = self.classifierTest(classifierTest_params)
-				classifier_info_list_mapping['phenotype_class_info'] = phenotype_class_info_list
-				classifier_info_list_mapping['classifier_ref'] = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': classifierTest_params['classifier_name'] }])[0]['refs'][0])
-				classifier_info_list_mapping['averagef1'] = avgf1
-
-				classifier_info_list.append(classifier_info_list_mapping)
-				del classifier_info_list_mapping
-
-				self.to_HTML_Statistics(class_list, classifier_name, known = classifierTest_params['classifier_name'], for_ensemble = True)
-
-				self.html_report_4(global_target, classifier_name, estimators_inHTML, num_classes)
-
-				htmloutput_name = self.html_dual_123()
-
-		elif classifier_type == u"DecisionTreeClassifier":
-
-			#classifierTest_params['classifier'] = self.whichClassifier(classifier_type)
-			classifierTest_params['classifier'] = self.whichClassifierAdvanced(classifier_type, params["classifierAdvanced_params"])
-
-			classifier_info_list_mapping = {}
-			classifier_info_list_mapping['classifier_name'] = classifierTest_params['classifier_name']
-			(test_av, test_std, val_av, val_std), phenotype_class_info_list, avgf1 = self.classifierTest(classifierTest_params)
-			classifier_info_list_mapping['phenotype_class_info'] = phenotype_class_info_list
-			classifier_info_list_mapping['classifier_ref'] = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': classifierTest_params['classifier_name'] }])[0]['refs'][0])
-			classifier_info_list_mapping['averagef1'] = avgf1
-
-			classifier_info_list.append(classifier_info_list_mapping)
-			del classifier_info_list_mapping
-
-			self.to_HTML_Statistics(class_list, classifier_name)
-			
-			self.html_report_1(global_target, classifier_type, classifier_name, params['phenotypeclass'], num_classes)
-
-
-			classifierTest_params['htmlfolder'] = folderhtml2
-			classifier_info_list_mapping_fromDTentropy, classifier_info_list_mapping_fromDTgini, weight_list  = self.tune_Decision_Tree(classifierTest_params, current_ws)
-			classifier_info_list.append(classifier_info_list_mapping_fromDTentropy)
-			classifier_info_list.append(classifier_info_list_mapping_fromDTgini)
-			
-			self.html_report_2(global_target, classifier_name, num_classes)
-			htmloutput_name = self.html_dual_12()
-
-		else:
-			#classifierTest_params['classifier'] = self.whichClassifier(classifier_type)
-			classifierTest_params['classifier'] = self.whichClassifierAdvanced(classifier_type, params["classifierAdvanced_params"])
-			
-			classifier_info_list_mapping = {}
-			classifier_info_list_mapping['classifier_name'] = classifierTest_params['classifier_name']
-			(test_av, test_std, val_av, val_std), phenotype_class_info_list, avgf1 = self.classifierTest(classifierTest_params)
-			classifier_info_list_mapping['phenotype_class_info'] = phenotype_class_info_list
-			classifier_info_list_mapping['classifier_ref'] = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': classifierTest_params['classifier_name'] }])[0]['refs'][0])
-			classifier_info_list_mapping['averagef1'] = avgf1
-
-			classifier_info_list.append(classifier_info_list_mapping)
-			del classifier_info_list_mapping
-
-			self.to_HTML_Statistics(class_list, classifier_name)
-			self.html_report_1(global_target, classifier_type, classifier_name, params['phenotypeclass'], num_classes)
-			htmloutput_name = self.html_nodual("forHTML")
-
-			weight_list = []
-
-		return htmloutput_name, classifier_info_list, weight_list
-		
-	def fullPredict(self, params, current_ws):
-		"""
-		args:
-		---params from predict_phenotype
-		---current_ws which is a narrative enviornment variable necessary to access the KBase workspace
-		does:
-		---first it sets up the Xs in dataframe (the columns are masterRole which are all the function rolls and the indexes are the Genome_IDs)
-			--- The Xs in this case is the testing data or unclassified data
-		---based on the user selected classifier makes predictions on the data with a column for the probability of the prediction being correct
-		return:
-		---an htmloutput_name which is the name of the html report that get created from makeHtmlReport
-		--- 
-		"""
-
-		ctx = self.ctx
-		token = ctx['token']
-
-		self.createHoldingDirs(False)
-
-		current_ws = params.get('workspace')
-		classifier_name = params.get('classifier_name')
-		target = params.get('phenotypeclass')
-
-		#getting user selected classifer from workspace and then "unpickling & unbase64ing" it into a usable classifier
-		classifier_object = self.ws_client.get_objects([{'workspace':current_ws, 'name':classifier_name}])
-
-		#base64str = str(classifier_object[0]['data']['classifier_data'])
-		# clf_shock_id = classifier_object[0]['data']['classifier_handle_ref']
-		# clf_shock_id  = str(current_ws + '/' + classifier_name + ';' + clf_shock_id)
-		# clf_shock_id = clf_shock_id.split(':')[-1]
-		clf_shock_id = classifier_object[0]['data']['classifier_handle_ref']
-		# clf_file_path = self._download_shock(clf_shock_id)
-		print(clf_shock_id)
-		clf_file_path = self._download_shock(handle_id=clf_shock_id)
-
-		print("Getting to here 1")
-		master_Role = classifier_object[0]['data']['attribute_data']
-		my_mapping = classifier_object[0]['data']['class_list_mapping']
-
-		#after_classifier = pickle.loads(codecs.decode(base64str.encode(), "base64"))
-		pickle_in = open(clf_file_path, "rb")
-		print("Getting here 1.5")
-		after_classifier = pickle.load(pickle_in)
-
-		print("Getting to here 2")
-		if params.get('list_name'):
-			#checks if empty string bool("") --> False
-			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
-			#listOfNames = self.intake_method(toEdit_all_classifications, for_predict = True)
-
-			print("this is toEdit_all_classifications")
-			print(toEdit_all_classifications)
-			
-			(missingGenomes, inKBASE, ref_list) = self.createGenomeClassifierTrainingSet(current_ws, params['Annotated'], just_DF = toEdit_all_classifications, for_predict = True)
-			#Will error out if inKBASE == 0
-			all_attributes = self.get_wholeClassification(inKBASE, current_ws, params['attribute'], refs = ref_list, master_Role = master_Role ,for_predict = True)
-		else:
-			file_path = self._download_shock(shock_id = params.get('shock_id'))
-			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
-			(missingGenomes, inKBASE, ref_list)  = self.createGenomeClassifierTrainingSet(current_ws,params['Annotated'], just_DF = pd.read_excel(file_path, dtype=str), for_predict = True)
-			#Will error out if inKBASE == 0
-			all_attributes = self.get_wholeClassification(inKBASE, current_ws, params['attribute'], refs = ref_list, master_Role = master_Role ,for_predict = True)
-
-		print("Getting to here 3")
-		# if params.get('list_name'):
-		# 	#checks if empty string bool("") --> False
-		# 	print ("taking this path rn")
-		# 	print(params)
-		# 	toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
-		# 	(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['Annotated'], just_DF = toEdit_all_classifications, for_predict = True)
-		# 	#self.newReferencetoGenome(current_ws, params['description'], params['training_set_out'], inKBASE, inKBASE_Classification)
-		# 	#self.workRAST(current_ws, just_DF = toEdit_all_classifications)
-		# 	#listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
-		# 	#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
-		# else:
-		# 	print("printing the params to see RAST")
-		# 	print(params)
-		# 	#file_path = self._download_shock(params.get('shock_id'))
-		# 	(missingGenomes, inKBASE, inKBASE_Classification) = self.createGenomeClassifierTrainingSet(current_ws,params['Annotated'], just_DF = pd.read_excel(file_path), for_predict = True)
-		# 	#self.newReferencetoGenome(current_ws, params['description'], params['training_set_out'], inKBASE, inKBASE_Classification)
-		# 	#self.workRAST(current_ws, just_DF = pd.read_excel(file_path))
-		# 	#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
-		# 	#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
-
-		#PREDICTIONS on new data that needs to be classified
-		after_classifier_result = after_classifier.predict(all_attributes)
-
-		after_classifier_result_forDF = []
-
-		print("Getting to here 4")
-		for current_result in after_classifier_result:
-			after_classifier_result_forDF.append(list(my_mapping.keys())[list(my_mapping.values()).index(current_result)])
-
-
-		#after_classifier_df = pd.DataFrame(after_classifier_result_forDF, index=all_attributes.index, columns=[target])
-		allProbs = after_classifier.predict_proba(all_attributes)
-		maxEZ = np.amax(allProbs, axis=1)
-
-		# after_classifier_df = pd.DataFrame.from_dict({'Genome Id': all_attributes.index,target: after_classifier_result_forDF})
-		# after_classifier_df = after_classifier_df[['Genome Id', target]]
-
-		#create a column for the probability of a prediction being accurate
-		# allProbs = after_classifier.predict_proba(all_attributes)
-		# maxEZ = np.amax(allProbs, axis=1)
-		# maxEZ_df = pd.DataFrame(maxEZ, index=all_attributes.index, columns=["Probability"])
-
-		print("Getting to here 5")
-		predict_table_pd = pd.DataFrame.from_dict({'Genome Id': all_attributes.index, target: after_classifier_result_forDF, "Probability": maxEZ})
-		#predict_table_pd = predict_table_pd.set_index('Genome Id')
-		predict_table_pd = predict_table_pd[['Genome Id', target, "Probability"]]
-
-		predictions_mapping = {}
-
-		for genome_name, phenotype, prediction_accuracy in zip(all_attributes.index, after_classifier_result_forDF, maxEZ):
-			genome_ref = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': genome_name }])[0]['refs'][0])
-			
-			innerStruct = {}
-
-			innerStruct['genome_name'] = genome_name
-			innerStruct['phenotype'] = phenotype
-			innerStruct['prediction_accuracy'] = prediction_accuracy
-
-			predictions_mapping[genome_ref] = innerStruct
-			del innerStruct
-
-		predict_table_pd.to_html(os.path.join(self.scratch, 'forSecHTML', 'html3folder', 'results.html'), index=False, table_id="results", classes =["table", "table-striped", "table-bordered"])
-
-		print("Getting to here 6")
-
-
-		#     typedef structure {
-		#         float prediction_accuracy;
-		#         string phenotype;
-		#         string genome_name;
-		#         string genome_ref;
-		#     } PredictedPhenotypeOut;
-
-		#    typedef structure {
-		#         mapping<string genome_id, PredictedPhenotypeOut> predictions;
-		#         string report_name;
-		#         string report_ref;
-		#    }ClassifierPredictionOutput;
-
-		#you can also save down table as text file or csv
-		"""
-		#txt
-		np.savetxt(r'/kb/module/work/tmp/np.txt', predict_table_pd.values, fmt='%d')
-
-		#csv
-		predict_table_pd.to_csv(r'/kb/module/work/tmp/pandas.txt', header=None, index=None, sep=' ', mode='a')
-		"""
-		self.html_report_3(missingGenomes, params['phenotypeclass'])
-		htmloutput_name = self.html_nodual("forSecHTML")
-
-		print("Getting to here 7")
-
-		return htmloutput_name, predictions_mapping
-		
-
-	def fullUpload(self, params, current_ws):
-
-		out_path = os.path.join(self.scratch, 'forZeroHTML')
-		os.makedirs(out_path)
-
-		if params.get('list_name'):
-			#checks if empty string bool("") --> False
-			print ("taking this path rn")
-			print(params)
-			toEdit_all_classifications = self.incaseList_Names(params.get('list_name'))
-			(missingGenomes, inKBASE, inKBASE_Classification, classifier_training_set_mapping) = self.createGenomeClassifierTrainingSet(current_ws,params['Annotated'], just_DF = toEdit_all_classifications)
-			self.newReferencetoGenome(current_ws, params['description'], params['training_set_out'], inKBASE, inKBASE_Classification)
-			#self.workRAST(current_ws, just_DF = toEdit_all_classifications)
-			#listOfNames, all_classifications = self.intake_method(toEdit_all_classifications)
-			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
-		else:
-			print("printing the params to see RAST")
-			print(params)
-			#file_path = self._download_shock(params.get('shock_id'))
-			(missingGenomes, inKBASE, inKBASE_Classification, classifier_training_set_mapping) = self.createGenomeClassifierTrainingSet(current_ws,params['Annotated'], just_DF = pd.read_excel(os.path.join(os.path.sep,"staging",file_path)))
-			self.newReferencetoGenome(current_ws, params['description'], params['training_set_out'], inKBASE, inKBASE_Classification)
-			#self.workRAST(current_ws, just_DF = pd.read_excel(file_path))
-			#listOfNames, all_classifications = self.intake_method(just_DF = pd.read_excel(file_path))
-			#all_attributes, master_Role = self.get_wholeClassification(listOfNames, current_ws)
-
-		self.html_report_0(missingGenomes, params['phenotypeclass'])
-		htmloutput_name = self.html_nodual("forZeroHTML")
-
-		# typedef structure {
-        # string phenotype;
-        # string genome_name;
-        # string genome_ref;
-        # int load_status;
-        # int RAST_annotation_status;
-    	# 	}	 ClassifierTrainingSetOut;
-		# mapping <string genome_id,ClassifierTrainingSetOut> classifier_training_set;
-		return htmloutput_name, classifier_training_set_mapping
-
-	def workRAST(self, current_ws, just_DF):
-
-		listintGNames = just_DF['Genome_ID']
-		
-		#vigorous string matching izip(self.list_name, self.list_statistics)
-		listGNames = list(map(str, listintGNames))
-		for string, index in zip(listGNames, range(len(listGNames))):
-			listGNames[index] = string.replace(" ", "")
-
-		print("we are printing just_DF")
-		print(listGNames)
-
-		for index in range(len(listGNames)):
-
-			params_RAST =	{
-			"workspace": current_ws,#"sagoyal:narrative_1536939130038",
-			"input_genome": listGNames[index],
-			"output_genome": listGNames[index]+".RAST",
-			"call_features_rRNA_SEED": 0,
-			"call_features_tRNA_trnascan": 0,
-			"call_selenoproteins": 0,
-			"call_pyrrolysoproteins": 0,
-			"call_features_repeat_region_SEED": 0,
-			"call_features_strep_suis_repeat": 0,
-			"call_features_strep_pneumo_repeat": 0,
-			"call_features_crispr": 0,
-			"call_features_CDS_glimmer3": 0,
-			"call_features_CDS_prodigal": 0,
-			"annotate_proteins_kmer_v2": 1,
-			"kmer_v1_parameters": 1,
-			"annotate_proteins_similarity": 1,
-			"retain_old_anno_for_hypotheticals": 0,
-			"resolve_overlapping_features": 0,
-			"call_features_prophage_phispy": 0
-			}
-
-			output = self.rast.annotate_genomes(params_RAST)
-
-		print(output)
-
-
-
-	def makeHtmlReport(self, htmloutput_name, current_ws, which_report, description, for_predict = False):
-		"""
-		args:
-		---htmloutput_name the name of the html file 'something.html'
-		---which_report whether from clf_Runner or pred_Runner
-		does:
-		---using shock, zips and uploads an html folder to kbase app that is then viewable through the reports window
-		return:
-		---report_output the html report itself as a ws object that is viewable after the Kbase app runs
-		--- 
-		"""
-
-		ctx = self.ctx
-		token = ctx['token']
-		uuid_string = str(uuid.uuid4())
-
-		if which_report == 'clf_Runner':
-			saved_html = 'forHTML'
-		
-		if which_report == 'pred_Runner':
-			saved_html = 'forSecHTML'
-
-		if which_report == 'upload_Runner':
-			saved_html = 'forZeroHTML'
-
-		output_directory = os.path.join(self.scratch, saved_html)
-		report_shock_id = self.dfu.file_to_shock({'file_path': output_directory,'pack': 'zip'})['shock_id']
-
-		htmloutput = {
-		'description' : description,
-		'name' : htmloutput_name,
-		'label' : 'Open New Tab',
-		'shock_id': report_shock_id
-		}
-
-		if not for_predict:
-			list_PickleFiles = os.listdir(os.path.join(self.scratch, 'forHTML', 'forDATA'))
-
-			output_file_links = []
-
-			for file in list_PickleFiles:
-				output_file_links.append({'path' : os.path.join(self.scratch, 'forHTML', 'forDATA', file),
-											'name' : file,
-											'label': 'label' + str(file),
-											'description': 'my_description'
-											})
-
-			"""output_zip_files.append({'path': os.path.join(read_file_path, file),
-																					 'name': file,
-																					 'label': label,
-																					 'description': desc})"""
-
-			report_params = {'message': '',
-				 'workspace_name': current_ws,#params.get('input_ws'),
-				 #'objects_created': objects_created,
-				 'file_links': output_file_links,
-				 'html_links': [htmloutput],
-				 'direct_html_link_index': 0,
-				 'html_window_height': 500,
-				 'report_object_name': 'kb_classifier_report_' + str(uuid.uuid4())
-				 }
-
-		else:
-			report_params = {'message': '',
-				 'workspace_name': current_ws,#params.get('input_ws'),
-				 #'objects_created': objects_created,
-				 #'file_links': output_file_links,
-				 'html_links': [htmloutput],
-				 'direct_html_link_index': 0,
-				 'html_window_height': 500,
-				 'report_object_name': 'kb_classifier_report_' + str(uuid.uuid4())
-				 }
-
-		kbase_report_client = KBaseReport(self.callback_url, token=token)
-		report_output = kbase_report_client.create_extended_report(report_params)
-
-		output = {'report_name': report_output['name'], 'report_ref': report_output['ref']}
-
-		print('I hope I am working now - this means that I am past the report generation')
-
-		print(output.get('report_name')) # kb_classifier_report_5920d1da-2a99-463b-94a5-6cb8721fca45
-		print(output.get('report_ref')) #19352/1/1
-
-		return report_output
-
-	##### Methods below are called only from inside this class ####
-
-	def editBuildArguments(self, params):
-
-		return_params = {
-		"trainingset_name": params["trainingset_name"],
-		"phenotypeclass": params["phenotypeclass"],
-		"classifier": params.get("classifier"),
-		"attribute": params["attribute"],
-		"save_ts": params["save_ts"],
-		"classifier_out": params["classifier_out"],
-		"description" : params["description"] #edit this so classifier object can add this
-		}
-
-		print(return_params)
-
-		if params.get("classifier") == "run_all":
-			params["k_nearest_neighbors"] = {
-			"n_neighbors": 5,
-			"weights": "uniform",
-			"algorithm": "auto",
-			"leaf_size": 30,
-			"p": 2,
-			"metric": "minkowski",
-			"metric_params": "",
-			"knn_n_jobs": 1
-			}
-			return_params['k_nearest_neighbors'] = params["k_nearest_neighbors"]
-
-			params["gaussian_nb"] = {
-			"priors": ""
-			}
-			return_params['gaussian_nb'] = params["gaussian_nb"]
-
-			params["logistic_regression"] = {
-			"penalty": "l2",
-			"dual": "False",
-			"lr_tolerance": 0.0001,
-			"lr_C": 1,
-			"fit_intercept": "True",
-			"intercept_scaling": 1,
-			"lr_class_weight": "",
-			"lr_random_state": 0,
-			"lr_solver": "newton-cg",
-			"lr_max_iter": 100,
-			"multi_class": "ovr",
-			"lr_verbose": 0,
-			"lr_warm_start": "False",
-			"lr_n_jobs": 1
-			}
-			return_params['logistic_regression'] = params["logistic_regression"]
-
-			params["decision_tree_classifier"] = {
-			"criterion": "gini",
-			"splitter": "best",
-			"max_depth": None,
-			"min_samples_split": 2,
-			"min_samples_leaf": 1,
-			"min_weight_fraction_leaf": 0,
-			"max_features": "",
-			"dt_random_state": 0,
-			"max_leaf_nodes": None,
-			"min_impurity_decrease": 0,
-			"dt_class_weight": "",
-			"presort": "False"
-			}
-			return_params['decision_tree_classifier'] = params["decision_tree_classifier"]
-
-			params["support_vector_machine"] = {
-			"svm_C": 1,
-			"kernel": "linear",
-			"degree": 3,
-			"gamma": "auto",
-			"coef0": 0,
-			"probability": "True",
-			"shrinking": "True",
-			"svm_tolerance": 0.001,
-			"cache_size": 200,
-			"svm_class_weight": "",
-			"svm_verbose": "False",
-			"svm_max_iter": -1,
-			"decision_function_shape": "ovr",
-			"svm_random_state": 0
-			}
-			return_params['support_vector_machine'] = params["support_vector_machine"]
-
-			params["neural_network"] = {
-			"hidden_layer_sizes": "(100,)",
-			"activation": "relu",
-			"mlp_solver": "adam",
-			"alpha": 0.0001,
-			"batch_size": "auto",
-			"learning_rate": "constant",
-			"learning_rate_init": 0.001,
-			"power_t": 0.05,
-			"mlp_max_iter": 200,
-			"shuffle": "True",
-			"mlp_random_state": 0,
-			"mlp_tolerance": 0.0001,
-			"mlp_verbose": "False",
-			"mlp_warm_start": "False",
-			"momentum": 0.9,
-			"nesterovs_momentum": "True",
-			"early_stopping": "False",
-			"validation_fraction": 0.1,
-			"beta_1": 0.9,
-			"beta_2": 0.999,
-			"epsilon": 1e-8
-			}
-			return_params['neural_network'] = params["neural_network"]
-
-		elif params.get("classifier") == "KNeighborsClassifier":
-			if params["k_nearest_neighbors"] == None:
-				params["k_nearest_neighbors"] = {
-				"n_neighbors": 5,
-				"weights": "uniform",
-				"algorithm": "auto",
-				"leaf_size": 30,
-				"p": 2,
-				"metric": "minkowski",
-				"metric_params": "",
-				"knn_n_jobs": 1
-				}
-			return_params['k_nearest_neighbors'] = params["k_nearest_neighbors"]
-
-		elif params.get("classifier") == "GaussianNB":
-			if params["gaussian_nb"] == None:
-				params["gaussian_nb"] = {
-				"priors": ""
-				}
-			return_params['gaussian_nb'] = params["gaussian_nb"]
-		elif params.get("classifier") == "LogisticRegression":
-			if params["logistic_regression"] == None:
-				params["logistic_regression"] = {
-				"penalty": "l2",
-				"dual": "False",
-				"lr_tolerance": 0.0001,
-				"lr_C": 1,
-				"fit_intercept": "True",
-				"intercept_scaling": 1,
-				"lr_class_weight": "",
-				"lr_random_state": 0,
-				"lr_solver": "newton-cg",
-				"lr_max_iter": 100,
-				"multi_class": "ovr",
-				"lr_verbose": 0,
-				"lr_warm_start": "False",
-				"lr_n_jobs": 1
-				}
-			return_params['logistic_regression'] = params["logistic_regression"]
-		elif params.get("classifier") == "DecisionTreeClassifier":
-			if params["decision_tree_classifier"] == None:
-				params["decision_tree_classifier"] = {
-				"criterion": "gini",
-				"splitter": "best",
-				"max_depth": None,
-				"min_samples_split": 2,
-				"min_samples_leaf": 1,
-				"min_weight_fraction_leaf": 0,
-				"max_features": "",
-				"dt_random_state": 0,
-				"max_leaf_nodes": None,
-				"min_impurity_decrease": 0,
-				"dt_class_weight": "",
-				"presort": "False"
-				}
-			return_params['decision_tree_classifier'] = params["decision_tree_classifier"]
-		elif params.get("classifier") == "SVM":
-			if params["support_vector_machine"] == None:
-				params["support_vector_machine"] = {
-				"svm_C": 1,
-				"kernel": "linear",
-				"degree": 3,
-				"gamma": "auto",
-				"coef0": 0,
-				"probability": "False",
-				"shrinking": "True",
-				"svm_tolerance": 0.001,
-				"cache_size": 200,
-				"svm_class_weight": "",
-				"svm_verbose": "False",
-				"svm_max_iter": -1,
-				"decision_function_shape": "ovr",
-				"svm_random_state": 0
-				}
-			return_params['support_vector_machine'] = params["support_vector_machine"]
-		elif params.get("classifier") == "NeuralNetwork":
-			if params["neural_network"] == None:
-				params["neural_network"] = {
-				"hidden_layer_sizes": "(100,)",
-				"activation": "relu",
-				"mlp_solver": "adam",
-				"alpha": 0.0001,
-				"batch_size": "auto",
-				"learning_rate": "constant",
-				"learning_rate_init": 0.001,
-				"power_t": 0.05,
-				"mlp_max_iter": 200,
-				"shuffle": "True",
-				"mlp_random_state": 0,
-				"mlp_tolerance": 0.0001,
-				"mlp_verbose": "False",
-				"mlp_warm_start": "False",
-				"momentum": 0.9,
-				"nesterovs_momentum": "True",
-				"early_stopping": "False",
-				"validation_fraction": 0.1,
-				"beta_1": 0.9,
-				"beta_2": 0.999,
-				"epsilon": 1e-8
-				}
-			return_params['neural_network'] = params["neural_network"]
-
-		if params["ensemble_model"] == None:
-			params["ensemble_model"] = {
-			"k_nearest_neighbors_box": 1,
-			"gaussian_nb_box": 1,
-			"logistic_regression_box": 1,
-			"decision_tree_classifier_box": 1,
-			"support_vector_machine_box": 1,
-			"neural_network_box": 1,
-			"voting": "soft",
-			"en_weights": "",
-			"en_n_jobs": 1,
-			"flatten_transform": ""
-			}
-		return_params['ensemble_model'] = params["ensemble_model"]
-
-		if params.get("classifier") == "KNeighborsClassifier":
-			return_params['classifierAdvanced_params'] = params["k_nearest_neighbors"]
-
-		if params.get("classifier") == "GaussianNB":
-			return_params['classifierAdvanced_params'] = params["gaussian_nb"]
-
-		if params.get("classifier") == "LogisticRegression":
-			return_params['classifierAdvanced_params'] = params["logistic_regression"]
-			
-		if params.get("classifier") == "DecisionTreeClassifier":
-			return_params['classifierAdvanced_params'] = params["decision_tree_classifier"]
-
-		if params.get("classifier") == "SVM":
-			return_params['classifierAdvanced_params'] = params["support_vector_machine"]
-
-		if params.get("classifier") == "NeuralNetwork":
-			return_params['classifierAdvanced_params'] = params["neural_network"]
-
-		return return_params
-
-	def incaseList_Names(self, list_name, for_predict = False):
-		"""		
-		args:
-		---list_name (same as classifierTest)
-		---for_predict is boolean indicator to see if this used by clf_Runner to pred_Runner
-		does:
-		---used when user inputs data/classifications in the textbox instead of excel file
-		---creates a panda dataframe after parsing the input
-		return:
-		---the panda dataframe
-		"""
-
-		list_name = list_name.replace("\"", "")
-		list_name = list_name.replace(", ", "\t")
-		#list_name = list_name.replace("-", "\t")
-
-		working_str = list_name.split("\\n")
-
-		#open(u'kb/module/work/tmp/trialoutput.txt', u'w')
-		tem_file = codecs.open(os.path.join(self.scratch, 'trialoutput.txt'), u"w", 'utf-8')
-		for index in working_str:
-			#print(index, file=tem_file)
-			#print index
-			#print >>tem_file, index
-			print(index, file=tem_file)
-
-		print ("before closing")
-
-		tem_file.close()
-
-		if not for_predict:
-			print ("I'm inside the if not for_predict")
-			my_workPD = pd.read_csv(os.path.join(self.scratch, 'trialoutput.txt'), dtype=str, delimiter="\s+")
-			#print my_workPD
-		else: 
-			my_workPD = pd.read_csv(os.path.join(self.scratch, 'trialoutput.txt'),dtype=str)
-
-		os.remove(os.path.join(self.scratch, 'trialoutput.txt'))
-
-		return my_workPD
-
-
-	def createGenomeClassifierTrainingSet(self, current_ws, Annotated, just_DF, for_predict = False):
-		"""
-		args:
-		---current_ws is same as before
-		---trainingset_object_Name is the training set defined/input by the user
-		---just_DF is a dataframe that is given by the user in the form of an excel file or pasted in a text box, however converted in a data frame
-		does:
-		---takes the dataframe and pulls the Genome_ID and Classification and creates a trainingset_object (list of GenomeClass which holds Genome_ID and Classification
-		return:
-		---N/A just creates a trainingset_object in the workspace
-		"""
-		ctx = self.ctx
-
-		print("this is just_DF")
-		print(just_DF)
-
-		listintGNames = just_DF['Genome_ID']
-
-		#vigorous string matching izip(self.list_name, self.list_statistics)
-		listGNames = list(map(str, listintGNames))
-		for string, index in zip(listGNames, range(len(listGNames))):
-			listGNames[index] = string.replace(" ", "")
-
-		
-		inKBASE_Classification =[]
-
-		list_allGenomesinWS = []
-
-		missingGenomes = []
-
-		back = self.ws_client.list_objects({'workspaces':[current_ws],'type':'KBaseGenomes.Genome'})
-
-		#print(back)
-
-		for item in back:
-			list_allGenomesinWS.append(item[1])
-
-		#print(list_allGenomesinWS)
-
-		all_genome_ID = []
-		loaded_Narrative = []
-		all_Genome_Classification = []
-		add_trainingSet = []
-
-		inKBASE = []
-
-		if(for_predict):
-			ref_names = []
-			for index in range(len(listGNames)):
-				try:
-					if(Annotated==1):
-						position = list_allGenomesinWS.index(listGNames[index])
-						ref_names.append(str(self.ws_client.get_objects([{'workspace':current_ws, 'name': listGNames[index] }])[0]['refs'][0]))
-						inKBASE.append(listGNames[index])
-
-					else:
-						#do some rast annotation
-						# position = list_allGenomesinWS.index(listGNames[index])
-						# inKBASE.append(listGNames[index])
-
-						for index in range(len(listGNames)):
-							try:
-								position = list_allGenomesinWS.index(listGNames[index])
-
-								print('printing positions')
-								print(position)
-
-								params_RAST =	{
-								"workspace": current_ws,#"sagoyal:narrative_1536939130038",
-								"input_genome": listGNames[index],
-								"output_genome": listGNames[index]+".RAST",
-								"call_features_rRNA_SEED": 0,
-								"call_features_tRNA_trnascan": 0,
-								"call_selenoproteins": 0,
-								"call_pyrrolysoproteins": 0,
-								"call_features_repeat_region_SEED": 0,
-								"call_features_strep_suis_repeat": 0,
-								"call_features_strep_pneumo_repeat": 0,
-								"call_features_crispr": 0,
-								"call_features_CDS_glimmer3": 0,
-								"call_features_CDS_prodigal": 0,
-								"annotate_proteins_kmer_v2": 1,
-								"kmer_v1_parameters": 1,
-								"annotate_proteins_similarity": 1,
-								"retain_old_anno_for_hypotheticals": 0,
-								"resolve_overlapping_features": 0,
-								"call_features_prophage_phispy": 0
-								}
-
-								output = self.rast.annotate_genome(params_RAST)
-
-								inKBASE.append(listGNames[index]+".RAST")
-								ref_names.append(str(self.ws_client.get_objects([{'workspace':current_ws, 'name': listGNames[index]+".RAST" }])[0]['refs'][0]))
-
-							except:
-								print (listGNames[index])
-								print ('The above Genome does not exist in workspace')
-								missingGenomes.append(listGNames[index])
-								ref_names.append(str(self.ws_client.get_objects([{'workspace':current_ws, 'name': listGNames[index] }])[0]['refs'][0]))
-
-				except:
-					print (listGNames[index])
-					print ('The above Genome does not exist in workspace')
-					missingGenomes.append(listGNames[index])
-					ref_names.append(str(self.ws_client.get_objects([{'workspace':current_ws, 'name': listGNames[index] }])[0]['refs'][0]))
-
-			print(inKBASE)
-			print(missingGenomes)
-
-			return (missingGenomes, inKBASE, ref_names)
-
-		listClassification = just_DF['Classification']
-
-		classifier_training_set_mapping = {}
-
-		#self.ws_client.get_objects([{'workspace':current_ws, 'name':'357804.5'}])[0]['refs'][0]
-
-		for index in range(len(listGNames)):
-
-			eachGenomeDict = {}
-
-			try:
-				position = list_allGenomesinWS.index(listGNames[index])
-
-				print('printing positions')
-				print(position)
-
-				print("This is my Annotated value")
-				print(Annotated)
-
-				if(Annotated == 0):
-
-					params_RAST =	{
-					"workspace": current_ws,#"sagoyal:narrative_1536939130038",
-					"input_genome": listGNames[index],
-					"output_genome": listGNames[index]+".RAST",
-					"call_features_rRNA_SEED": 0,
-					"call_features_tRNA_trnascan": 0,
-					"call_selenoproteins": 0,
-					"call_pyrrolysoproteins": 0,
-					"call_features_repeat_region_SEED": 0,
-					"call_features_strep_suis_repeat": 0,
-					"call_features_strep_pneumo_repeat": 0,
-					"call_features_crispr": 0,
-					"call_features_CDS_glimmer3": 0,
-					"call_features_CDS_prodigal": 0,
-					"annotate_proteins_kmer_v2": 1,
-					"kmer_v1_parameters": 1,
-					"annotate_proteins_similarity": 1,
-					"retain_old_anno_for_hypotheticals": 0,
-					"resolve_overlapping_features": 0,
-					"call_features_prophage_phispy": 0
-					}
-
-					output = self.rast.annotate_genome(params_RAST)
-
-					inKBASE.append(listGNames[index]+".RAST")
-					inKBASE_Classification.append(listClassification[index])
-
-					all_genome_ID.append(listGNames[index]+".RAST")
-					loaded_Narrative.append(["Yes"])
-					all_Genome_Classification.append(listClassification[index])
-					add_trainingSet.append(["Yes"])
-
-					eachGenomeDict['genome_name'] = listGNames[index]+".RAST"
-					eachGenomeDict['genome_ref'] = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': eachGenomeDict['genome_name'] }])[0]['refs'][0])
-					eachGenomeDict['phenotype'] = listClassification[index]
-					eachGenomeDict['load_status'] = 1
-					eachGenomeDict['RAST_annotation_status'] = 1
-
+				return KNeighborsClassifier(n_neighbors = params["n_neighbors"],
+											weights = params["weights"],
+											algorithm = params["algorithm"],
+											leaf_size = params["leaf_size"],
+											p = params["p"],
+											metric = params["metric"]
+											)
+
+		elif classifier_type == "gaussian_nb":
+			if(params == None):
+				return GaussianNB()
+			else:
+				if(params["priors"] == "None"):
+					return GaussianNB(priors=None)
 				else:
-					# you will end up with case where the genomes will be RAST annotated but not have .RAST attached to it
-
-					inKBASE.append(listGNames[index])
-					inKBASE_Classification.append(listClassification[index])
-
-					all_genome_ID.append(listGNames[index])
-					loaded_Narrative.append(["Yes"])
-					all_Genome_Classification.append(listClassification[index])
-					add_trainingSet.append(["Yes"])
-
-					eachGenomeDict['genome_name'] = listGNames[index]
-					eachGenomeDict['genome_ref'] = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': eachGenomeDict['genome_name'] }])[0]['refs'][0])
-					eachGenomeDict['phenotype'] = listClassification[index]
-					eachGenomeDict['load_status'] = 1
-					eachGenomeDict['RAST_annotation_status'] = 1
-
-			except:
-				print (listGNames[index])
-				print ('The above Genome does not exist in workspace')
-				missingGenomes.append(listGNames[index])
-
-				all_genome_ID.append(listGNames[index])
-				loaded_Narrative.append(["No"])
-				all_Genome_Classification.append(listClassification[index])
-				add_trainingSet.append(["No"])
-
-				eachGenomeDict['genome_name'] = listGNames[index]
-				eachGenomeDict['genome_ref'] = "None"
-				eachGenomeDict['phenotype'] = listClassification[index]
-				eachGenomeDict['load_status'] = 0
-				eachGenomeDict['RAST_annotation_status'] = 0
-
-			classifier_training_set_mapping[eachGenomeDict['genome_ref']] = eachGenomeDict
-			del eachGenomeDict
-
-		four_columns = pd.DataFrame.from_dict({'Genome Id': all_genome_ID, 'Loaded in the Narrative': loaded_Narrative, 'Classification' : all_Genome_Classification, 'Added to Training Set' : add_trainingSet})
-		four_columns = four_columns[['Genome Id', 'Loaded in the Narrative', 'Classification', 'Added to Training Set']]
-
-		old_width = pd.get_option('display.max_colwidth')
-		pd.set_option('display.max_colwidth', -1)
-		four_columns.to_html(os.path.join(self.scratch, 'forZeroHTML', 'four_columns.html'), index=False, justify='center', table_id = "four_columns", classes =["table", "table-striped", "table-bordered"])
-		pd.set_option('display.max_colwidth', old_width)
-
-
-		print("done")
-
-		# typedef structure {
-        # string phenotype;
-        # string genome_name;
-        # string genome_ref;
-        # int load_status;
-        # int RAST_annotation_status;
-    	# 	}	 ClassifierTrainingSetOut;
-		# mapping <string genome_id,ClassifierTrainingSetOut> classifier_training_set;
-
-		return (missingGenomes, inKBASE, inKBASE_Classification, classifier_training_set_mapping)
-
-	def newReferencetoGenome(self, current_ws, description, trainingset_object_Name, inKBASE, inKBASE_Classification):
-
-		ctx = self.ctx
-
-		list_GenomeClass = []
-		list_allGenomesinWSupdated = []
-
-		newBack = self.ws_client.list_objects({'workspaces':[current_ws],'type':'KBaseGenomes.Genome'})
-
-		for item in newBack:
-			list_allGenomesinWSupdated.append(item[1])
-
-		for index in range(len(inKBASE)):
-			position = list_allGenomesinWSupdated.index(inKBASE[index])
-
-			list_GenomeClass.append({'genome_ref': str(newBack[position][6]) + '/' + str(newBack[position][0]) + '/' + str(newBack[position][4]),#self.ws_client.get_objects([{'workspace':current_ws, 'name':listGNames[index]}])[0]['path'][0],
-										'genome_classification': inKBASE_Classification[index],
-										'genome_name': inKBASE[index],
-										'genome_id': 'my_genome_id',
-										'references': ['some','list'],
-										'evidence_types': ['another','some','list'],
-										})
-
-
-		trainingset_object = {
-			'name': trainingset_object_Name,#'my_name',
-			'description': description,
-			'classification_type': 'my_classification_type',
-			'number_of_genomes': len(inKBASE),
-			'number_of_classes': len(list(set(inKBASE_Classification))),
-			'classes': list(set(inKBASE_Classification)),
-			'classification_data': list_GenomeClass
-			}
-
-		obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
-													  'objects':[{
-													  'type': 'KBaseClassifier.GenomeClassifierTrainingSet',
-													  'data': trainingset_object,
-													  'name': trainingset_object_Name,  
-													  'provenance': ctx.get('provenance')  # ctx should be passed into this func.
-													  }]
-													})[0]
-
-
-	def unloadGenomeClassifierTrainingSet(self, current_ws, trainingset_name):
-		"""
-		args:
-		---current_ws is same as before
-		---trainingset_name is the training set selected by the user
-		does:
-		---from the training set object it extracts the Genome_ID and Classification and creates a dataframe of them
-		return:
-		---the dataframe
-		"""
-
-		input_trainingset_object = self.ws_client.get_objects([{'workspace':current_ws, 'name':trainingset_name}])
-		trainingset_object = input_trainingset_object[0]['data']['classification_data']
-		training_set_ref = input_trainingset_object[0]['path'][0]
-
-		iterations = len(trainingset_object)
-
-		listGNames = [] #just_DF['Genome_ID']
-		listrefs = []
-		listClassification = [] #just_DF['Classification']
-
-		for example in range(iterations):
-			print(trainingset_object[example]['genome_name'])
-			listGNames.append(trainingset_object[example]['genome_name'])
-			listrefs.append(trainingset_object[example]['genome_ref'])
-			listClassification.append(trainingset_object[example]['genome_classification'])
-
-		print(listGNames)
-		print(listClassification)
-
-		detailsDF = {'Genome_ID': listGNames,
-					'Classification': listClassification
-					}
-
-		numClasses = len(set(listClassification))
-
-		remadeDF = pd.DataFrame.from_dict(detailsDF)
-
-		return remadeDF, training_set_ref, numClasses, listrefs
-
-	def intake_method(self, just_DF, for_predict = False):
-		"""
-		args:
-		---just_DF is pandas dataframe made from incaseList_Names or from shock--> converted to pd
-		---for_predict is boolean indicator to see if this used by clf_Runner to pred_Runner
-		does:
-		---with the excel file which has 2 columns: Genome_ID (same as my_input) and Classification
-			---it creates another dataframe with only classifications and rows as "index" which are genome names (my_input)
-		return:
-		---my_all_classifications the dataframe with all_classifications (essentially the Y variable for ML)
-		---my_all_classifications.index the index or 'rows' as list (listOfNames) of my_all_classifications
-		"""
-
-		my_all_classifications = just_DF
-
-		#print my_all_classifications
-		print (my_all_classifications.columns.values.tolist())
-
-		my_all_classifications.set_index('Genome_ID', inplace=True)
-		#my_all_classifications.reset_index()
-		#my_all_classifications.set_index(list(my_all_classifications.index),inplace=True)
-
-		print ("Below is my_all_classifications")
-
-		#print my_all_classifications
-
-		if not for_predict:
-			return list(my_all_classifications.index), my_all_classifications
-		else:
-			return list(my_all_classifications.index)
-
-
-	def get_wholeClassification(self, listOfNames, current_ws, search_attribute, refs = None, master_Role = None, for_predict = False):
-		"""
-		args:
-		---listOfNames is a list from the dataframe.index containing the 'rows' which is names/Genome_ID
-		---current_ws (same as before)
-		---master_Role is given if being called from predict_phenotype method otherwise not
-		---for_predict is boolean indicator to see if this used by clf_Runner to pred_Runner
-		does:
-		---creates a dataframe for the all the genomes given
-			---Rows are "index" which is the name of the genome(same as my_input)
-			---Colmuns are "master Role" which is a list of the all functional roles
-		return:
-		---returns the dataframe which contains all_attributes (this is the X matrix for ML)
-		"""
-
-		print (current_ws)
-
-		if not for_predict:
-			master_Role = [] #make this master_Role
-
-
-		# functionList = self.ws_client.get_objects([{'workspace':current_ws, 'name':"679190.3.RAST"}])[0]['data']['non_coding_features']
-
-		# print("here is functionList")
-		# print( listOfNames)
-
-		name_and_roles = {}
-
-		search = ""
-		if (search_attribute == "functional_roles"):
-			search = 'function'
-		elif (search_attribute == "prot_seq"):
-			search = 'protein_translation'
-
-
-		# for current_gName in listOfNames:
-
-
-		print("here are refs")
-		print(refs)
-		
-		for current_ref, current_gName in zip(refs, listOfNames):
-			listOfFunctionalRoles = set()
-			functionList = None
-			# try:
-			# 	functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['non_coding_features']
-			# 	print("Didn't fail 1")
-			# except:
-			# 	try:
-			# 		functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['features']
-			# 		print("Didn't fail 2")
-				
-			# 	except:
-			# 		functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['cdss']
-			# 		print("Didn't fail 3")
-
-			functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['non_coding_features']
-			if(len(functionList) == 0):
-				functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['features']
-			if(len(functionList) == 0):
-				functionList = self.ws_client.get_objects2({'objects' : [{'ref' : current_ref}]})['data'][0]['data']['cdss']
-
-			if(len(functionList) == 0):
-				print(current_gName)
-				print("FunctionList should not be 0 for any gnome")
-				os._exit(0)
-
-			for function in range(len (functionList)):
-				# print(current_gName)
-				# print(current_ref)
-				try:
-					search = 'function'
-					if str(functionList[function][search]).lower() != 'hypothetical protein':
-						#print(str(functionList[function]['functions'][0]).find(" @ " ))
-						#if (str(functionList[function]['functions'][0]).find(" @ " ) > 0):
-						if " @ " in str(functionList[function][search]):
-							listOfFunctionalRoles.add(str(functionList[function][search]).split(" @ "))
-							print("I went inside the if statement #2")
-						elif " / " in str(functionList[function][search]):
-							listOfFunctionalRoles.add(str(functionList[function][search]).split(" / "))
-						elif "; " in str(functionList[function][search]):
-							listOfFunctionalRoles.add(str(functionList[function][search]).split("; "))
-						else:
-							listOfFunctionalRoles.add(str(functionList[function][search]))
-				except:
-					search = 'functions'
-					try:
-						if str(functionList[function][search][0]).lower() != 'hypothetical protein':
-							#print(str(functionList[function]['functions'][0]).find(" @ " ))
-							#if (str(functionList[function]['functions'][0]).find(" @ " ) > 0):
-							if " @ " in str(functionList[function][search]):
-								listOfFunctionalRoles.add(str(functionList[function][search]).split(" @ "))
-								print("I went inside the if statement #2")
-							elif " / " in str(functionList[function][search]):
-								listOfFunctionalRoles.add(str(functionList[function][search]).split(" / "))
-							elif "; " in str(functionList[function][search]):
-								listOfFunctionalRoles.add(str(functionList[function][search]).split("; "))
-							else:
-								listOfFunctionalRoles.add(str(functionList[function][search]))
-					except:
-						#apparently some function list just don't have functions...
-						pass
-
-			name_and_roles[current_gName] = listOfFunctionalRoles
-
-			#print("I have arrived inside the desired for loop!!")
-			#print(len(listOfFunctionalRoles))
-			#print(listOfFunctionalRoles)
-			#print(current_gName)
-
-			# os._exit(0)
-
-
-		if not for_predict:
-			#master_pre_Role = list(itertools.chain(*name_and_roles.values()))
-			#master_Role = list(set(master_pre_Role))
-			master_Role = list(set(itertools.chain(*name_and_roles.values())))
-		
-
-		print("this is my master_Role")
-		# print(master_Role)
-
-		#In case you want to save functional roles (master_Role) and the dictionary containing {Genome_ID: [Functional Roles]}
-		"""
-		with open(os.path.join(self.scratch, "KBASEfunctionalRoles.txt"), "w") as f:
-			f.write(unicode(str(master_Role)))
-
-		import json
-
-		my_json = json.dumps(name_and_roles)
-		with open(os.path.join(self.scratch,"KBASEname_and_roles.json"),"w") as f:
-			f.write(unicode(my_json))
-		"""
-		
-		data_dict = {}
-
-		for current_gName in listOfNames:
-			arrayofONEZERO = []
-
-			current_Roles = name_and_roles[current_gName]
-
-			# for individual_role in master_Role:
-			# 	if individual_role in current_Roles:
-			# 		arrayofONEZERO.append(1)
-			# 	else:
-			# 		arrayofONEZERO.append(0)
-			arrayofONEZERO = [1 if individual_role in current_Roles else 0 for individual_role in master_Role]
-
-			data_dict[current_gName] = arrayofONEZERO
-
-		my_all_attributes = pd.DataFrame.from_dict(data_dict, orient='index', columns = master_Role)
-
-		#pickle_out = open(os.path.join(self.scratch,"fromKBASE_Phylum_attributes.pickle"), "wb")
-		#pickle.dump(my_all_attributes, pickle_out)
-
-		#pickle_out = open(os.path.join(self.scratch,"fromKBASE_Phylum_MR.pickle"), "wb")
-		#pickle.dump(master_Role, pickle_out)
-
-		print("I'm done creating the all_attributes data frame")
-
-		if not for_predict:
-			return my_all_attributes, master_Role
-		else:
-			return my_all_attributes
-		
-
-	def createHoldingDirs(self, clf = True):
-		"""
-		does:
-		---creates the directories that hold all of the html files, figures, and .pickle files
-		"""
-
-		if clf:
-			dirs_names = ['pics', 'dotFolder', 'forHTML', 'forHTML/html1folder', 'forHTML/html2folder', 'forHTML/html4folder',  'forHTML/forDATA']
-		else:	#pred
-			dirs_names = ['forSecHTML', 'forSecHTML/html3folder']
-
-		for name in dirs_names:
-			out_path = os.path.join(self.scratch, name)
-			os.makedirs(out_path)
-
-	def whichClassifier(self, name):
-		"""
-		args:
-		---name which is a string that the user will pass in as to which classifier (sklearn) classifier they want
-		does:
-		---matches string with sklearn classifier
-		return:
-		---sklearn classifier
-		"""
-
-		if name == u"KNeighborsClassifier":
-			return KNeighborsClassifier()
-		elif name == u"GaussianNB":
-			return GaussianNB()
-		elif name == u"LogisticRegression":
-			return LogisticRegression(random_state=0)
-		elif name == u"DecisionTreeClassifier":
-			return DecisionTreeClassifier(random_state=0)
-		elif name == u"SVM":
-			return svm.SVC(kernel = "linear",random_state=0)
-		elif name == u"NeuralNetwork":
-			return MLPClassifier(random_state=0)
-		else:
-			return u"ERROR THIS SHOULD NOT HAVE REACHED HERE"
-
-	def whichClassifierAdvanced(self, name, clfA_params, multi_call = False):
-		"""
-		args:
-		---name which is a string that the user will pass in as to which classifier (sklearn) classifier they want
-		does:
-		---matches string with sklearn classifier
-		return:
-		---sklearn classifier
-		"""
-
-		if name == u"KNeighborsClassifier":
-			print("here calling clfA_params")
-			print(type(clfA_params))
-			clfA_params = self.fixKNN(clfA_params, multi_call)
-			return KNeighborsClassifier(n_neighbors=clfA_params["n_neighbors"], weights=clfA_params["weights"], algorithm=clfA_params["algorithm"], leaf_size=clfA_params["leaf_size"], p=2, metric=clfA_params["metric"], metric_params=clfA_params["metric_params"], n_jobs=clfA_params["knn_n_jobs"])
-		
-		elif name == u"GaussianNB":
-			clfA_params = self.fixGNB(clfA_params, multi_call)
-			return GaussianNB(priors=clfA_params["priors"])
-		
-		elif name == u"LogisticRegression":
-			clfA_params = self.fixLR(clfA_params, multi_call)
-			return LogisticRegression(penalty=clfA_params["penalty"], dual=clfA_params["dual"], tol=clfA_params["lr_tolerance"], C=clfA_params["lr_C"], fit_intercept=clfA_params["fit_intercept"], intercept_scaling=clfA_params["intercept_scaling"], class_weight=clfA_params["lr_class_weight"], random_state=clfA_params["lr_random_state"], solver=clfA_params["lr_solver"], max_iter=clfA_params["lr_max_iter"], multi_class=clfA_params["multi_class"], verbose=clfA_params["lr_verbose"], warm_start=clfA_params["lr_warm_start"], n_jobs=clfA_params["lr_n_jobs"])
-		
-		elif name == u"DecisionTreeClassifier":
-			clfA_params = self.fixDTC(clfA_params, multi_call)
-			return DecisionTreeClassifier(criterion=clfA_params["criterion"], splitter=clfA_params["splitter"], max_depth=clfA_params["max_depth"], min_samples_split=clfA_params["min_samples_split"], min_samples_leaf=clfA_params["min_samples_leaf"], min_weight_fraction_leaf=clfA_params["min_weight_fraction_leaf"], max_features=clfA_params["max_features"], random_state=clfA_params["dt_random_state"], max_leaf_nodes=clfA_params["max_leaf_nodes"], min_impurity_decrease=clfA_params["min_impurity_decrease"], class_weight= clfA_params["dt_class_weight"], presort=clfA_params["presort"])
-		
-		elif name == u"SVM":
-			clfA_params = self.fixSVM(clfA_params, multi_call)
-			return svm.SVC(C=clfA_params["svm_C"], kernel=clfA_params["kernel"], degree=clfA_params["degree"], gamma=clfA_params["gamma"], coef0=clfA_params["coef0"], shrinking=clfA_params["shrinking"], probability=clfA_params["probability"], tol=clfA_params["svm_tolerance"], cache_size=clfA_params["cache_size"], class_weight=clfA_params["svm_class_weight"], verbose=clfA_params["svm_verbose"], max_iter=clfA_params["svm_max_iter"], decision_function_shape=clfA_params["decision_function_shape"], random_state=clfA_params["svm_random_state"])
-		
-		elif name == u"NeuralNetwork":
-			clfA_params = self.fixNN(clfA_params, multi_call)
-			return MLPClassifier(hidden_layer_sizes=clfA_params["hidden_layer_sizes"], activation=clfA_params["activation"], solver=clfA_params["mlp_solver"], alpha=clfA_params["alpha"], batch_size=clfA_params["batch_size"], learning_rate=clfA_params["learning_rate"], learning_rate_init=clfA_params["learning_rate_init"], power_t=clfA_params["power_t"], max_iter=clfA_params["mlp_max_iter"], shuffle=clfA_params["shuffle"], random_state=clfA_params["mlp_random_state"], tol=clfA_params["mlp_tolerance"], verbose=clfA_params["mlp_verbose"], warm_start=clfA_params["mlp_warm_start"], momentum=clfA_params["momentum"], nesterovs_momentum=clfA_params["nesterovs_momentum"], early_stopping=clfA_params["early_stopping"], validation_fraction=clfA_params["validation_fraction"], beta_1=clfA_params["beta_1"], beta_2=clfA_params["beta_2"], epsilon=clfA_params["epsilon"])
-		
-		else:
-			return u"ERROR THIS SHOULD NOT HAVE REACHED HERE"
-
-	def ensembleCreation(self, ensemble_params, params):
-
-		my_estimators = []
-
-		estimators_inHTML = ""
-
-		if ensemble_params["k_nearest_neighbors_box"] == 1:
-			my_estimators.extend([("knn",self.whichClassifierAdvanced("KNeighborsClassifier", params["k_nearest_neighbors"], multi_call = True))])
-			estimators_inHTML += "K Nearest Neighbors Classifier, "
-		if ensemble_params["gaussian_nb_box"] == 1:
-			my_estimators.extend([("gnb",self.whichClassifierAdvanced("GaussianNB", params["gaussian_nb"], multi_call = True))])
-			estimators_inHTML += "Gaussian Naive Bayes Classifier, "
-		if ensemble_params["logistic_regression_box"] == 1:
-			my_estimators.extend([("lr",self.whichClassifierAdvanced("LogisticRegression", params["logistic_regression"],multi_call = True))])
-			estimators_inHTML += "Logistic Regression Classifier, "
-		if ensemble_params["decision_tree_classifier_box"] == 1:
-			my_estimators.extend([("dtc",self.whichClassifierAdvanced("DecisionTreeClassifier", params["decision_tree_classifier"], multi_call = True))])
-			estimators_inHTML += "Decision Tree Classifier, "
-		if ensemble_params["support_vector_machine_box"] == 1:
-			my_estimators.extend([("svm",self.whichClassifierAdvanced("SVM", params["support_vector_machine"], multi_call = True))])
-			estimators_inHTML += "Support Vector Machine, "
-		if ensemble_params["neural_network_box"] == 1:
-			my_estimators.extend([("nn",self.whichClassifierAdvanced("NeuralNetwork", params["neural_network"], multi_call = True))])
-			estimators_inHTML += "Neural Network"
-
-		ensemble_params = self.fixEnsemble(ensemble_params)
-
-		print("Here are my estimators")
-		#print(my_estimators)
-
-		print("Here are my ensemble_params")
-		#print(ensemble_params)
-
-		if estimators_inHTML == "":
-			return "No_Third", ""
-		else:
-			return VotingClassifier(estimators=my_estimators, voting=ensemble_params["voting"], n_jobs=ensemble_params["en_n_jobs"], flatten_transform=ensemble_params["flatten_transform"]), estimators_inHTML
-
-	def fixKNN(self, clfA_params, round_best):
-
-		if not round_best:
-			#convert string to dictionary
-			if clfA_params["metric_params"] == "":
-				clfA_params["metric_params"] = None
+					return GaussianNB(	priors=params["prior"]
+										)
+
+		elif classifier_type == "logistic_regression":
+			if(params == None):
+				return LogisticRegression(random_state=0)
 			else:
-				clfA_params["metric_params"] = ast.literal_eval(clfA_params["metric_params"])
+				return LogisticRegression(	penalty = params["penalty"],
+											dual = self.getBool(params["dual"]),
+											tol = params["lr_tolerance"],
+											C = params["lr_C"],
+											fit_intercept = self.getBool(params["fit_intercept"]),
+											intercept_scaling = params["intercept_scaling"],
+											solver = params["lr_solver"],
+											max_iter = params["lr_max_iter"],
+											multi_class = params["multi_class"]
+											)
 
-			return clfA_params
-
-		else:
-			return clfA_params
-
-	def fixGNB(self, clfA_params, round_best):
-
-		if not round_best:
-			#convert string to list
-			if clfA_params["priors"] == "":
-				clfA_params["priors"] = None
+		elif classifier_type == "decision_tree_classifier":
+			if(params == None):
+				return DecisionTreeClassifier(random_state=0)
 			else:
-				clfA_params["priors"] = ast.literal_eval(clfA_params["priors"])
 
-			return clfA_params
+				return DecisionTreeClassifier(	criterion = params["criterion"],
+												splitter = params["splitter"],
+												max_depth = params["max_depth"],
+												min_samples_split = params["min_samples_split"],
+												min_samples_leaf = params["min_samples_leaf"],
+												min_weight_fraction_leaf = params["min_weight_fraction_leaf"],
+												max_leaf_nodes = params["max_leaf_nodes"],
+												min_impurity_decrease = params["min_impurity_decrease"]
+												)
 
-		else:
-			return clfA_params
-
-	def fixLR(self, clfA_params, round_best):
-
-		if not round_best:
-			clfA_params["dual"] = self.str_to_bool(clfA_params["dual"])
-			clfA_params["fit_intercept"] = self.str_to_bool(clfA_params["fit_intercept"])
-
-			if clfA_params["lr_class_weight"] == "":
-				clfA_params["lr_class_weight"] = None
-			elif clfA_params["lr_class_weight"] == "balanced":
-				pass
+		elif classifier_type == "support_vector_machine":
+			if(params == None):
+				return svm.SVC(kernel = "linear",random_state=0)
 			else:
-				clfA_params["lr_class_weight"] = ast.literal_eval(clfA_params["lr_class_weight"])
+				return svm.SVC(	C = params["svm_C"],
+								kernel = params["kernel"],
+								degree = params["degree"],
+								gamma = params["gamma"],
+								coef0 = params["coef0"],
+								probability = self.getBool(params["probability"]),
+								shrinking = self.getBool(params["shrinking"]),
+								tol = params["svm_tolerance"],
+								cache_size = params["cache_size"],
+								max_iter = params["svm_max_iter"],
+								decision_function_shape = params["decision_function_shape"]
+								)
 
-			clfA_params["lr_warm_start"] = self.str_to_bool(clfA_params["lr_warm_start"])
-
-			return clfA_params
-
-		else:
-			return clfA_params
-
-	def fixDTC(self, clfA_params, round_best):
-
-		if not round_best:
-			# check if int, float, or None
-			clfA_params["presort"] = self.str_to_bool(clfA_params["presort"])
-			if clfA_params["dt_class_weight"] == "":
-				clfA_params["dt_class_weight"] = None
-			elif clfA_params["dt_class_weight"] == "balanced":
-				pass
+		elif classifier_type == "neural_network":
+			if(params == None):
+				return MLPClassifier(random_state=0)
 			else:
-				clfA_params["dt_class_weight"] = ast.literal_eval(clfA_params["dt_class_weight"])
+				return MLPClassifier(	hidden_layer_sizes = (int(params["hidden_layer_sizes"]),),
+										activation = params["activation"],
+										solver = params["mlp_solver"],
+										alpha = params["alpha"],
+										batch_size = params["batch_size"],
+										learning_rate = params["learning_rate"],
+										learning_rate_init = params["learning_rate_init"],
+										power_t = params["power_t"],
+										max_iter = params["mlp_max_iter"],
+										shuffle = self.getBool(params["shuffle"]),
+										tol = params["mlp_tolerance"],
+										momentum = params["momentum"],
+										nesterovs_momentum = self.getBool(params["nesterovs_momentum"]),
+										early_stopping = self.getBool(params["early_stopping"]),
+										validation_fraction = params["validation_fraction"],
+										beta_1 = params["beta_1"],
+										beta_2 = params["beta_2"],
+										epsilon = params["epsilon"]
+										)
 
-
-			if clfA_params["max_features"] == "":
-				clfA_params["max_features"] = None
-			else:
-				pass
-
-			try:
-				int(clfA_params["max_features"])
-				clfA_params["max_features"] == int(clfA_params["max_features"])
-			except:
-				pass
-
-			try:
-				float(clfA_params["max_features"])
-				clfA_params["max_features"] == float(clfA_params["max_features"])
-			except:
-				pass
-
-			print ("My current clfA is:")
-			print(clfA_params)
-
-			return clfA_params
-
-		else:
-			return clfA_params
-
-	def fixSVM(self, clfA_params, round_best):
-
-		if not round_best:
-			clfA_params["probability"] = self.str_to_bool(clfA_params["probability"])
-			clfA_params["shrinking"] = self.str_to_bool(clfA_params["shrinking"])
-
-			if clfA_params["svm_class_weight"] == "":
-				clfA_params["svm_class_weight"] = None
-			elif clfA_params["svm_class_weight"] == "balanced":
-				pass
-			else:
-				clfA_params["svm_class_weight"] = ast.literal_eval(clfA_params["svm_class_weight"])
-
-			clfA_params["svm_verbose"] = self.str_to_bool(clfA_params["svm_verbose"])
-
-			return clfA_params
-
-		else:
-			return clfA_params
-
-	def fixNN(self, clfA_params, round_best):
-
-		if not round_best:
-			#convert string to tuple
-			clfA_params["hidden_layer_sizes"] = ast.literal_eval(clfA_params["hidden_layer_sizes"])
-
-			clfA_params["shuffle"] = self.str_to_bool(clfA_params["shuffle"])
-			clfA_params["mlp_verbose"] = self.str_to_bool(clfA_params["mlp_verbose"])
-			clfA_params["mlp_warm_start"] = self.str_to_bool(clfA_params["mlp_warm_start"])
-			clfA_params["nesterovs_momentum"] = self.str_to_bool(clfA_params["nesterovs_momentum"])
-			clfA_params["early_stopping"] = self.str_to_bool(clfA_params["early_stopping"])
-
-			return clfA_params
-
-		else:
-			return clfA_params
-
-	def fixEnsemble(self, ensemble_params):
-		
-		if ensemble_params["en_weights"] == "":
-				ensemble_params["en_weights"] = None
-		else:
-			ensemble_params["en_weights"] = ast.literal_eval(ensemble_params["en_weights"])
-
-		if ensemble_params["flatten_transform"] == "":
-				ensemble_params["flatten_transform"] = None
-		else:
-			ensemble_params["flatten_transform"] = self.str_to_bool(ensemble_params["flatten_transform"])
-
-		return ensemble_params
-
-	def str_to_bool(self, s):
-		#Convert string to Boolean
-		if s == 'True':
-			 return True
-		elif s == 'False':
-			 return False
-
-	def classifierTest(self, classifierTest_params):
+	def getBool(self, value):
 		"""
-		args:
-		---classifierTest_params dictionary containing:
-			'ctx' - context variable from narrative
-			'current_ws' - current_ws which is a narrative enviornment variable necessary to access the KBase workspace
-			'classifier' - classifier which is a sklearn object that has methods #LogisticRegression()
-			'classifier_type' - classifier in string format
-			'classifier_name' - string and is what is the name given by user to what the classifer is being saved as
-			'my_mappng' - dictionary that converts the classifications to nums ie. ['A','B', 'C'] --> [0,1,2]
-			'master_Role' - column names of all_attributes which is same as all of the functional roles
-			'splits' - number SKF splits
-			'train_index' - array of training sets
-			'test_index' - array of testing sets
-			'all_attributes' - the X's in 1s and 0s
-			'all_classifications' - the Y's classification
-			'class_list' - the 'keys' in the my_mapping ['A','B', 'C']
-			'htmlfolder' - name of folder that saves the classifier_object
-			'print_cfm - print_cfm is boolean (False when running through tuning and you don't want to print out all results on the
-								console - True otherwise)
-			}
+		Converts string to boolean
 
-		does:
-		---calculates the numerical value of the the classifiers
-		---saves down pickled versions of classifiers (probably make a separate method)
-			---saves down base64 versions of classifiers
-		---creates the text fields and values to be placed into the statistics table
-		---calls the plot_confusion_matrix function
-
-		return:
-		--- (np.average(train_score), np.std(train_score), np.average(validate_score), np.std(validate_score))
-			---return statement is only used when you repeatedly loop through this function during tuning
+		Parameter
+		---------
+		value : str
+			"False", "True"
 		"""
 
-		ctx = classifierTest_params['ctx']
-		current_ws = classifierTest_params['current_ws']
-		classifier = classifierTest_params['classifier']
-		classifier_type = classifierTest_params['classifier_type']
-		classifier_name = classifierTest_params['classifier_name']
-		my_mapping = classifierTest_params['my_mapping']
-		master_Role = classifierTest_params['master_Role']
+		if(value == "False"):
+			return False
+		else:
+			return True
 
-		splits = classifierTest_params['splits']
-		train_index = classifierTest_params['train_index']
-		test_index = classifierTest_params['test_index']
+	def executeClassifier(self, current_ws, common_classifier_information, current_classifier_object, folder_name):
+		"""
+		Creates k=splits number of classifiers and then generates a confusion matrix that averages
+		over the predicted results for all of the classifiers.
 
-		all_attributes = classifierTest_params['all_attributes']
-		all_classifications = classifierTest_params['all_classifications']
-		class_list = classifierTest_params['class_list']
-		htmlfolder = classifierTest_params['htmlfolder']
-		print_cfm = classifierTest_params['print_cfm']
-		training_set_ref = classifierTest_params['training_set_ref']
-		description = classifierTest_params['description']
+		Generates statistics for each classifier (saved in classification_report_dict)
 
-		if print_cfm:
-			print (classifier_name)
-			self.list_name.extend([classifier_name])
+		Saves each classifier object as a pickle file and then uploads that object to shock, saves the object's 
+		shock handle into the KBASE Categorizer Object (https://narrative.kbase.us/#spec/type/KBaseClassifier.GenomeCategorizer)
+
+		Calls function to create png of confusion matrix
+
+		Saves information for callback of build_classifier in individual_classifier_info
+
+		Parameter
+		---------
+		current_ws : str
+			current_ws
+		common_classifier_information : dict
+			information that is common to the current classifier that is going to be built
+		current_classifier_object: dict
+			information that is specific to the current classifier that is going to be built
+		folder_name:
+			folder name gives the location to save classifier and images
+		"""
+
+		individual_classifier_info = {}
+		matrix_size = len(common_classifier_information["class_list_mapping"])
+		cnf_matrix_proportion = np.zeros(shape=(matrix_size, matrix_size))
 		
-		train_score = np.zeros(splits)
-		validate_score = np.zeros(splits)
-		matrix_size = class_list.__len__()
+		classifier = current_classifier_object["classifier_to_execute"]
 
-		cnf_matrix = np.zeros(shape=(matrix_size, matrix_size))
-		cnf_matrix_f = np.zeros(shape=(matrix_size, matrix_size))
-		
-		for c in range(splits):
-			X_train = all_attributes[train_index[c]]
-			y_train = all_classifications[train_index[c]]
-			X_test = all_attributes[test_index[c]]
-			y_test = all_classifications[test_index[c]]
+		for c in range(common_classifier_information["splits"]):
+			X_train = common_classifier_information["whole_X"][common_classifier_information["list_train_index"][c]]
+			y_train = common_classifier_information["whole_Y"][common_classifier_information["list_train_index"][c]]
+			X_test = common_classifier_information["whole_X"][common_classifier_information["list_test_index"][c]]
+			y_test = common_classifier_information["whole_Y"][common_classifier_information["list_test_index"][c]]
+
 			classifier.fit(X_train, y_train)
-			train_score[c] = classifier.score(X_train, y_train)
-			validate_score[c] = classifier.score(X_test, y_test)
 			y_pred = classifier.predict(X_test)
-			cnf = confusion_matrix(y_test, y_pred)
-			cnf_f = cnf.astype(u'float') / cnf.sum(axis=1)[:, np.newaxis]
+
+			cnf = confusion_matrix(y_test, y_pred, labels=list(common_classifier_information["class_list_mapping"].values()))
+			cnf_f = cnf.astype('float') / cnf.sum(axis=1)[:, np.newaxis]
 			for i in range(len(cnf)):
 				for j in range(len(cnf)):
-					cnf_matrix[i][j] += cnf[i][j]
-					cnf_matrix_f[i][j] += cnf_f[i][j]
+					cnf_matrix_proportion[i][j] += cnf_f[i][j]
 
-		if print_cfm:
-			print("I'm inside this print_cfm")
-			pickle_out = open(os.path.join(self.scratch, 'forHTML', 'forDATA', str(classifier_name) + u".pickle"), u"wb")
+		#get statistics for the last case made
+		#diagonal entries of cm are the accuracies of each class
+		target_names = list(common_classifier_information["class_list_mapping"].keys())
+		classification_report_dict = classification_report(y_test, y_pred, target_names=target_names, output_dict = True)
 
-			#pickle_out = open("/kb/module/work/tmp/" + str(self.classifier_name) + ".pickle", "wb")
+		#save down classifier object in pickle format
+		pickle_out = open(os.path.join(self.scratch, folder_name, "data", current_classifier_object["classifier_name"] + ".pickle"), "wb")
+		main_clf = classifier.fit(common_classifier_information["whole_X"], common_classifier_information["whole_Y"])
+		pickle.dump(main_clf, pickle_out, protocol = 2)
+		pickle_out.close()
 
+		shock_id, handle_id = self._upload_to_shock(os.path.join(self.scratch, folder_name, "data", current_classifier_object["classifier_name"] + ".pickle"))
 
-			pickle.dump(classifier.fit(all_attributes, all_classifications), pickle_out, protocol = 2)
-			pickle_out.close()
-			print("I've dumped and saved the pickle file")
+		classifier_object = {
+		'classifier_id' : '',
+		'classifier_type' : current_classifier_object["classifier_type"],
+		'classifier_name' : current_classifier_object["classifier_name"],
+		'classifier_data' : '', #saved in shock
+		'classifier_handle_ref' : handle_id,
+		'classifier_description' : common_classifier_information["description"],
+		'lib_name' : 'sklearn',
+		'attribute_type' : common_classifier_information["attribute_type"],
+		'number_of_attributes' : len(common_classifier_information["attribute_data"]), #size of master_role_list
+		'attribute_data' : common_classifier_information["attribute_data"],
+		'class_list_mapping' : common_classifier_information["class_list_mapping"],
+		'number_of_genomes' : len(common_classifier_information["whole_Y"]),
+		'training_set_ref' : common_classifier_information["training_set_ref"]
+		}
 
-			#just temporary trial thing
-			"""
-			Pickle_folder = os.path.join('savingPickle')
-			os.mkdir(Pickle_folder)
-
-			pickle_out = open(os.path.join(Pickle_folder, unicode(classifier_name) + u".pickle"), u"wb")
-			pickle.dump(classifier.fit(all_attributes, all_classifications), pickle_out, protocol = 2)
-			pickle_out.close()
-
-			"""
-			
-			print("trying to save shock stuff")
-			shock_id, handle_id = self._upload_to_shock(os.path.join(self.scratch, 'forHTML', 'forDATA', str(classifier_name) + u".pickle"))
-			
-			print("this is your handle_id")
-			print(handle_id)
-			print("this is your shock_id")
-			print(shock_id)
-
-			#handle_id = 'will fix later'
-			
-			#base64
-			#current_pickle = pickle.dumps(classifier.fit(all_attributes, all_classifications), protocol=0)
-			#pickled = codecs.encode(current_pickle, "base64").decode()
-
-			pickled = "this is what the pickled string would be"
-
-			print ("This is printing out the classifier_object that needs to be saved down dump")
-
-			print ("your training_set_ref is below")
-			print(training_set_ref)
-
-			
-			classifier_object = {
-			'classifier_id' : '',
-			'classifier_type' : classifier_type, # Neural network
-			'classifier_name' : classifier_name,
-			'classifier_data' : pickled,
-			'classifier_handle_ref' : handle_id,
-			'classifier_description' : description,
-			'lib_name' : 'sklearn',
-			'attribute_type' : 'functional_roles',
-			'number_of_attributes' : all_attributes.shape[1],#class_list.__len__(),
-			'attribute_data' : master_Role,#["this is where master_role would go", "just a list"],#master_Role, #master_Role,
-			'class_list_mapping' : my_mapping, #{} my_mapping, #my_mapping,
-			'number_of_genomes' : class_list.__len__()#, #all_attributes.shape[1],
-			#'training_set_ref' : training_set_ref #self.dfu.get_objects({'object_refs': [training_set_ref]}) #training_set_ref
-			}
-
-			if training_set_ref != 'User Denied':
-				classifier_object['training_set_ref'] = training_set_ref
-			#print classifier_object
-
-			#Saving the Classifier object
 	
-			obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
-														  'objects':[{
-														  'type': 'KBaseClassifier.GenomeCategorizer',
-														  'data': classifier_object,
-														  'name': classifier_name,  
-														  'provenance': ctx.get('provenance')  # ctx should be passed into this func.
-														  }]
-														})[0]
+		obj_save_ref = self.ws_client.save_objects({'workspace': current_ws,
+													  'objects':[{
+													  'type': 'KBaseClassifier.GenomeCategorizer',
+													  'data': classifier_object,
+													  'name': current_classifier_object["classifier_name"],  
+													  'provenance': self.ctx['provenance']
+													  }]
+													})[0]
+	 
+		#information for call back
+		individual_classifier_info = {	"classifier_name": current_classifier_object["classifier_name"],
+										"classifier_ref": obj_save_ref,
+										"accuracy": classification_report_dict["accuracy"]}
 
-			print ("I'm print out the obj_save_ref")
+		cm = np.round(cnf_matrix_proportion/common_classifier_information["splits"]*100.0,1)
+		title = "CM: " + current_classifier_object["classifier_type"]
+		self.plot_confusion_matrix(cm, title, current_classifier_object["classifier_name"], list(common_classifier_information["class_list_mapping"].keys()), folder_name)
 
-			print (obj_save_ref)
-			print ("done")        
+		return classification_report_dict, individual_classifier_info
 
-		phenotype_class_info_list = None
-		avgf1 = None
-
-		if print_cfm:
-
-			cnf_av = cnf_matrix/splits
-			phenotype_class_info_list, avgf1 = self.NClasses(class_list, cnf_av)
-
-			self.plot_confusion_matrix(np.round(cnf_matrix_f/splits*100.0,1),class_list,u'Confusion Matrix', htmlfolder, classifier_name, classifier_type)
-
+	def handleClassificationReports(self, dict_classification_report_dict, target_names, classifier_object_name):
 		"""
-		list_forDict = []
+		This function takes all of the classification scores (Precision, Recall, F1-Score, Accuracy) for all of the classifier
+		and places them into a DataFrame that can then be transformed into an html report to show statistics for the classifiers
 
-		if class_list.__len__() == 3:
-			if print_cfm:
-				cnf_av = cnf_matrix / splits
-				print
-				print cnf_av[0][0], cnf_av[0][1], cnf_av[0][2]
-				print cnf_av[1][0], cnf_av[1][1], cnf_av[1][2]
-				print cnf_av[2][0], cnf_av[2][1], cnf_av[2][2]
-				print
-				print class_list[0]
-				TP = cnf_av[0][0]
-				TN = cnf_av[1][2] + cnf_av[1][2] + cnf_av[2][1] + cnf_av[2][2]
-				FP = cnf_av[0][1] + cnf_av[0][2]
-				FN = cnf_av[1][0] + cnf_av[2][0]
-				list_forDict.extend([None])
-				list_forDict.extend(self.cf_stats(TN, TP, FP, FN))
+		The Build Classifer App can create 2 views:
+		1. Main Report (main_report_dict/main_report_df)
+			a. Run All 
+				In the Run All case the user has selected to build all of the default classifier
+				and so the view reflects this choice by showing all of the classifier and their appropriate
+				scores
 
-				print class_list[1]
-				TP = cnf_av[1][1]
-				TN = cnf_av[0][0] + cnf_av[0][2] + cnf_av[2][0] + cnf_av[2][2]
-				FP = cnf_av[1][0] + cnf_av[1][2]
-				FN = cnf_av[0][1] + cnf_av[2][1]
-				list_forDict.extend([None, None])
-				list_forDict.extend(self.cf_stats(TN, TP, FP, FN))
+				This will also keep track of the best classifier in terms of accuracy and pass this information
+				to the Decision Tree Report
 
-				print class_list[2]
-				TP = cnf_av[2][2]
-				TN = cnf_av[0][0] + cnf_av[0][1] + cnf_av[1][0] + cnf_av[1][1]
-				FP = cnf_av[2][0] + cnf_av[2][1]
-				FN = cnf_av[0][1] + cnf_av[0][2]
-				list_forDict.extend([None, None])
-				list_forDict.extend(self.cf_stats(TN, TP, FP, FN))
+				(will also make Decision Tree Report, since decision_tree is one of the options in Run All)
 
-				list_forDict.extend([(list_forDict[4] + list_forDict[10] + list_forDict[16])/3])
+			b. Single Selection
+				In the Single Selection case the user has selects only a single option so only one column of 
+				statistics being shown
 
-				self.list_statistics.append(list_forDict)
+				however in the even that the user selects the Decision Tree as the single selection, then there is
+				NO main page made and only a Decision Tree Report made
+	
+		2. Decision Tree Report (dtt_report_dict/dtt_report_df)
+			Show statistics for vanilla Decision Tree Classifier, Best Gini Decision Tree, Best Entropy Decision Tree
 
-				# self.plot_confusion_matrix(cnf_matrix/10,class_list,'Confusion Matrix')
-				self.plot_confusion_matrix(cnf_matrix_f/splits*100.0,class_list,u'Confusion Matrix', htmlfolder, classifier_name, classifier_type)
+			optionally if Run All has been run it will also repeat the statistics in the Main Report for the best classifier for comparision
 
-		if class_list.__len__() == 2:
-			if print_cfm:
+		Parameter
+		---------
+		dict_classification_report_dict : dict
+			classification scores per classifier
+			ex: dict_classification_report_dict["decision_tree_classifier"]["aerobic"]["precision"]
 
-				TP = cnf[0][0]
-				TN = cnf[1][1]
-				FP = cnf[0][1]
-				FN = cnf[1][0]
-
-				list_forDict.extend(self.cf_stats(TN, TP, FP, FN))
-				self.list_statistics.append(list_forDict)
-
-				self.plot_confusion_matrix(cnf_matrix_f/splits*100.0,class_list,u'Confusion Matrix', htmlfolder, classifier_name, classifier_type)
+		target_names : str list
+			list of phenotypes ["aerobic", "anerobic", etc.]
+		classifier_object_name: str
+			classifier_object_name
 		"""
 
-		if print_cfm:
-			print (classifier)
-			print("")
-			print(u"Confusion matrix")
-			for i in range(len(cnf_matrix)):
-				print(class_list[i])#,; sys.stdout.write(u"  \t"))
-				for j in range(len(cnf_matrix[i])):
-					print(cnf_matrix[i][j] / splits)#,; sys.stdout.write(u"\t"))
-				print("")
-			print("")
-			for i in range(len(cnf_matrix_f)):
-				print(class_list[i])#,; sys.stdout.write(u"  \t")
-				for j in range(len(cnf_matrix_f[i])):
-					print( u"%6.1f" % ((cnf_matrix_f[i][j] / splits) * 100.0))#,; sys.stdout.write(u"\t")
-				print("")
-			print("")
-			print( u"01", cnf_matrix[0][1])
+		main_report_dict = {}
+		dtt_report_dict = {}
+		best_classifier_type_nice = None
+		genome_dtt_classifier_object_names = []
+		#genome_dtt_classifier_object_names is a list of classifier_object_name + "_" + dtt_classifier_type
 
-		print( u"%6.3f\t%6.3f\t%6.3f\t%6.3f" % (
-		np.average(train_score), np.std(train_score), np.average(validate_score), np.std(validate_score)))
+		metric_column =[]
+		for target in target_names:
+			metric_column.append(target)
+			metric_column.append("Precision")
+			metric_column.append("Recall")
+			metric_column.append("F1-Score")
 
-		return (np.average(train_score), np.std(train_score), np.average(validate_score), np.std(validate_score)), phenotype_class_info_list, avgf1
+		metric_column.append("Accuracy")
+		main_report_dict["Metrics"] = metric_column
 
-	def NClasses(self, class_list, cnf_av):
-		
-		list_forDict = []
+		classifier_types_to_nice = {"k_nearest_neighbors": "K Nearest Neighbors", 
+									"gaussian_nb": "Gaussian Naive Bayes", 
+									"logistic_regression": "Logistic Regression",
+									"decision_tree_classifier": "Decision Tree",
+									"decision_tree_classifier_gini": "Decision Tree Gini",
+									"decision_tree_classifier_entropy": "Decision Tree Entropy",
+									"support_vector_machine": "Support Vector Machine", 
+									"neural_network": "Neural Network"
+									}
 
-		phenotype_class_info_list = []
+		#only making a single column
+		if(len(dict_classification_report_dict.keys())==1):
+			classifier_type = list(dict_classification_report_dict.keys())[0]
+			classifier_type_column = []
 
-		for class_current in range(len(class_list)):
-			print(class_list[class_current])
+			for target in target_names:
+				classifier_type_column.append(None)
+				classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["precision"])
+				classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["recall"])
+				classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["f1-score"])
+
+			#also add accuracy
+			classifier_type_column.append(dict_classification_report_dict[classifier_type]["accuracy"])
+
+			main_report_dict[classifier_types_to_nice[classifier_type]] = classifier_type_column
+
+		elif(len(dict_classification_report_dict.keys())==3):
+			#case where the keys are decision_tree_classifier, decision_tree_classifier_gini, and decision_tree_classifier_entropy
 			
-			TP = cnf_av[class_current][class_current]
-			FP = self.forFP(class_current, cnf_av)
-			FN = self.forFN(class_current, cnf_av)
-			TN = self.forTN(FP, FN, class_current, cnf_av)
-			
-			list_forDict.extend([None])
-			cf_stats_list = self.cf_stats(TN,TP,FP,FN)
-			list_forDict.extend(cf_stats_list)
-			list_forDict.extend([None])
+			dtt_report_dict["Metrics"] = metric_column
+			dtt_classifier_types = ["decision_tree_classifier", "decision_tree_classifier_gini", "decision_tree_classifier_entropy"]
+			for classifier_type in dtt_classifier_types:
+				classifier_type_column = []
 
-			phenotype_class_info_mapping = {}
-			phenotype_class_info_mapping['phenotypeclass'] = class_list[class_current]
-			phenotype_class_info_mapping['accuracy'] = cf_stats_list[0]
-			phenotype_class_info_mapping['precision'] = cf_stats_list[1]
-			phenotype_class_info_mapping['recall'] = cf_stats_list[2]
-			phenotype_class_info_mapping['f1score'] = cf_stats_list[3]
-			
-			phenotype_class_info_list.append(phenotype_class_info_mapping)
-			del phenotype_class_info_mapping
+				for target in target_names:
+					classifier_type_column.append(None)
+					classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["precision"])
+					classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["recall"])
+					classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["f1-score"])
 
-		#try fixing this line below more
-		fScore_indexes = [(4 + 6*a) for a in range(len(class_list))]
+				#also add accuracy
+				classifier_type_column.append(dict_classification_report_dict[classifier_type]["accuracy"])
 
-		fScore_sum = 0
+				dtt_report_dict[classifier_types_to_nice[classifier_type]] = classifier_type_column
+				genome_dtt_classifier_object_names.append(classifier_object_name + "_" + classifier_type)
 
-		print("This is you list_forDict")
-		print(list_forDict)
 
-		"""
-		for f_index in fScore_indexes:
-			fScore_sum += list_forDict[f_index]
+			#In this case there will be no main page and only a decision tree page
 
-		list_forDict.extend([(fScore_sum)/len(class_list)])
-		"""
-
-		list_fScore = []
-
-		for f_index in fScore_indexes:
-			list_fScore.extend([list_forDict[f_index]])
-
-		avgf1 = np.nanmean(list_fScore)
-		list_forDict.extend([avgf1])
-
-		self.list_statistics.append(list_forDict)
-
-		return phenotype_class_info_list, avgf1
-			
-	def forTN(self, FP, FN, class_current, cnf_av):
-		sum_TN = 0
-		for i in range(len(cnf_av)):
-			for j in range(len(cnf_av)):
-				sum_TN += cnf_av[i][j]
-		
-		sum_TN -= cnf_av[class_current][class_current]
-		return sum_TN
-		
-	def forFP(self, class_current, cnf_av):
-		sum_FP = 0
-		for j in range(len(cnf_av)):
-			sum_FP += cnf_av[class_current][j]
-			
-		sum_FP -= cnf_av[class_current][class_current]
-		return sum_FP
-
-	def forFN(self, class_current, cnf_av):
-		sum_FN = 0
-		for i in range(len(cnf_av)):
-			sum_FN += cnf_av[i][class_current]
-			
-		sum_FN -= cnf_av[class_current][class_current]
-		return sum_FN
-
-	def cf_stats(self, TN, TP, FP, FN):
-		"""
-		args:
-		---True Negative, True Positive, False Positive, False Negative
-		does:
-		---calculates statistics as a way to measure and evaluate the performance of the classifiers
-		return:
-		---list_return=[((TP + TN) / Total), (Precision), (Recall), (2 * ((Precision * Recall) / (Precision + Recall)))]
-			---Accuracy, Precision, Recall, F1 Score
-		"""
-		Total = TN + TP + FP + FN
-		Recall = (TP / (TP + FN))
-		Precision = (TP / (TP + FP))
-
-		#this will raise invalid error when you get NaN values
-		old_settings = np.seterr()
-		np.seterr(invalid='ignore')
-
-		list_return=[((TP + TN) / Total), (Precision), (Recall), (2 * ((Precision * Recall) / (Precision + Recall)))]
-
-		np.seterr(**old_settings)
-
-		return list_return
-
-	def plot_confusion_matrix(self,cm, classes, title, htmlfolder, classifier_name, classifier_type):
-		"""
-		args:
-		---cm is the "cnf_matrix" which is a np array of numerical values for the confusion matrix
-		---classes is the class_list which is a list of the classes ie. [N,P] or [Aerobic, Anaerobic, Facultative]
-		---title is a "heading" that appears on the image
-		---classifier_name is the classifier name and is what the saved .png file name will be
-		does:
-		---creates a confusion matrix .png file and saves it
-		return:
-		---N/A but instead creates an .png file in tmp
-		"""
-		#plt.rcParams.update({u'font.size': 18})
-		#fig = plt.figure()
-		#ax = fig.subplot(figsize=(4.5,4.5))
-		fig, ax = plt.subplots(figsize=(4.5,4.5))
-		#sns.set(font_scale=1.0)
-		sns_plot = sns.heatmap(cm, annot=True, ax = ax, cmap=u"Blues", fmt=".1f", square=True) #annot=True to annotate cells
-		ax = sns_plot
-		#im = ax.imshow(cm, interpolation='nearest', cmap=u"Blues")
-		#ax.figure.colorbar(im, ax=ax)
-		ax.set_xlabel(u'Predicted labels'); ax.set_ylabel(u'True labels')
-		# ax.set_ylim(len(cm)-0.25, 0.5)
-		ax.set_title(title)
-		ax.xaxis.set_ticklabels(classes); ax.yaxis.set_ticklabels(classes)
-		#ax.xaxis.set_horizontalalignment('center'), ax.yaxis.set_verticalalignment('center')
-		#ax.savefig(classifier_name+".png", format='png')
-		plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
-		plt.tight_layout()
-
-		fig = sns_plot.get_figure()
-		#fig = ax.get_figure()
-		#fig.savefig(u"./pics/" + classifier_name +u".png", format=u'png')
-		fig.savefig(os.path.join(self.scratch, 'forHTML', htmlfolder, classifier_name +u".png"), format=u'png')
-
-		if classifier_type == "DecisionTreeClassifier":
-			fig.savefig(os.path.join(self.scratch, 'forHTML','html2folder', classifier_name +u".png"), format=u'png')
-
-	def to_HTML_Statistics(self, class_list, classifier_name, known = "", additional = False, for_ensemble = False):
-		"""
-		args:
-		---additional is a boolean and is used to indicate if this method is being called to make html2
-		does:
-		---the statistics that were calculated and stored into lists are converted into a dataframe table --> html page
-		return:
-		---N/A but instead creates an html file in tmp
-		"""
-
-		if for_ensemble:
-			statistics_dict = {}
-
-			print("Here is the list_name")
-			print(self.list_name)
-
-			en_index = self.list_name.index(known)
-
-			ensemble_index = [self.list_name[en_index]]
-			ensembleStatistic_index = [self.list_statistics[en_index]]
-			
-			for i, j in zip(ensemble_index, ensembleStatistic_index):
-				statistics_dict[i] = j
-
-			data = statistics_dict
-
-
-			my_index = []
-
-			for class_current in range(len(class_list)):
-				my_index.extend([class_list[class_current], u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None])
-			
-			my_index.append(u'Average F1')
-
-			df = pd.DataFrame(data, index=my_index)
-			df.to_html(os.path.join(self.scratch, 'forHTML', 'html4folder', 'ensembleStatistics.html'), table_id = "ensembleStatistics", classes =["table", "table-striped", "table-bordered"])
-
-			file = open(os.path.join(self.scratch, 'forHTML', 'html4folder', 'ensembleStatistics.html'), u'r')
-			allHTML = file.read()
-			file.close()
-
-			new_allHTML = re.sub(r'NaN', r'', allHTML)
-
-			file = open(os.path.join(self.scratch, 'forHTML', 'html4folder', 'ensembleStatistics.html'), u'w')
-			file.write(new_allHTML)
-			file.close
-
-			return 0
-
-		if not additional:
-
-			print(u"I am inside not additional")
-
-			statistics_dict = {}
-
-			#print(self.list_name)
-			#print(self.list_statistics)
-
-			for i, j in zip(self.list_name, self.list_statistics):
-				statistics_dict[i] = j
-
-			data = statistics_dict
-
-			my_index = []
-
-			for class_current in range(len(class_list)):
-				my_index.extend([class_list[class_current], u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None])
-			
-			my_index.append(u'Average F1')
-
-			"""
-			if class_list.__len__() == 3:
-				my_index = [class_list[0], u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None, class_list[1], u'Accuracy:',
-						u'Precision:', u'Recall:', u'F1 score::', None, class_list[2], u'Accuracy:', u'Precision:', u'Recall:',
-						u'F1 score::', u'Average F1']
-
-			if class_list.__len__() == 2:
-				my_index = [u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::']
-			"""
-
-			df = pd.DataFrame(data, index=my_index)
-
-			df.to_html(os.path.join(self.scratch, 'forHTML', 'html1folder','newStatistics.html'), table_id = "newStatistics", classes =["table", "table-striped", "table-bordered"])
-
-			df['Max'] = df.idxmax(1)
-
-			#print("Here is df[Max]")
-			#print(df['Max'])
-
-			best_classifier_str = df['Max'].iloc[-1]
-
-
-			file = open(os.path.join(self.scratch, 'forHTML', 'html1folder','newStatistics.html'), u'r')
-			allHTML = file.read()
-			file.close()
-
-			new_allHTML = re.sub(r'NaN', r'', allHTML)
-
-			file = open(os.path.join(self.scratch, 'forHTML', 'html1folder','newStatistics.html'), u'w')
-			file.write(new_allHTML)
-			file.close
-
-			return best_classifier_str
-
-		if additional:
-			statistics_dict = {}
-
-			for name, name_index in zip(self.list_name, range(self.list_name.__len__())):
-				if classifier_name + "_DecisionTreeClassifier" == name:
-					DTClf_index = name_index
-				if known == name:
-					BestClf_index = name_index
-
-			#DecisionTreeClassifier_index =
-
-			#neededIndex = [2, 3, self.list_name.__len__() - 2, self.list_name.__len__() -1]
-			#neededIndex = [self.list_name.__len__() - 2, self.list_name.__len__() -1]
-
-			try:
-				neededIndex = [DTClf_index, BestClf_index, self.list_name.__len__() - 2, self.list_name.__len__() -1]
-			except:
-				neededIndex = [0, self.list_name.__len__() - 2, self.list_name.__len__() -1]
-
-			sub_list_name = [self.list_name[i] for i in neededIndex]
-			sub_list_statistics = [self.list_statistics[i] for i in neededIndex]
-
-			for i, j in zip(sub_list_name, sub_list_statistics):
-				statistics_dict[i] = j
-
-			data = statistics_dict
-
-
-			my_index = []
-
-			for class_current in range(len(class_list)):
-				my_index.extend([class_list[class_current], u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None])
-			
-			my_index.append(u'Average F1')
-
-			"""
-			if class_list.__len__() == 3:
-				my_index = [class_list[0], u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::', None, class_list[1], u'Accuracy:',
-						u'Precision:', u'Recall:', u'F1 score::', None, class_list[2], u'Accuracy:', u'Precision:', u'Recall:',
-						u'F1 score::', u'Average F1']
-
-			if class_list.__len__() == 2:
-				my_index = [u'Accuracy:', u'Precision:', u'Recall:', u'F1 score::']
-			"""
-
-			df = pd.DataFrame(data, index=my_index)
-			df.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'), table_id = "postStatistics", classes =["table", "table-striped", "table-bordered"])
-
-			df['Max'] = df.idxmax(1)
-			best_classifier_str = df['Max'].iloc[-1]
-
-			file = open(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'), u'r')
-			allHTML = file.read()
-			file.close()
-
-			new_allHTML = re.sub(r'NaN', r'', allHTML)
-
-			file = open(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'), u'w')
-			file.write(new_allHTML)
-			file.close
-
-			return best_classifier_str
-
-	#### Below is code for tuning Decision Tree ####
-
-	def tune_Decision_Tree(self,classifierTest_paramsInput, current_ws, best_classifier_str = None):
-		"""
-		args:
-		---classifierTest_paramsInput is same dictionary as classifierTest_params passed in with few updates
-		---best_classifier_str (optional) passed to to_HTML_Statistics in case the best classifier was known so a column for it could be created in the table
-		does:
-		---by looping through various parameters (1. depth 2. criterion) it selects best configuration
-		---calls tree_code
-		return:
-		---N/A but main function is just to figure out "workhorse"
-		"""
-		
-		classifierTest_params = {
-				'ctx' : classifierTest_paramsInput['ctx'],
-				'current_ws' : classifierTest_paramsInput['current_ws'],
-				#'classifier' : ,
-				'classifier_type' : classifierTest_paramsInput['classifier_type'],
-				'classifier_name' : classifierTest_paramsInput['classifier_name'],
-				'my_mapping' : classifierTest_paramsInput['my_mapping'],
-				'master_Role' : classifierTest_paramsInput['master_Role'],
-				'splits' : classifierTest_paramsInput['splits'],
-				'train_index' : classifierTest_paramsInput['train_index'],
-				'test_index' : classifierTest_paramsInput['test_index'],
-				'all_attributes' : classifierTest_paramsInput['all_attributes'],
-				'all_classifications' : classifierTest_paramsInput['all_classifications'],
-				'class_list' : classifierTest_paramsInput['class_list'],
-				'htmlfolder' : classifierTest_paramsInput['htmlfolder'],
-				'print_cfm' : True,
-				'training_set_ref' : classifierTest_paramsInput['training_set_ref'],
-				'description' : classifierTest_paramsInput['description']
-				}
-
-		#below code is for gini-criterion
-
-		classifierTest_params['classifier_name'] = classifierTest_paramsInput['classifier_name'] + u"DecisionTreeClassifier"
-		classifierTest_params['print_cfm'] = False
-
-		val = np.zeros(12)
-		test_av = np.zeros(12)
-		test_std = np.zeros(12)
-		val_av = np.zeros(12)
-		val_std = np.zeros(12)
-		for d in range(1, 12):
-			classifierTest_params['classifier'] = DecisionTreeClassifier(random_state=0, max_depth=d)
-			val[d] = d
-			(test_av[d], test_std[d], val_av[d], val_std[d]), val1, val2 = self.classifierTest(classifierTest_params)
-
-		fig, ax = plt.subplots(figsize=(6, 6))
-		plt.errorbar(val[1:], test_av[1:], yerr=test_std[1:], fmt=u'o', label=u'Training set')
-		plt.errorbar(val[1:], val_av[1:], yerr=val_std[1:], fmt=u'o', label=u'Testing set')
-		ax.set_ylim(ymin=0.0, ymax=1.1)
-		ax.set_title(u"Gini Criterion")
-		plt.xlabel(u'Tree depth', fontsize=12)
-		plt.ylabel(u'Accuracy', fontsize=12)
-		plt.legend(loc=u'lower left')
-		ax.grid(which='major', linestyle=':', linewidth='0.5', color='black')
-		#plt.savefig(u"./pics/"+ global_target +u"_gini_depth-met.png")
-		#fig.savefig(u"/kb/module/work/tmp/pics/" + classifier_name +u".png", format=u'png')
-		plt.savefig(os.path.join(self.scratch, 'forHTML', 'html2folder', classifierTest_paramsInput['classifier_name'] +u"_gini_depth-met.png"))
-
-		gini_best_index = np.argmax(val_av)
-		print(gini_best_index)
-		gini_best = np.amax(val_av)
-
-		#below code is for entropy-criterion
-
-		classifierTest_params['classifier_name'] = classifierTest_paramsInput['classifier_name'] + u"DecisionTreeClassifier"
-		classifierTest_params['print_cfm'] = False
-
-		val = np.zeros(12)
-		test_av = np.zeros(12)
-		test_std = np.zeros(12)
-		val_av = np.zeros(12)
-		val_std = np.zeros(12)
-		for d in range(1, 12):
-			classifierTest_params['classifier'] = DecisionTreeClassifier(random_state=0, max_depth=d, criterion=u'entropy')
-			val[d] = d
-			(test_av[d], test_std[d], val_av[d], val_std[d]), val1, val2 = self.classifierTest(classifierTest_params)
-
-		fig, ax = plt.subplots(figsize=(6, 6))
-		plt.errorbar(val[1:], test_av[1:], yerr=test_std[1:], fmt=u'o', label=u'Training set')
-		plt.errorbar(val[1:], val_av[1:], yerr=val_std[1:], fmt=u'o', label=u'Testing set')
-		ax.set_ylim(ymin=0.0, ymax=1.1)
-		ax.set_title(u"Entropy Criterion")
-		plt.xlabel(u'Tree depth', fontsize=12)
-		plt.ylabel(u'Accuracy', fontsize=12)
-		plt.legend(loc=u'lower left')
-		ax.grid(which='major', linestyle=':', linewidth='0.5', color='black')
-		#plt.savefig(u"./pics/"+ global_target +u"_entropy_depth-met.png")
-		plt.savefig(os.path.join(self.scratch, 'forHTML', 'html2folder', classifierTest_paramsInput['classifier_name'] +u"_entropy_depth-met.png"))
-
-		entropy_best_index = np.argmax(val_av)
-		print(entropy_best_index)
-		entropy_best = np.amax(val_av)
-
-
-		#gini_best_index = 4
-		#entropy_best_index = 3
-
-		classifierTest_params['classifier'] = DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini')
-		classifierTest_params['classifier_name'] = classifierTest_paramsInput['classifier_name'] + u"_DecisionTreeClassifier_gini"
-		classifierTest_params['print_cfm'] = True
-		
-		classifier_info_list_mapping_fromDTentropy = {}
-		classifier_info_list_mapping_fromDTentropy['classifier_name'] = classifierTest_params['classifier_name']
-		(test_av, test_std, val_av, val_std), phenotype_class_info_list, avgf1 = self.classifierTest(classifierTest_params)
-		classifier_info_list_mapping_fromDTentropy['phenotype_class_info'] = phenotype_class_info_list
-		classifier_info_list_mapping_fromDTentropy['classifier_ref'] = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': classifierTest_params['classifier_name'] }])[0]['refs'][0])
-		classifier_info_list_mapping_fromDTentropy['averagef1'] = avgf1
-
-
-		classifierTest_params['classifier'] = DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy')
-		classifierTest_params['classifier_name'] = classifierTest_paramsInput['classifier_name'] + u"_DecisionTreeClassifier_entropy"
-		classifierTest_params['print_cfm'] = True
-
-		classifier_info_list_mapping_fromDTgini = {}
-		classifier_info_list_mapping_fromDTgini['classifier_name'] = classifierTest_params['classifier_name']
-		(test_av, test_std, val_av, val_std), phenotype_class_info_list, avgf1 = self.classifierTest(classifierTest_params)
-		classifier_info_list_mapping_fromDTgini['phenotype_class_info'] = phenotype_class_info_list
-		classifier_info_list_mapping_fromDTgini['classifier_ref'] = str(self.ws_client.get_objects([{'workspace':current_ws, 'name': classifierTest_params['classifier_name'] }])[0]['refs'][0])
-		classifier_info_list_mapping_fromDTgini['averagef1'] = avgf1
-
-		self.to_HTML_Statistics(classifierTest_params['class_list'], classifierTest_paramsInput['classifier_name'], known = best_classifier_str,additional=True)
-
-		if gini_best > entropy_best:
-			weightlist = self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=gini_best_index, criterion=u'gini'), classifierTest_params['all_attributes'], classifierTest_params['all_classifications'], classifierTest_params['master_Role'], classifierTest_params['class_list'])
-			# classifier_info_list_mapping_fromDTgini['phenotype_class_info']['attribute_weights'] = weightlist
 		else:
-			weightlist = self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=entropy_best_index, criterion=u'entropy'), classifierTest_params['all_attributes'], classifierTest_params['all_classifications'], classifierTest_params['master_Role'], classifierTest_params['class_list'])
-			# classifier_info_list_mapping_fromDTentropy['phenotype_class_info']['attribute_weights'] = weightlist
+			#there is everything **and** we have to select a best classifier
+			regular_classifier_types = ["k_nearest_neighbors", "gaussian_nb", "logistic_regression", "decision_tree_classifier", "support_vector_machine", "neural_network"]
+			regular_classifier_type_to_accuracy = {}
 
-		return classifier_info_list_mapping_fromDTentropy, classifier_info_list_mapping_fromDTgini, weightlist
+			for classifier_type in regular_classifier_types:
+				classifier_type_column = []
 
-	def tree_code(self, optimized_tree, all_attributes, all_classifications, master_Role, class_list, spacer_base=u"    "):
+				for target in target_names:
+					classifier_type_column.append(None)
+					classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["precision"])
+					classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["recall"])
+					classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["f1-score"])
+
+				#also add accuracy
+				regular_classifier_type_to_accuracy[classifier_type] = dict_classification_report_dict[classifier_type]["accuracy"]
+				classifier_type_column.append(dict_classification_report_dict[classifier_type]["accuracy"])
+
+				main_report_dict[classifier_types_to_nice[classifier_type]] = classifier_type_column
+
+			best_classifier_type = max(regular_classifier_type_to_accuracy.items(), key=operator.itemgetter(1))[0]
+			best_classifier_type_nice = classifier_types_to_nice[best_classifier_type]
+
+			#handle decision_tree_classifier, decision_tree_classifier_gini, and decision_tree_classifier_entropy
+			dtt_report_dict["Metrics"] = metric_column
+			dtt_classifier_types = []
+			dtt_classifier_types.append("decision_tree_classifier")
+			if(best_classifier_type != "decision_tree_classifier"):
+				dtt_classifier_types.append(best_classifier_type)
+			
+			dtt_classifier_types.append("decision_tree_classifier_gini")
+			dtt_classifier_types.append("decision_tree_classifier_entropy")
+
+			for classifier_type in dtt_classifier_types:
+				classifier_type_column = []
+
+				for target in target_names:
+					classifier_type_column.append(None)
+					classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["precision"])
+					classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["recall"])
+					classifier_type_column.append(dict_classification_report_dict[classifier_type][target]["f1-score"])
+
+				#also add accuracy
+				classifier_type_column.append(dict_classification_report_dict[classifier_type]["accuracy"])
+
+				dtt_report_dict[classifier_types_to_nice[classifier_type]] = classifier_type_column
+				genome_dtt_classifier_object_names.append(classifier_object_name + "_" + classifier_type)
+
+		main_report_df = pd.DataFrame(main_report_dict)
+		dtt_report_df = pd.DataFrame(dtt_report_dict)
+
+		return(main_report_df, dtt_report_df, best_classifier_type_nice, genome_dtt_classifier_object_names)
+
+	def tuneDecisionTree(self, current_ws, common_classifier_information, classifier_object_name, folder_name):
 		"""
-		args:
-		---optimized_tree this is a DecisionTree object that has been tuned
-		---spacer_base is string physically acting as a spacer
-		does:
-		---Produce psuedo-code for decision tree - based on http://stackoverflow.com/a/30104792.
-		---calls printTree
-		return:
-		---N/A but prints out a visual of what the DecisionTree object looks like on the inside
+		This function attempt to tune the vanilla Decision Tree Classifier on 2 hyperparameters:
+		tree_depth and criterion, to do so it does a grid search over a range of different tree depths
+		[1, ... , 13] and both criterion (gini & entropy).
+
+		It saves the average training/testing scores over each iteration and saves them to a png file
+
+		The best Decision Tree produced for each criterion (wrt depth) is saved.
+
+		Parameter
+		---------
+		current_ws : str
+			current_ws
+		common_classifier_information : dict
+			information for classifier details
+		classifier_object_name: str
+			classifier_object_name to save
+		folder_name: str
+			location to save data
 		"""
 
-		tree = optimized_tree 
-		#tree = DecisionTreeClassifier(random_state=0, max_depth=3, criterion='entropy')
+		range_start = 1
+		iterations = 13
+		ddt_dict_classification_report_dict = {}
+		dtt_classifier_info = []
 
-		tree.fit(all_attributes, all_classifications)
-		feature_names = master_Role
-		target_names = class_list
+		#Gini Criterion
+		training_avg = []
+		training_std = []
+		validation_avg = []
+		validation_std = []
 
-		left = tree.tree_.children_left
-		right = tree.tree_.children_right
-		threshold = tree.tree_.threshold
-		features = [feature_names[i] for i in tree.tree_.feature]
-		value = tree.tree_.value
+		for tree_depth in range(range_start, iterations):#notice here that tree depth must start at 1
+			
+			classifier = DecisionTreeClassifier(random_state=0, max_depth=tree_depth, criterion=u'gini')
+			train_score = []
+			validate_score = []
 
-		# def recurse(left, right, threshold, features, node, depth):
-		# 	spacer = spacer_base * depth
-		# 	if (threshold[node] != -2):
-		# 		print spacer + u"if ( " + features[node] + u" <= " + \
-		# 			  unicode(threshold[node]) + u" ) {"
-		# 		if left[node] != -1:
-		# 			recurse(left, right, threshold, features,
-		# 						 left[node], depth + 1)
-		# 		print spacer + u"}\n" + spacer + u"else {"
-		# 		if right[node] != -1:
-		# 			recurse(left, right, threshold, features,
-		# 						 right[node], depth + 1)
-		# 		print spacer + u"}"
-		# 	else:
-		# 		target = value[node]
-		# 		for i, v in izip(np.nonzero(target)[1],
-		# 						target[np.nonzero(target)]):
-		# 			target_name = target_names[i]
-		# 			target_count = int(v)
-		# 			print spacer + u"return " + unicode(target_name) + \
-		# 				  u" ( " + unicode(target_count) + u" examples )"
+			for c in range(common_classifier_information["splits"]):
+				X_train = common_classifier_information["whole_X"][common_classifier_information["list_train_index"][c]]
+				y_train = common_classifier_information["whole_Y"][common_classifier_information["list_train_index"][c]]
+				X_test = common_classifier_information["whole_X"][common_classifier_information["list_test_index"][c]]
+				y_test = common_classifier_information["whole_Y"][common_classifier_information["list_test_index"][c]]
 
-		# recurse(left, right, threshold, features, 0, 0)
+				classifier.fit(X_train, y_train)
+				y_pred = classifier.predict(X_test)
 
-		return self.printTree(tree, u"NAMEmyTreeLATER", master_Role, class_list)
+				train_score.append(classifier.score(X_train, y_train))
+				validate_score.append(classifier.score(X_test, y_test))
 
-	def printTree(self,tree, pass_name, master_Role, class_list):
+			training_avg.append(np.average(np.array(train_score)))
+			training_std.append(np.std(train_score))
+			validation_avg.append(np.average(validate_score))
+			validation_std.append(np.std(validate_score))
+
+		#Create Figure
+		fig, ax = plt.subplots(figsize=(6, 6))
+		plt.errorbar(np.arange(range_start,iterations), training_avg, yerr=training_std, fmt=u'o', label=u'Training set')
+		plt.errorbar(np.arange(range_start,iterations), validation_avg, yerr=validation_std, fmt=u'o', label=u'Testing set')
+		ax.set_ylim(ymin=0.0, ymax=1.1)
+		ax.set_title("Gini Criterion")
+		plt.xlabel('Tree Depth', fontsize=12)
+		plt.ylabel('Accuracy', fontsize=12)
+		plt.legend(loc='lower left')
+		ax.grid(which='major', linestyle=':', linewidth='0.5', color='black')
+		plt.savefig(os.path.join(self.scratch, folder_name, "images", "decision_tree_classifier_gini_depth.png"))
+		
+		best_gini_depth = np.argmax(validation_avg) + 1
+		best_gini_accuracy_score = np.max(validation_avg)
+
+		#Create Gini Genome Categorizer
+		current_classifier_object = {	"classifier_to_execute": DecisionTreeClassifier(random_state=0, max_depth=best_gini_depth, criterion='gini'),
+										"classifier_type": "decision_tree_classifier_gini",
+										"classifier_name": classifier_object_name + "_" + "decision_tree_classifier_gini"
+									}
+
+		#this is a dictionary containing 'class 0': {'precision': 0.5, 'recall': 1.0, 'f1-score': 0.2}, 'accuracy'
+		(classification_report_dict, individual_classifier_info) = self.executeClassifier(current_ws, common_classifier_information, current_classifier_object, folder_name)
+		ddt_dict_classification_report_dict["decision_tree_classifier_gini"] = classification_report_dict
+		dtt_classifier_info.append(individual_classifier_info)
+
+		
+		#Entropy Criterion
+		training_avg = []
+		training_std = []
+		validation_avg = []
+		validation_std = []
+
+		for tree_depth in range(range_start, iterations):#notice here that tree depth must start at 1
+			classifier = DecisionTreeClassifier(random_state=0, max_depth=tree_depth, criterion=u'entropy')
+			train_score = []
+			validate_score = []
+
+			for c in range(common_classifier_information["splits"]):
+				X_train = common_classifier_information["whole_X"][common_classifier_information["list_train_index"][c]]
+				y_train = common_classifier_information["whole_Y"][common_classifier_information["list_train_index"][c]]
+				X_test = common_classifier_information["whole_X"][common_classifier_information["list_test_index"][c]]
+				y_test = common_classifier_information["whole_Y"][common_classifier_information["list_test_index"][c]]
+
+				classifier.fit(X_train, y_train)
+				y_pred = classifier.predict(X_test)
+
+				train_score.append(classifier.score(X_train, y_train))
+				validate_score.append(classifier.score(X_test, y_test))
+
+			training_avg.append(np.average(np.array(train_score)))
+			training_std.append(np.std(train_score))
+			validation_avg.append(np.average(validate_score))
+			validation_std.append(np.std(validate_score))
+
+		fig, ax = plt.subplots(figsize=(6, 6))
+		plt.errorbar(np.arange(range_start,iterations), training_avg, yerr=training_std, fmt=u'o', label=u'Training set')
+		plt.errorbar(np.arange(range_start,iterations), validation_avg, yerr=validation_std, fmt=u'o', label=u'Testing set')
+		ax.set_ylim(ymin=0.0, ymax=1.1)
+		ax.set_title("Entropy Criterion")
+		plt.xlabel('Tree Depth', fontsize=12)
+		plt.ylabel('Accuracy', fontsize=12)
+		plt.legend(loc='lower left')
+		ax.grid(which='major', linestyle=':', linewidth='0.5', color='black')
+		plt.savefig(os.path.join(self.scratch, folder_name, "images", "decision_tree_classifier_entropy_depth.png"))
+		
+		best_entropy_depth = np.argmax(validation_avg) + 1
+		best_entropy_accuracy_score = np.max(validation_avg)
+
+		#Create Gini Genome Categorizer
+		current_classifier_object = {	"classifier_to_execute": DecisionTreeClassifier(random_state=0, max_depth=best_entropy_depth, criterion='entropy'),
+										"classifier_type": "decision_tree_classifier_entropy",
+										"classifier_name": classifier_object_name + "_" + "decision_tree_classifier_entropy" 
+									}
+
+		#this is a dictionary containing 'class 0': {'precision': 0.5, 'recall': 1.0, 'f1-score': 0.2}, 'accuracy'
+		(classification_report_dict, individual_classifier_info) = self.executeClassifier(current_ws, common_classifier_information, current_classifier_object, folder_name)
+		ddt_dict_classification_report_dict["decision_tree_classifier_entropy"] = classification_report_dict
+		dtt_classifier_info.append(individual_classifier_info)
+
+		if best_gini_accuracy_score > best_entropy_accuracy_score:
+			top_20 = self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=best_gini_depth, criterion='gini'), common_classifier_information)
+		else:
+			top_20 = self.tree_code(DecisionTreeClassifier(random_state=0, max_depth=best_entropy_depth, criterion='entropy'), common_classifier_information)
+		
+		return (ddt_dict_classification_report_dict, dtt_classifier_info, top_20)
+
+	def tree_code(self, tree, common_classifier_information):
 		"""
-		args:
-		---tree is a DecisionTree object that has already been tuned
-		---pass_name is a string for what you want the tree named as (but this is not where the creation happens just pass)
-		---master_Role (same as classifierTest)
-		---class_list (same as classifierTest)
-		does:
-		---using graphviz feature it is able to geneate the dot file that has an "ugly" version of the tree inside
-		---call the parse_lookNice
-		return:
-		---N/A just makes an "ugly" dot file.
+		Takes the Decision Tree and produces an human understandable tree png and find the list of 
+		the top 20 most important attributed in identifying the splits in the tree
+
+		Parameter
+		---------
+		tree : sklearn DecisionTreeClassifier object
+			defined by calling function
+		common_classifier_information : dict
+			information for classifier details
 		"""
 
-		not_dotfile = io.StringIO()
-		export_graphviz(tree, out_file=not_dotfile, feature_names=master_Role,
-						class_names=class_list)
+		tree = tree.fit(common_classifier_information["whole_X"], common_classifier_information["whole_Y"])
 
-		contents = not_dotfile.getvalue()
-		not_dotfile.close()
+		tree_contents = export_graphviz(tree, 
+										out_file=None, 
+										feature_names=common_classifier_information["attribute_data"],
+										class_names=list(common_classifier_information["class_list_mapping"].keys()))
 
-		dotfile = open(os.path.join(self.scratch, 'dotFolder', 'mydotTree.dot'), u'w')
-		dotfile.write(contents)
-		dotfile.close()
+		initial_tree_contents = open(os.path.join(self.scratch, 'forBuild', 'initial_tree_contents.dot'), 'w')
+		initial_tree_contents.write(tree_contents)
+		initial_tree_contents.close()
 
-		return self.parse_lookNice(pass_name,tree, master_Role, class_list)
-
-	def parse_lookNice(self, name, tree, master_Role, class_list):
-		"""
-		args:
-		---name is a string that is what you want the DecisionTree image saved as
-		---tree is a DecisionTree object that has already been tuned
-		---master_Role (same as classifierTest)
-		---class_list (same as classifierTest)
-		does:
-		---this cleans up the dot file to produce a more visually appealing tree figure using graphviz
-		return:
-		---N/A but saves a .png of the name in the tmp folder
-		"""
-		f = open(os.path.join(self.scratch, 'dotFolder', 'mydotTree.dot'), u"r")
-		allStr = f.read()
-		f.close()
-		new_allStr = allStr.replace(u'\\n', u'')
-
-		first_fix = re.sub(r'(\w\s\[label="[\w\s.,:\'\/()-]+)<=([\w\s.\[\]=,]+)("] ;)', r'\1 (Absent)" , color="0.650 0.200 1.000"] ;', new_allStr)
-		second_fix = re.sub(r'(\w\s\[label=")(.+?class\s=\s)', r'\1', first_fix)
-
-		# nominal fixes like color and shape
-		third_fix = re.sub(r'shape=box] ;', r'shape=Mrecord] ; node [style=filled];', second_fix)
+		#start parsing the tree contents
+		#The tree that is made by export_graphviz, is UGLY! we try to add color and more human interpretability to it
+		tree_contents = tree_contents.replace('\\n', '')
+		tree_contents = re.sub(r'<=[^;]+', r' (Absent)" , color="0.650 0.200 1.000"]', tree_contents)
+		tree_contents = re.sub(r'[^"]*(class = )', r'', tree_contents)
+		tree_contents = re.sub(r'shape=box] ;', r'shape=Mrecord] ; node [style=filled];', tree_contents)
 
 		color_set = []
-		for class_current in range(len(class_list)):
-			color_set.extend(['%.4f'%random.uniform(0, 1) + " " + '%.4f'%random.uniform(0, 1) + " " + '0.900'])
+		for i in range(len(list(common_classifier_information["class_list_mapping"].keys()))):
+			color_set.append('%.4f'%np.random.random() + " " + '%.4f'%np.random.random()+ " " + '0.900')
 
-		for class_current, my_color in zip(range(len(class_list)),color_set):
-			third_fix = re.sub(r'(\w\s\[label="%s")' % class_list[class_current], r'\1, color = "%s"' % my_color, third_fix)
-
-		f = open(os.path.join(self.scratch, 'dotFolder', 'niceTree.dot'), u"w")
-		f.write(third_fix)
-		f.close()
-
-		os.system(u'dot -Tpng ' + os.path.join(self.scratch, 'dotFolder', 'niceTree.dot') + ' >  '+ os.path.join(self.scratch, 'forHTML', 'html2folder', name + u'.png '))
-		return self.top20Important(tree, master_Role)
-
-		"""
-		if class_list.__len__() == 3:
-			fourth_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[0], ur'\1, color = "0.5176 0.2314 0.9020"', third_fix)
-			fifth_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[1], ur'\1, color = "0.5725 0.6118 1.0000"', fourth_fix)
-			sixth_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[2], ur'\1, color = "0.5804 0.8824 0.8039"', fifth_fix)
-			f = open(os.path.join(self.scratch, 'dotFolder', 'niceTree.dot'), u"w")
-			f.write(sixth_fix)
-			f.close()
-
-			os.system(u'dot -Tpng ' + os.path.join(self.scratch, 'dotFolder', 'niceTree.dot') + ' >  '+ os.path.join(self.scratch, 'forHTML', 'html2folder', name + u'.png '))
-			self.top20Important(tree, master_Role)
-
-		if class_list.__len__() == 2:
-			fourth_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[0], ur'\1, color = "0.5176 0.2314 0.9020"', third_fix)
-			fifth_fix = re.sub(ur'(\w\s\[label="%s")' % class_list[1], ur'\1, color = "0.5725 0.6118 1.0000"', fourth_fix)
-			f = open(os.path.join(self.scratch, 'dotFolder', 'niceTree.dot'), u"w")
-			f.write(fifth_fix)
-			f.close()
-
-			os.system(u'dot -Tpng ' + os.path.join(self.scratch, 'dotFolder', 'niceTree.dot') + ' >  '+ os.path.join(self.scratch, 'forHTML', 'html2folder', name + u'.png '))
-			self.top20Important(tree, master_Role)
-		"""
+		for current_class, current_color in zip(list(common_classifier_information["class_list_mapping"].keys()), color_set):
+			tree_contents = re.sub(r'("%s")' % current_class, r'\1, color = "%s"' % current_color, tree_contents)
 
 
+		modified_tree_contents = open(os.path.join(self.scratch, 'forBuild', 'modified_tree_contents.dot'), "w")
+		modified_tree_contents.write(tree_contents)
+		modified_tree_contents.close()
 
-	def top20Important(self,tree, master_Role):
-		"""
-		args:
-		---tree is a DecisionTree object that has already been tuned
-		---master_Role (same as classifierTest)
-		does:
-		---find the list of the top20 most important roles in determining classification
-		return:
-		---creates a dataframe that is displayed in the html report
-		"""
-
-		data = {'attribute_list': master_Role, 'importance': tree.feature_importances_}
-
-		forImportance = pd.DataFrame.from_dict(data)
-
-		#display the top 20 most important functional roles and weights
-		top20 = forImportance.sort_values('importance', ascending=False)['attribute_list'].head(20)
-		top20_weight = forImportance.sort_values('importance', ascending=False)['importance'].head(20)*100
-		list_top20 = list(top20)
-		list_top20_weight = list(top20_weight)
-
-		df_top20 = pd.DataFrame.from_dict({'Top 20 Prioritized Roles': list_top20, 'Weights': list_top20_weight})
-
-		old_width = pd.get_option('display.max_colwidth')
-		pd.set_option('display.max_colwidth', -1)
-		df_top20.to_html(os.path.join(self.scratch, 'forHTML', 'html2folder', 'top20.html'), index=False, justify='center', table_id = "top20", classes =["table", "table-striped", "table-bordered"])
-		pd.set_option('display.max_colwidth', old_width)
-
-		#create a downloadable link to all functional roles and weights
-		top = forImportance.sort_values('importance', ascending=False)['attribute_list']
-		top_weight = forImportance.sort_values('importance', ascending=False)['importance']
-		list_top = list(top)
-		list_top_weight = list(top_weight)
-
-		attribute_list = []
-
-		for list_top_value, list_top_weight_value in zip(list_top20, list_top20_weight):
-			attribute_struct = {}
-			attribute_struct['attribute'] = list_top_value
-			attribute_struct['weight'] = list_top_weight_value
-
-			attribute_list.append(attribute_struct)
-			del attribute_struct
-
-		df_top = pd.DataFrame.from_dict({'Top Prioritized Roles': list_top, 'Weights': list_top_weight})
-
-		writer = pd.ExcelWriter(os.path.join(self.scratch, 'forHTML', 'forDATA', 'prioritized_weights.xlsx'), engine='xlsxwriter')
-		df_top.to_excel(writer, sheet_name='Sheet1')
-		writer.save()
-
-		return attribute_list
-
-	### Extra methods being used 
-	def _make_dir(self):
-		dir_path = os.path.join(self.scratch, str(uuid.uuid4()))
-		os.mkdir(dir_path)
-
-		return dir_path
-
-	def _download_shock(self, shock_id = None, handle_id = None):
-		"""
-		does:
-		---using kbase dfu tool to allow users to insert excel files 
-		"""
-		dir_path = self._make_dir()
-
-		if(handle_id):
-			file_path = self.dfu.shock_to_file({'handle_id': handle_id,
-											'file_path': dir_path})['file_path']
+		#take the tree dot file and turn it into an image
+		os.system(u'dot -Tpng ' + os.path.join(self.scratch, 'forBuild', 'modified_tree_contents.dot') + ' >  '+ os.path.join(self.scratch, 'forBuild', 'images', "VisualDecisionTree.png"))
 		
-		else:
-			file_path = self.dfu.shock_to_file({'shock_id': shock_id,
-											'file_path': dir_path})['file_path']
+		#find the 20 "most important" functional roles
+		genome_attribute_to_importance = pd.DataFrame({	common_classifier_information["attribute_type"]: common_classifier_information["attribute_data"], 
+														'Importance': tree.feature_importances_})
 
-		return file_path
+		top_20 = genome_attribute_to_importance.sort_values("Importance", ascending = False).head(20)
+
+		return top_20
 
 	def _upload_to_shock(self, file_path):
-		"""
-		does:
-		---using kbase dfu tool to allow users to insert excel files 
-		"""
-		# dir_path = self._make_dir()
-
-		"""print('here is the file_path')
-								print(type(file_path))
-								print(file_path)"""
 
 		f2shock_out = self.dfu.file_to_shock({'file_path': file_path,
 											  'make_handle': True})
@@ -2693,983 +845,1190 @@ class kb_genomeclfUtils(object):
 
 		return shock_id, handle_id
 
-	#### HTML templates below ####
-
-	### For Build_Classifier App
-
-	def html_report_0(self, missingGenomes, phenotype):
-		file = open(os.path.join(self.scratch, 'forZeroHTML', 'html0.html'), u"w")
-
-		html_string = u"""
-		<!DOCTYPE html>
-		<html>
-
-		<head>
-		
-		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css" rel="stylesheet">
-
-		<style>
-		table, th, td , tr{
-			text-align: center;
-		}
-		.table tbody tr td{background:#fff /*set your own color*/} 
-    	.table tbody tr th{background:#fff /*set your own color*/} 
-    	.table thead tr th{background:#fff /*set your own color*/} 
-		
-		.container {
-			max-width: 90%;
-			padding-top: 50px;
-      		padding-bottom: 50px;
-		}
-		</style>
-
-		</head>
-		<body>
-		<div class="container">
-
-		<h1 style="text-align:center;"> Missing Genomes in Training Data </h1>
-
-		<p> Missing genomes are listed below (ie. these were included in your excel / pasted file but are not present in the workspace).
-		A training set object was created regardless of if there were missing genomes. In the event that there were missing genomes they were excluded  </p>
-		<p> The missing genomes are: """ + str(missingGenomes) + """ </p>
-		
-		<br>
-
-		<p>Below is a detailed table which shows Genome ID, whether it was loaded into the Narrative, its """ + phenotype + """ Classification, and if it was Added to the Training Set</p>
-
+	def plot_confusion_matrix(self, cm, title, classifier_name, classes, folder_name):
 		"""
-		file.write(html_string)
+		Creates a Confunsion Matrix with specs
 
-		another_file = open(os.path.join(self.scratch, 'forZeroHTML','four_columns.html'), u"r")
-		all_str = another_file.read()
-		another_file.close()
-		file.write(all_str)
-
-		next_str =u"""
-		</div>
-		</body>
-
-		<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
-		<script type="text/javascript" src="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
-    
-		<script type="text/javascript" language="javascript" class="init">
-   		$(document).ready(function() {
-			$('#four_columns').DataTable();
-		});
-		</script>
-		</html>
+		Parameter
+		---------
+		cm : np array
+			defined by calling function
+		title : str
+			title
+		classifier_name : str
+			classifier_name
+		classes : list
+			["aerobic", "anerobic", etc.]
+		folder_name: str
+			location to place images
 		"""
-		file.write(next_str)
-		file.close()
 
-		#return "html0.html"
+		fig, ax = plt.subplots(figsize=(4.5,4.5))
 
-	def html_report_1(self, global_target, classifier_type, classifier_name, phenotype, num_classes, best_classifier_str = None):
+		sns_plot = sns.heatmap(cm, annot=True, ax = ax, cmap=u"Blues", fmt=".1f", square=True)
+		ax = sns_plot
+
+		ax.set_xlabel(u'Predicted Labels') 
+		ax.set_ylabel(u'True Labels')
+
+		ax.set_title(title)
+		ax.xaxis.set_ticklabels(classes)
+		ax.yaxis.set_ticklabels(classes)
+
+		plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+		plt.tight_layout()
+
+		fig = sns_plot.get_figure()
+		fig.savefig(os.path.join(self.scratch, folder_name, "images", classifier_name +".png"), format=u'png')
+
+
+	def unloadTrainingSet(self, current_ws, training_set_name):
 		"""
-		does: creates an .html file that makes the frist report (first app).
+		Take a Training Set Object and extracts "Genome Name", "Genome Reference", "Phenotype",
+		and "Phenotype Enumeration" and places into a DataFrame
+
+		class_enumeration will be something like: {'N': 0, 'P': 1} ie. phenotype --> number
+	
+		Parameter
+		---------
+		current_ws : str
+			current_ws
+		training_set_name : str
+			training set to use for app
 		"""
-		file = open(os.path.join(self.scratch, 'forHTML', 'html1folder', 'html1.html'), u"w")
+		training_set_object = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': training_set_name}]})["data"]
+	
+		phenotype = training_set_object[0]['data']["classification_type"]
+		classes_sorted = training_set_object[0]['data']["classes"]
 
-		html_string = u"""
-		<!DOCTYPE html>
-		<html>
+		class_enumeration = {} #{'N': 0, 'P': 1}
+		for index, _class in enumerate(classes_sorted):
+			class_enumeration[_class] = index
 
-		<head>
-		
-		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css" rel="stylesheet">
+		training_set_object_data = training_set_object[0]['data']['classification_data']
+		training_set_object_reference = training_set_object[0]['path'][0]
 
-		<style>
-		.dataTables_filter {
-      		width: 50%;
-      		float: right;
-      		text-align: right;
-    	}
-		table, th, td , tr{
-			text-align: center;
-		}
-		.table tbody tr td{background:#fff /*set your own color*/} 
-    	.table tbody tr th{background:#fff /*set your own color*/} 
-    	.table thead tr th{background:#fff /*set your own color*/} 
+		_names = []
+		_references = []
+		_phenotypes = []
+		_phenotype_enumeration = []
 
-		.container {
-			max-width: 90%;
-			padding-top: 50px;
-      		padding-bottom: 50px;
-		}
-		.row {
-			display: flex;
-			flex-wrap: wrap;
-			padding: 0 4px;
-		}
-
-		/* Create two equal columns that sits next to each other */
-		.column {
-			flex: 50%;
-			padding: 0 4px;
-		}
-
-		.column img {
-			margin-top: 8px;
-			vertical-align: middle;
-		}
-		</style>
-
-		</head>
-		<body>
-		<div class="container">
-
-		<h1 style="text-align:center;">""" + global_target + """ - Classifier</h1> """
-
-		file.write(html_string)
-
-		if classifier_type == u"run_all":
+		for genome in training_set_object_data:
+			_names.append(genome["genome_name"])
+			_references.append(genome["genome_ref"])
+			_phenotypes.append(genome["genome_classification"])
 			
-			next_str = u"""
-			<p style="text-align:center; font-size:160%;"> """ + global_target + """ Classification models were created based on the selected trainging set object, classification algorithim, and attribute.
-			The effectiveness of each model to predict """+ phenotype +""" is displayed by a confusion matrix* and relevant statistical measures below. </p>
+			_enumeration = class_enumeration[genome["genome_classification"]]
+			_phenotype_enumeration.append(_enumeration)
 
-			<p> The selected classifiers were: </p>
-			<ul>
-				<li>K-Nearest-Neighbors Classifier</li>
-				<li>Logistic Regression Classifier</li>
-				<li>Naive Gaussian Bayes Classifier</li>
-				<li>Support Vector Machine (SVM) Classifier</li>
-				<li>Decision Tree Classifier</li>
-				<li>Neural Network </li>
-			</ul> 
+		uploaded_df = pd.DataFrame(data={	"Genome Name": _names,
+											"Genome Reference": _references,
+											"Phenotype": _phenotypes,
+											"Phenotype Enumeration": _phenotype_enumeration})
 
-			<p> Further more, advanced options were not selected so no feature selection and parameter optimization was conducted. </p>
-			"""
+		return(phenotype, class_enumeration, uploaded_df, training_set_object_reference)
 
-			file.write(next_str)
+	def createIndicatorMatrix(self, uploaded_df, genome_attribute, master_role_list = None):
+		"""
+		Creates an indicator matrix of the following form
 
-		else :
+						Function 1	Function 2	Function 3	Function 4	Function 5 ...
 
-			next_str = u"""
-			<p style="text-align:center; font-size:160%;"> """ + global_target + """ Classification models were created based on the selected trainging set object, classification algorithim, and attribute.
-			The effectiveness of each model is displayed by a confusion matrix* and relevant statistical measures below. </p>
+		Genome Name 1		1			0			1			1			0
+		Genome Name 2		1			1			1			1			0
+		Genome Name 3		0			0			1			1			0
+		Genome Name 4		1			1			1			1			0
+		Genome Name 5		0			0			1			0			1
 
-			<p> The selected classifiers were: </p>
-			<ul>
-				<li>""" + classifier_type + """</li>
-			</ul> 
+		The [Genome Name 1, Genome Name 2, etc.] list is defined in uploaded_df (Names or References doesn't matter)
+		The [Function 1, Function 2, etc.] list is generated in this function...
 
-			<p> Further more, advanced options were not selected so no feature selection and parameter optimization was conducted. </p>
-			"""
+		How?
+		1. First loop over all genome objects to fine list of functional roles
+		2. Place all functional roles found over all genomes into a set
+		3. This set is sorted and made into list (alphabetically) and thus arranged to become Function 1, Function 2, etc.
+			a.  This list of all functional roles present in the genomes that were uploaded during the training time
+				will be known as master_role_list
 
-			file.write(next_str)
+		Then once we have master_role_list, we can simply populate the indicator matrix 
 
-		next_str = u"""
-		<p style="font-size:110%;"> 
-		*A confusion matrix is a table that is used to describe the performance of a classifier
-		on a set of test data for which the true values are known - showing the comparision between the predicted labels and true labels. (In our case we used 
-		K-fold Cross Validation and the below confusion matrices represent the "average" of k-folds.) 
-		The number in each cell of the confusion matrix is the percentage of samples with a true label being classified with the predicted label.
-		A strong classifier is one that has a central diagonal with the highest percentages, meaning that the majority of the predicted labels match the true label.
-		</p>
+		Parameter
+		---------
+		uploaded_df : pd DataFrame
+			refined user uploaded dataframe with genome names and references
+		genome_attribute : str
+			functional_roles, k-mers, protein sequence, etc.
+		master_role_list: str list 
+			only defined if function called from Predict Phenotype
 
-		<br/>
-
-		<p> Note that each classfication model can be downloaded by either clicking the Download button or selecting the desired model under links. As of now,
-		the format of these models are python pickel object created from the sklearn library</p>
+			This is because if function is called from Predict Phenotype, we don't need to figure out what the
+			list of all possible functional roles are, instead we just need to figure out which of the possible
+			functional roles are also present in genomes we are predicting phenotypes for
 		"""
 
-		file.write(next_str)
+		genome_references = uploaded_df["Genome Reference"].to_list()
 
-		if classifier_type == u"run_all":
-			if num_classes >= 6:
-				next_str = u"""
-				<p style="color: #ff5050;> Sorry, we cannot display confusion matricies for classifiers with greater than 6 classes. However statistics are still produced below. </p>
-				"""
-				file.write(next_str)
+		if "functional_roles" == genome_attribute:
+			
+			ref_to_role = {}
 
+			if(master_role_list == None):
+				master_role_set = set()
+
+			for genome_ref in genome_references:
+				genome_object_data = self.ws_client.get_objects2({'objects':[{'ref': genome_ref}]})['data'][0]['data']
+
+				#figure out where functional roles are kept
+				keys_location = genome_object_data.keys()
+				if ("features" in keys_location):
+					location_of_functional_roles = genome_object_data["features"]
+
+				elif ("non_coding_features" in keys_location):
+					location_of_functional_roles = genome_object_data["non_coding_features"]
+
+				elif ("cdss" in keys_location):
+					location_of_functional_roles = genome_object_data["cdss"]
+
+				else:
+					raise ValueError("The functional roles are not under features, non_coding_features, or cdss...")
+
+				#either the functional roles are under function or functions (really stupid...)
+				keys_function = location_of_functional_roles[0].keys()
+				function_str = "function" if "function" in keys_function else "functions"
+
+				list_functional_roles = []
+				for functional_role in location_of_functional_roles:
+					try:
+						role_to_insert = functional_role[function_str][0]
+						if " @ " in  role_to_insert:
+							list_functional_roles.extend(role_to_insert.split(" @ "))
+						elif " / " in role_to_insert:
+							list_functional_roles.extend(role_to_insert.split(" / "))
+						elif "; " in role_to_insert:
+							list_functional_roles.extend(role_to_insert.split("; "))
+						elif 'hypothetical protein' in role_to_insert:
+							pass
+						else:
+							list_functional_roles.append(role_to_insert)
+					except (KeyError):
+						# print("this is funcitonal role")
+						# print(functional_role)
+						# print("this is list_functional_roles")
+						# print(list_functional_roles)
+						
+						#print("apparently some function list just don't have functions...")
+						#^^ this makes no sense...
+						pass
+
+				#create a mapping from genome_ref to all of its functional roles
+				ref_to_role[genome_ref] = list_functional_roles
+
+				if(master_role_list == None):
+					#keep updateing a set of all functional roles seen so far
+					master_role_set = master_role_set.union(set(list_functional_roles))
+
+			if(master_role_list == None):
+				#we are done looping over all genomes
+				master_role_list = sorted(list(master_role_set))
+
+				try:
+					master_role_list.remove('')
+				except:	
+					pass
+			ref_to_indication = {}
+
+			#make indicator rows for each 
+			for genome_ref in genome_references:
+				set_functional_roles = set(ref_to_role[genome_ref])
+				matching_index = [i for i, role in enumerate(master_role_list) if role in set_functional_roles] 
+
+				indicators = np.zeros(len(master_role_list))
+				try:
+					indicators[np.array(matching_index)] = 1
+				except (IndexError):
+					raise IndexError('The genomes or genomeSet that you have submitted wasn’t annotated using the \
+						RAST annotation pipeline. Please annotate the genomes via ‘Annotate Microbial Genome’ app \
+						(https://narrative.kbase.us/#appcatalog/app/RAST_SDK/reannotate_microbial_genome/release)or \
+						genomeSets via Annotate Multiple Microbial Genomes’ app \
+						(https://narrative.kbase.us/#appcatalog/app/RAST_SDK/reannotate_microbial_genomes/release) and \
+						resubmit the RAST annotated genome/genomeSets into the Predict Phenotype app. (')
+				ref_to_indication[genome_ref] = indicators.astype(int)
+
+
+			indicator_matrix = pd.DataFrame.from_dict(data = ref_to_indication, orient='index', columns = master_role_list).reset_index().rename(columns={"index":"Genome Reference"})
+		
+			return (indicator_matrix, master_role_list)
+		else:
+			raise ValueError("Only classifiers based on functional roles have been impliemented please check back later")
+
+	def getKSplits(self, splits, whole_X, whole_Y):
+		"""
+		Creates training and testing sets based on strified k=10 splits
+
+		Parameter
+		---------
+		splits : int
+			default = 10
+		whole_X : np array
+			indicator matrix with data for (genomes x functional roles)
+		whole_Y: np array 
+			Phenotype classes denoted as integers
+		"""
+
+		#This cross-validation object is a variation of KFold that returns stratified folds. 
+		#The folds are made by preserving the percentage of samples for each class.
+		list_train_index = []
+		list_test_index = []
+		skf = StratifiedKFold(n_splits=splits, random_state=0, shuffle=True)
+		for train_idx, test_idx in skf.split(whole_X, whole_Y):
+			list_train_index.append(train_idx)
+			list_test_index.append(test_idx)
+
+		return (list_train_index, list_test_index)
+
+	def fullPredict(self, params, current_ws):
+		"""
+		workhorse function for predict_phenotype
+		"""
+
+		#create folder
+		folder_name = "forPredict"
+		os.makedirs(os.path.join(self.scratch, folder_name), exist_ok=True)
+
+		#Load Information from Categorizer 
+		categorizer_object = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name':params['categorizer_name']}]})["data"]
+
+		categorizer_handle_ref = categorizer_object[0]['data']['classifier_handle_ref']
+		categorizer_file_path = self._download_shock(categorizer_handle_ref)
+
+		master_role_list = categorizer_object[0]['data']['attribute_data']
+		class_list_mapping = categorizer_object[0]['data']['class_list_mapping']
+		genome_attribute = categorizer_object[0]['data']['attribute_type']
+
+		current_categorizer = pickle.load(open(categorizer_file_path, "rb"))
+
+		#Testing Files (No longer works)
+		#params["file_path"] = "/kb/module/data/RealData/GramDataEdit5.xlsx"
+		#uploaded_df = pd.read_excel(params["file_path"], dtype=str)
+		
+		#True App
+		#No longer needed: uploaded_df = self.getUploadedFileAsDF(params["file_path"], forPredict=True)
+		uploaded_df = self.genomeProcessing(current_ws, params)
+		params["annotate"] = 0 #explictly make sure there are no annotations happening
+		(missing_genomes, genome_label, subset_uploaded_df, _in_workspace, _list_genome_name, _list_genome_ref) = self.createListsForPredictionSet(current_ws, params, uploaded_df)
+
+		#get functional_roles and make indicator matrix
+		(indicator_matrix, master_role_list) = self.createIndicatorMatrix(subset_uploaded_df, genome_attribute, master_role_list = master_role_list)
+		whole_X = indicator_matrix[master_role_list].values
+		#Make Predictions on uploaded file
+		predictions_numerical = current_categorizer.predict(whole_X)
+
+		#{'N': 0, 'P': 1} --> {0:'N', 1: 'P'}
+		inv_map_class_list_mapping = {v: k for k, v in class_list_mapping.items()}
+		predictions_phenotype = [] #map numerical to phenotype
+		for numerical in predictions_numerical:
+			predictions_phenotype.append(inv_map_class_list_mapping[numerical])
+		prediction_probabilities = current_categorizer.predict_proba(whole_X)
+		prediction_probabilities = np.max(prediction_probabilities, axis = 1) #predict_proba returns an genome by class_num probability matrix, you only want to select maximum
+
+		#for callback structure and prediction set object
+		_list_prediction_phenotype = []
+		_list_prediction_probabilities = []
+
+		#for use in report
+		_prediction_phenotype = []
+		_prediction_probabilities = []
+		index = 0
+
+		genome_iter = uploaded_df[genome_label].to_list()
+		for genome in genome_iter:
+			if(genome not in missing_genomes):
+				_prediction_phenotype.append(predictions_phenotype[index])
+				_prediction_probabilities.append(prediction_probabilities[index])
+				_list_prediction_phenotype.append(predictions_phenotype[index])
+				_list_prediction_probabilities.append(prediction_probabilities[index])	
+
+				index +=1
 			else:
-				next_str = u"""
-				<div class="row"> 
-					<div class="column">
-						<p style="text-align:left; font-size:160%;">A.) K-Nearest-Neighbors Classifier <a href="../forDATA/""" + classifier_name + """_KNeighborsClassifier.pickle" download>  (Download) </a> </p>
-						<img src=" """+ classifier_name +"""_KNeighborsClassifier.png"  alt="Snow" style="width:100%">
-						<p style="text-align:left; font-size:160%;">C.) Naive Gaussian Bayes Classifier <a href="../forDATA/""" + classifier_name + """_GaussianNB.pickle" download> (Download) </a> </p>
-						<img src=" """+ classifier_name +"""_GaussianNB.png" alt="Snow" style="width:100%">
-						<p style="text-align:left; font-size:160%;">E.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier.pickle" download> (Download) </a> </p>
-						<img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
-					</div>
+				_prediction_phenotype.append("N/A")
+				_prediction_probabilities.append("N/A")
 
-					<div class="column">
-						<p style="text-align:left; font-size:160%;">B.) Logistic Regression Classifier <a href="../forDATA/""" + classifier_name + """_LogisticRegression.pickle" download> (Download) </a> </p>
-						<img src=" """+ classifier_name +"""_LogisticRegression.png" alt="Snow" style="width:100%">
-						<p style="text-align:left; font-size:160%;">D.) Support Vector Machine (SVM) Classifier <a href="../forDATA/""" + classifier_name + """_SVM.pickle" download> (Download) </a> </p>
-						<img src=" """+ classifier_name +"""_SVM.png" alt="Snow" style="width:100%">
-						<p style="text-align:left; font-size:160%;">F.) Neural Network Classifier <a href="../forDATA/""" + classifier_name + """_NeuralNetwork.pickle" download> (Download) </a> </p>
-						<img src=" """+ classifier_name +"""_NeuralNetwork.png" alt="Snow" style="width:100%">
-					</div> 
-				</div>
 
-				"""
-				file.write(next_str)
+		#construct prediction_set mapping
+		prediction_set = {}
+		for index, curr_genome_ref in enumerate(_list_genome_ref):
+			prediction_set[curr_genome_ref] = { 'genome_name': _list_genome_name[index],
+												'genome_ref': curr_genome_ref,
+												'phenotype': _list_prediction_phenotype[index],
+												'prediction_probabilities': _list_prediction_probabilities[index]
+												}
 
-			next_str = u"""
-			<br>
 
-			<p style="font-size:160%;">Below are statistics for each class based on each model: in the form of Accuracy, Precision, Recall and F1 Score. The statistics were derived from the confusion matricies.</p>
-			<p style="font-size:100%;">Defintion of key statistics:</p> 
-			
-			<ul>
-				<li>Accuracy - How often is the classifier correct</li>
-				<li>Precision - When predition is positive how often is it correct</li>
-				<li>Recall - When the condition is correct how often is it correct</li>
-				<li>F1 Score - The is a weighted average of recall and precision</li>
-			</ul>         
-			"""
-			file.write(next_str)
+		training_set_ref = categorizer_object[0]['data']['training_set_ref']
+		phenotype = self.ws_client.get_objects2({'objects' : [{'ref': training_set_ref}]})["data"][0]['data']["classification_type"]
 
-			another_file = open(os.path.join(self.scratch, 'forHTML', 'html1folder', 'newStatistics.html'), u"r")
-			all_str = another_file.read()
-			another_file.close()
+		predict_table = pd.DataFrame.from_dict({	genome_label: genome_iter,
+													phenotype: _prediction_phenotype,
+													"Verified to be in the Narrative": _in_workspace,
+													"Probability": _prediction_probabilities
+												})
+		
+		self.predictHTMLContent(params['categorizer_name'], phenotype, genome_attribute, missing_genomes, genome_label, predict_table)
+		html_output_name = self.viewerHTMLContent(folder_name, status_view = True)
 
-			file.write(all_str)
+		return html_output_name, prediction_set
 
-			next_str = u"""
-			<br>
+	def genomeProcessing(self, current_ws, params):
+		"""
+		A user can ONLY use this application if they can pass in either a genome or genome set (no files several arguments about this but whatever),
+		anyways... so the params has a field called input_genome_and_genome_set_refs.
 
-			<p style="text-align:center; font-size:100%;">  The best model (based on the highest average F1 score) is: """ + str(best_classifier_str) + """ </p>
-			"""
+		This field input_genome_and_genome_set_refs is a list that holds references ["1/2/3", "4/5/6", etc.] of both genomes
+		and genome references. From here we need to do a couple things 
 
-			file.write(next_str)
+		0. From the list of genome and genome references separate out each
+		1. Take all individual genomes and place them into a set
+		2. Merge all genome sets together
+		3. Get only the Genome References and make into a DataFrame
 
-		else:
-			if num_classes >= 9:
-				next_str = u"""
-				<p style="color: #ff5050;"> Sorry, we cannot display confusion matricies for classifiers with greater than 9 classes. However statistics are still produced below. </p>
-				"""
-				file.write(next_str)
+		After this we can use the rest of the fullPredict pipeline as usual
+
+		Parameter
+		---------
+		current_ws : str
+			current_ws
+		params: dict
+			only key we need from here is input_genome_and_genome_set_refs
+		"""
+
+		#Handle Genome Processing
+		#0. From input_genome_and_genome_set_refs we need to figure out which ones are input_genome_refs and which ones are input_genome_set_refs
+		#what that means is that from the the list of references that are passed in from the user, we need to figure out which ones are genomes,
+		#and which ones are genome sets
+		params["input_genome_refs"] = []
+		params["input_genome_set_refs"] = []
+
+		for any_ref in params["input_genome_and_genome_set_refs"]:
+			any_object = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'objid': any_ref.split("/")[1]}]})#get the objid ie. the 902 in 36230/902/1,
+			object_type = any_object["data"][0]["info"][2]
+			if("KBaseSearch.GenomeSet" in object_type):
+				params["input_genome_set_refs"].append(any_ref)
 			else:
-				next_str = u"""
-				<div class="row">
-					<div class="column">
-						<p style="text-align:left; font-size:160%;">A.) """ + classifier_type + """ <a href="../forDATA/""" + classifier_name + """.pickle" download> (Download) </a> </p>
-						<img src=" """+ classifier_name +""".png" alt="Snow" style="width:100%">
-					</div>
-					<div class="column">
-				"""
-				file.write(next_str)
+				params["input_genome_refs"].append(any_ref)
 
-			next_str = u"""
 
-			<br>
+		#1. Take all individual genomes and place them into a set
 
-			<p style="font-size:160%;">Below are statistics for each class, for each model, in the form of Accuracy, Precision, Recall and F1 Score. The statistics were derived from the confusion matricies.</p>
-			<p style="font-size:100%;">Defintion of key statistics:</p> 
+		#check that there is at least one genome in params["input_genome_refs"]
+		single_intermediate_genome_set_ref  = ""
+
+		if(len(params["input_genome_refs"])!=0):
+			#KButil_Build_GenomeSet params_RAST
+			merge_all_single_params = {
+			"input_refs": params["input_genome_refs"],
+			"desc":"merging intemediate genomes",
+			"output_name":"single_intermediate_genome_set",
+			"workspace_name":current_ws
+			}
+
+			self.kb_util.KButil_Build_GenomeSet(merge_all_single_params)
+
+			time.sleep(10)
+			#get reference of single_intermediate_genome_set
+			meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': "single_intermediate_genome_set"}]})['data'][0]['info']
+			single_intermediate_genome_set_ref = str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
+
+		#2. Merge all genome sets together
+		#check that there is at least one genome set in params["input_genome_set_refs"]
+		
+		combined_genome_set_ref = None #this is a reference to a genome set that contains all genomes 
+		if(len(params["input_genome_set_refs"])!=0):
+			#append the single_intermediate_genome_set_ref to input_genome_set_refs
+			if(single_intermediate_genome_set_ref != ""):
+				input_refs = params["input_genome_set_refs"].append(single_intermediate_genome_set_ref)
+			else:
+				input_refs = params["input_genome_set_refs"]
+
+			if(len(params["input_genome_set_refs"])==1):
+				pass
+			else:
+				merge_all_genome_set_params = {
+				"input_refs":input_refs,
+				"desc":"merging intemediate genome sets",
+				"output_name":"multiple_intermediate_genome_set",
+				"workspace_name":current_ws
+				}
+
+				self.kb_util.KButil_Merge_GenomeSets(merge_all_genome_set_params)
+
+			#handle the case of only 1 genome set and nothing else:
+			if(len(params["input_genome_set_refs"])==1):
+				combined_genome_set_ref = params["input_genome_set_refs"][0]
+			else:
+				#get reference of multiple_intermediate_genome_set == combined_genome_set_ref
+				meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': "multiple_intermediate_genome_set"}]})['data'][0]['info']
+				combined_genome_set_ref = str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
+
+			if(single_intermediate_genome_set_ref != ""):
+				#delete the single_intermediate_genome_set, since this isn't required by the users
+				self.ws_client.delete_objects([{'workspace': current_ws, 'objid' : single_intermediate_genome_set_ref.split("/")[1]}]) #get the objid ie. the 902 in 36230/902/1, 
+
+		else:
+			if(single_intermediate_genome_set_ref==""):
+				#this is the case that the user just doesn't pass in a single genome or genome set reference
+
+				#throw error
+				raise ValueError('User must provide a genome or genome set to make predictions for')
+			else:
+				#they don't pass in a genome set but we made one from the singular genomes
+				combined_genome_set_ref = single_intermediate_genome_set_ref
+
+
+		#3. Get only the Genome References and make into a DataFrame
+		genome_set_data = self.ws_client.get_objects2({'objects':[{'ref': combined_genome_set_ref}]})['data'][0]['data']
+		all_references_in_genome_set = list(genome_set_data["elements"].keys())
+		
+		#go from references to names (easier for user)
+		genome_names = []
+		for genome_ref in all_references_in_genome_set:
+			name = str(self.ws_client.get_objects2({'objects' : [{'ref':genome_ref}]})['data'][0]['info'][1])
+			genome_names.append(name)
+
+		uploaded_df = pd.DataFrame(data={"Genome Name": genome_names}) 
+		print("here is uploaded_df")
+		print(uploaded_df)
+
+		if(len(params["input_genome_set_refs"])==1):
+			pass
+		else:
+			#delte the multiple_intermediate_genome_set == combined_genome_set_ref since, this isn't required by the users
+			self.ws_client.delete_objects([{'workspace': current_ws, 'objid' : combined_genome_set_ref.split("/")[1]}]) #get the objid ie. the 902 in 36230/902/1,
 			
-			<ul>
-				<li>Accuracy - How often is the classifier correct</li>
-				<li>Precision - When predition is positive how often is it correct</li>
-				<li>Recall - When the condition is correct how often is it correct</li>
-				<li>F1 Score - The is a weighted average of recall and precision</li>
-			</ul>           
-			"""
-			file.write(next_str)
+		return uploaded_df
 
-			another_file = open(os.path.join(self.scratch, 'forHTML', 'html1folder', 'newStatistics.html'), u"r")
-			all_str = another_file.read()
-			another_file.close()
+	def generateHTMLReport(self, current_ws, folder_name, single_html_name, description, for_build_classifier = False):
+		"""
+		Creates KBaseReport from html file
 
-			file.write(all_str)
-
-			next_str = u"""
-			</div>
-			</div>
-			"""
-			file.write(next_str)
-
-		next_str = u"""
-		</div>
-		</body>
-
-		<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
-		<script type="text/javascript" src="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
-		<script type="text/javascript" src="https://cdn.datatables.net/fixedcolumns/3.2.6/js/dataTables.fixedColumns.min.js"></script>
-
-		<script type="text/javascript" language="javascript" class="init">
-   		$(document).ready(function() {
-			$('#newStatistics').DataTable({
-        		ordering:		false,
-				scrollY:        true,
-				scrollX:        true,
-				scrollCollapse: true,
-				paging:         false,
-				fixedColumns:   true
-			});
-		});
-		</script>
-		</html>
+		Parameter
+		---------
+		current_ws : str
+			current_ws
+		folder_name : str
+			"forUpload" || "forAnnotate" || "forBuild" || "forPredict"
+		single_html_name: str
+			file name to display in KBASE Report (from viewerHTMLContent)
+		description: str
+			description
+		for_build_classifier: bool
+			True if function called from build_classifier
 		"""
 
-		file.write(next_str)
+		report_shock_id = self.dfu.file_to_shock({	'file_path': os.path.join(self.scratch, folder_name),
+													'pack': 'zip'})['shock_id']
 
-		file.close()
+		html_output = {
+		'name' : single_html_name, #always viewer.html
+		'shock_id': report_shock_id
+		}
 
-	def html_report_2(self, global_target, classifier_name, num_classes, best_classifier_str = None):
-		"""
-		does: creates an .html file that makes the second report (first app).
-		"""
-		file = open(os.path.join(self.scratch, 'forHTML', 'html2folder', 'html2.html'), u"w")
+		report_params = {'message': '',
+			 'workspace_name': current_ws,
+			 'html_links': [html_output],
+			 'direct_html_link_index': 0,
+			 'html_window_height': 500,
+			 'report_object_name': 'kb_classifier_report_' + str(uuid.uuid4())
+			 }
 
-		html_string = u"""
-		<!DOCTYPE html>
-		<html>
+		if for_build_classifier:
+			output_file_links = []
 
-		<head>
+			for file in os.listdir(os.path.join(self.scratch, 'forBuild', 'data')):
+				output_file_links.append({	'path' : os.path.join(self.scratch, 'forBuild', 'data', file),
+											'name' : file
+											})
+
+			report_params['file_links'] = output_file_links
+
+		kbase_report_client = KBaseReport(self.callback_url, token=self.ctx['token'])
+		report_output = kbase_report_client.create_extended_report(report_params)
+
+		return report_output		
+
+	### Helper Methods ###
+
+	def _make_dir(self):
+		dir_path = os.path.join(self.scratch, str(uuid.uuid4()))
+		os.mkdir(dir_path)
+
+		return dir_path
+
+	def _download_shock(self, handle_id):
+		dir_path = self._make_dir()
+
+		file_path = self.dfu.shock_to_file({'handle_id': handle_id,
+											'file_path': dir_path})['file_path']
 		
-		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css" rel="stylesheet">
+		return file_path
 
-		<style>
-		.dataTables_filter {
-      		width: 50%;
-      		float: right;
-      		text-align: right;
-    	}
-		table, th, td , tr{
-			text-align: center;
-		}
-		.table tbody tr td{background:#fff /*set your own color*/} 
-    	.table tbody tr th{background:#fff /*set your own color*/} 
-    	.table thead tr th{background:#fff /*set your own color*/} 
+	def getUploadedFileAsDF(self, file_path, forPredict=False):
+		"""
+		Reads xlsx/csv/tsv file from staging area and converts to pandas DataFrame
 
-		.container {
-			max-width: 90%;
-			padding-top: 50px;
-      		padding-bottom: 50px;
-		}
-		.row {
-			display: flex;
-			flex-wrap: wrap;
-			padding: 0 4px;
-		}
-
-		/* Create two equal columns that sits next to each other */
-		.column {
-			flex: 50%;
-			padding: 0 4px;
-		}
-
-		.column img {
-			margin-top: 8px;
-			vertical-align: middle;
-		}		
-		</style>
-
-		</head>
-		<body>
-		<div class="container">
-
-		<h1 style="text-align:center;">""" + global_target + """ - Decision Tree Tuning</h1>
-
-		<!-- <h2>Maybe we can add some more text here later?</h2> -->
-		<!--<p>How to create side-by-side images with the CSS float property:</p> -->
-
-		<p style="text-align:left; font-size:160%;">  We tune the Decision Tree based on two hyperparameters: Tree Depth and Criterion (quality of a split) </p>
-		<p style="text-align:left; font-size:100%;">  The two criterion were "gini" which uses the Gini impurity socre and "entropy" which uses information gain score. </p>
+		Parameter
+		---------
+		file_path : str
+			file selected from staging area by user
+		forPredict : bool
+			is True if function is being called from Predict Phenotype
 		"""
 
-		file.write(html_string)
+		file_path = self.dfu.download_staging_file({'staging_file_subdir_path':file_path})['copy_file_path']
 
-		next_str = u"""
-
-		<div class="row">
-		  <div class="column">
-			  <p style="text-align:left; font-size:160%;">Training vs Testing Score on Gini Criterion </p>
-			<img src=" """+ classifier_name +"""_gini_depth-met.png" alt="Snow" style="width:100%">
-		  </div>
-		  <div class="column">
-			  <p style="text-align:left; font-size:160%;">Training vs Testing Score on Entropy Criterion</p>
-			<img src=" """+ classifier_name +"""_entropy_depth-met.png" alt="Snow" style="width:100%">
-		  </div>
-		</div>
-		"""
-
-		file.write(next_str)
-
-		if (best_classifier_str == None) or ("DecisionTreeClassifier" in best_classifier_str):
-			if num_classes >= 6:
-				next_str = u"""
-				<p style="color: #ff5050;"> Sorry, we cannot display confusion matricies for classifiers with greater than 6 classes. However statistics are still produced below. </p>
-				"""
-				file.write(next_str)
-
-			else:	
-				next_str = u"""
-				<p style="text-align:center; font-size:160%;">  The effectiveness of each model is displayed by a confusion matrix. We also include the 
-				original Decision Tree Classifier model as a baseline. </p>
-
-				<div class="row">
-				<div class="column">
-					<p style="text-align:left; font-size:160%;">A.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier.pickle" download> (Download) </a> </p>
-					<img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
-				</div>
-
-				</div>
-
-				<div class="row">
-					<div class="column">
-						<p style="text-align:left; font-size:160%;">B.) Decision Tree Classifier - Gini <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_gini.pickle" download> (Download) </a> </p>
-						<img src=" """+ classifier_name +"""_DecisionTreeClassifier_gini.png" alt="Snow" style="width:100%">
-					</div>
-					<div class="column">
-						<p style="text-align:left; font-size:160%;">C.) Decision Tree Classifier - Entropy <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_entropy.pickle" download> (Download) </a> </p>
-						<img src=" """+ classifier_name +"""_DecisionTreeClassifier_entropy.png" alt="Snow" style="width:100%">
-					</div>
-				</div>
-				"""
-				file.write(next_str)
+		if file_path.endswith('.xlsx'):
+			uploaded_df = pd.read_excel(file_path, dtype=str)
+		elif file_path.endswith('.csv'):
+			uploaded_df = pd.read_csv(file_path, header=0, dtype=str)
+		elif file_path.endswith('.tsv'):
+			uploaded_df = pd.read_csv(file_path, sep='\t', header=0, dtype=str)
 		else:
-			if num_classes >= 6:
-				next_str = u"""
-				<p style="color: #ff5050;"> Sorry, we cannot display confusion matricies for classifiers with greater than 6 classes. However statistics are still produced below. </p>
-				"""
-				file.write(next_str)
+			raise ValueError('The following file type is not accepted, must be .xlsx, .csv, .tsv')
 
-			else:	
-				next_str = u"""<p style="text-align:center; font-size:160%;">  The effectiveness of each model is displayed by a confusion matrix. We also include the 
-				original Decision Tree Classifier model as a baseline  and """+ best_classifier_str + """ as it showed the highest average F1 Score </p>
+		self.checkValidFile(uploaded_df, forPredict)
+		return uploaded_df
 
-				<div class="row">
-				<div class="column">
-					<p style="text-align:left; font-size:160%;">A.) Decision Tree Classifier <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier.pickle" download> (Download) </a> </p>
-					<img src=" """+ classifier_name +"""_DecisionTreeClassifier.png" alt="Snow" style="width:100%">
-				</div>
-
-				<div class="column">
-					<p style="text-align:left; font-size:160%;">B.) """+ best_classifier_str + """ <a href="../forDATA/""" + best_classifier_str + """.pickle" download> (Download) </a> </p>
-					<img src=" """+ best_classifier_str + """.png" alt="Snow" style="width:100%">
-					</div>
-				</div>
-
-				<div class="row">
-					<div class="column">
-						<p style="text-align:left; font-size:160%;">C.) Decision Tree Classifier - Gini <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_gini.pickle" download> (Download) </a> </p>
-						<img src=" """+ classifier_name +"""_DecisionTreeClassifier_gini.png" alt="Snow" style="width:100%">
-					</div>
-					<div class="column">
-						<p style="text-align:left; font-size:160%;">D.) Decision Tree Classifier - Entropy <a href="../forDATA/""" + classifier_name + """_DecisionTreeClassifier_entropy.pickle" download> (Download) </a> </p>
-						<img src=" """+ classifier_name +"""_DecisionTreeClassifier_entropy.png" alt="Snow" style="width:100%">
-					</div>
-				</div>
-				"""
-				file.write(next_str)
-
-		next_str= u"""
-		<br>
-		<p style="font-size:160%;">Below are statistics for each class, for each model, in the form of Accuracy, Precision, Recall and F1 Score. The statistics were derived from the confusion matricies.</p>
+	def checkValidFile(self, uploaded_df, forPredict):
 		"""
-		file.write(next_str)
+		Check that the uploaded_df has appropriate columns to use apps
 
-		another_file = open(os.path.join(self.scratch, 'forHTML', 'html2folder', 'postStatistics.html'), u"r")
-		all_str = another_file.read()
-		another_file.close()
-		file.write(all_str)
+		if function is called from Upload Training Set then required columns are:
+			(Genome Name||Genome Reference) && Phenotype
+		if function is called from Predict Phenotype then required columns are:
+			Genome Name||Genome Reference
 
-		next_str= u"""
-		<br>
-		<p style="font-size:160%;"> Below is a visual for the Decision Tree Classifier with the highest F1 Score.</p>
-		<img src="NAMEmyTreeLATER.png" alt="Snow" style="width:100%">
-
-		<br>
-		<br>
-
-		<p style="font-size:100%;"> Below is a list of the Top 20 Roles that were given the highest importance by the Decision Tree Classifier.</p>
-		<p style="text-align:left; font-size:160%;">D.) Table with prioritized_weights <a href="../forDATA/prioritized_weights.xlsx" download> (Download) </a> </p>
-		"""
-		file.write(next_str)
-
-		another_file = open(os.path.join(self.scratch, 'forHTML', 'html2folder', 'top20.html'), u"r")
-		all_str = another_file.read()
-		another_file.close()
-		file.write(all_str)
-
-		next_str = u"""
-		</div>
-		</body>
-
-		<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
-		<script type="text/javascript" src="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
-    
-		<script type="text/javascript" language="javascript" class="init">
-		$(document).ready(function() {
-			$('#postStatistics').DataTable({
-        		ordering:		false,
-				scrollY:        true,
-				scrollX:        true,
-				scrollCollapse: true,
-				paging:         false,
-				fixedColumns:   true
-			});
-			$('#top20').DataTable();
-		});
-		</script>
-		</html>
-		"""
-		file.write(next_str)
-
-		file.close()
-
-	def html_report_4(self, global_target, classifier_name, estimators_inHTML, num_classes):
-		file = open(os.path.join(self.scratch, 'forHTML', 'html4folder', 'html4.html'), u"w")
-		
-		html_string = u"""
-		<!DOCTYPE html>
-		<html>
-
-		<head>
-		
-		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css" rel="stylesheet">
-
-		<style>
-		.dataTables_filter {
-      		width: 50%;
-      		float: right;
-      		text-align: right;
-    	}
-		table, th, td , tr{
-			text-align: center;
-		}
-
-		.container {
-      		max-width: 90%;
-			padding-top: 50px;
-      		padding-bottom: 50px;
-    	}
-		.table tbody tr td{background:#fff /*set your own color*/} 
-    	.table tbody tr th{background:#fff /*set your own color*/} 
-    	.table thead tr th{background:#fff /*set your own color*/} 
-		</style>
-
-		</head>
-		<body>
-		<div class="container">
-
-		<h1 style="text-align:center;">""" + global_target + """ - Ensemble Model</h1>
-
-		<p> Below is an Ensemble Classfier based on a "hard" majority rule voting
-		mechanism as its weights from the selected models:  """+ estimators_inHTML + """.  </p>
-
+		Parameter
+		---------
+		uploaded_df : pd DataFrame
+			current_ws
+		forPredict : bool
+			is True if function is being called from Predict Phenotype
 		"""
 
-		file.write(html_string)
-		
-		if num_classes >= 6:
-				next_str = u"""
-				<p style="color: #ff5050;"> Sorry, we cannot display confusion matricies for classifiers with greater than 6 classes. However statistics are still produced below. </p>
-				"""
-				file.write(next_str)
+		uploaded_df_columns = uploaded_df.columns
 
-		else:	
-			next_str = u"""
-			<div class="row">
-				<div class="column">
-					<p style="text-align:left; font-size:160%;"> Ensemble Classifier <a href="../forDATA/""" + classifier_name + """_Ensemble_Model.pickle" download> (Download) </a> </p>
-					<img src=" """+ classifier_name +"""_Ensemble_Model.png" alt="Snow" style="width:100%">
-				</div>
-				<div class="column">
-				</div>
-			</div>
-			"""
-			file.write(next_str)
+		if forPredict:
+			if(("Genome Name" in uploaded_df_columns) or ("Genome Reference" in uploaded_df_columns)):
+				pass
+			else:
+				raise ValueError('File must include Genome Name/Genome Reference')
+		else:		
+			if (("Ref Seq Ids" in uploaded_df_columns) or ("Genome Name" in uploaded_df_columns) or ("Genome Reference" in uploaded_df_columns)) and ("Phenotype" in uploaded_df_columns):
+				pass
+			else:
+				raise ValueError('File must include Genome Name/Genome Reference and Phenotype as columns')
 
-
-		another_file = open(os.path.join(self.scratch, 'forHTML', 'html4folder', 'ensembleStatistics.html'), u"r")
-		all_str = another_file.read()
-		another_file.close()
-
-		file.write(all_str)
-
-
-		next_str = u"""
-		
-		<p> The effectiveness of each model is displayed by a confusion matrix above. Furthermore statistics for each class, for each model,
-		 in the form of Accuracy, Precision, Recall and F1 Score is below. The statistics were derived from the confusion matricies. </p>  
-		
-		</div>
-		</body>
-
-		<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
-		<script type="text/javascript" src="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
-    
-		<script type="text/javascript" language="javascript" class="init">
-   		$(document).ready(function() {
-			$('#ensembleStatistics').DataTable({
-        		ordering:		false,
-				scrollY:        true,
-				scrollX:        true,
-				scrollCollapse: true,
-				paging:         false
-			});
-		});
-		</script>
-		</html>
+	def createAndUseListsForTrainingSet(self, current_ws, params, uploaded_df):
 		"""
-		file.write(next_str)
+		This function does preprocessing that is necessary to create a Training Set Object
+		1. Regardless of if the user only passes in the Genome Name or the Genome Reference, it will go and
+			acquire both and pass them to be saved in the training set object
+		2. If the user chooses to have their genomes RAST Annotated then we will annotate them
+		3. Create a display report(report_table) that has information
+			on whether their genomes in their uploaded file (uploaded_df) are present in their workspace (missing_genomes),
+			which genomes were added to the training set, their corresponding phenotype, references, evidence
+		4. Notice that the report_table and classifier_training_set are different, the report_table has information for both missing
+			and present genomes, but the classifier_training_set only has information for present genomes.
 
-		file.close()
-
-	def html_dual_123(self):
-		file = open(os.path.join(self.scratch, 'forHTML', 'dual_123.html'), u"w")
-
-		html_string = u"""
-		<!DOCTYPE html>
-		<html>
-		<head>
-		<style>
-		body {font-family: "Lato", sans-serif;}
-		/* Style the tab */
-		div.tab {
-			overflow: hidden;
-			border: 1px solid #ccc;
-			background-color: #f1f1f1;
-		}
-		/* Style the buttons inside the tab */
-		div.tab button {
-			background-color: inherit;
-			float: left;
-			border: none;
-			outline: none;
-			cursor: pointer;
-			padding: 14px 16px;
-			transition: 0.3s;
-			font-size: 17px;
-		}
-		/* Change background color of buttons on hover */
-		div.tab button:hover {
-			background-color: #ddd;
-		}
-		/* Create an active/current tablink class */
-		div.tab button.active {
-			background-color: #ccc;
-		}
-		/* Style the tab content */
-		.tabcontent {
-			display: none;
-			padding: 6px 12px;
-			border: 1px solid #ccc;
-			-webkit-animation: fadeEffect 1s;
-			animation: fadeEffect 1s;
-			border-top: none;
-		}
-		/* Fade in tabs */
-		@-webkit-keyframes fadeEffect {
-			from {opacity: 0;}
-			to {opacity: 1;}
-		}
-		@keyframes fadeEffect {
-			from {opacity: 0;}
-			to {opacity: 1;}
-		}
-		table {
-			font-family: arial, sans-serif;
-			border-collapse: collapse;
-			width: 100%;
-		}
-		td, th {
-			border: 1px solid #dddddd;
-			text-align: left;
-			padding: 8px;
-		}
-		tr:nth-child(odd) {
-			background-color: #dddddd;
-		}
-		div.gallery {
-			margin: 5px;
-			border: 1px solid #ccc;
-			float: left;
-			width: 180px;
-		}
-		div.gallery:hover {
-			border: 1px solid #777;
-		}
-		div.gallery img {
-			width: 100%;
-			height: auto;
-		}
-		div.desc {
-			padding: 15px;
-			text-align: center;
-		}
-		</style>
-		</head>
-		<body>
-
-		<p></p>
-
-		<div class="tab">
-		  <button class="tablinks" onclick="openTab(event, 'Overview')" id="defaultOpen">Main Analysis</button>
-		  <button class="tablinks" onclick="openTab(event, 'Visualization')">Decision Tree Analysis</button>
-		  <button class="tablinks" onclick="openTab(event, 'ThirdPage')">Ensemble Model</button>
-		</div>
-
-		<div id="Overview" class="tabcontent">
-		  <iframe src="html1folder/html1.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
-		</div>
-
-		<div id="Visualization" class="tabcontent">
-		  <iframe src="html2folder/html2.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
-		</div>
-
-		<div id="ThirdPage" class="tabcontent">
-		  <iframe src="html4folder/html4.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
-		</div>
-
-		<script>
-		function openTab(evt, tabName) {
-			var i, tabcontent, tablinks;
-			tabcontent = document.getElementsByClassName("tabcontent");
-			for (i = 0; i < tabcontent.length; i++) {
-				tabcontent[i].style.display = "none";
-			}
-			tablinks = document.getElementsByClassName("tablinks");
-			for (i = 0; i < tablinks.length; i++) {
-				tablinks[i].className = tablinks[i].className.replace(" active", "");
-			}
-			document.getElementById(tabName).style.display = "block";
-			evt.currentTarget.className += " active";
-		}
-		// Get the element with id="defaultOpen" and click on it
-		document.getElementById("defaultOpen").click();
-		</script>
-
-		</body>
-		</html>
+		Parameter
+		---------
+		current_ws : str
+			current_ws
+		params : dict
+			user specified parameters
+		uploaded_df: pd DataFrame
+			user uploaded file
 		"""
+		(genome_label, all_df_genome, missing_genomes) = self.findMissingGenomes(current_ws, params["workspace_id"], uploaded_df)
 
-		file.write(html_string)
-		file.close()
-
-		return "dual_123.html"
-
-	def html_dual_12(self):
-		file = open(os.path.join(self.scratch, 'forHTML', 'dual_12.html'), u"w")
-
-		html_string = u"""
-		<!DOCTYPE html>
-		<html>
-		<head>
-		<style>
-		body {font-family: "Lato", sans-serif;}
-		/* Style the tab */
-		div.tab {
-			overflow: hidden;
-			border: 1px solid #ccc;
-			background-color: #f1f1f1;
-		}
-		/* Style the buttons inside the tab */
-		div.tab button {
-			background-color: inherit;
-			float: left;
-			border: none;
-			outline: none;
-			cursor: pointer;
-			padding: 14px 16px;
-			transition: 0.3s;
-			font-size: 17px;
-		}
-		/* Change background color of buttons on hover */
-		div.tab button:hover {
-			background-color: #ddd;
-		}
-		/* Create an active/current tablink class */
-		div.tab button.active {
-			background-color: #ccc;
-		}
-		/* Style the tab content */
-		.tabcontent {
-			display: none;
-			padding: 6px 12px;
-			border: 1px solid #ccc;
-			-webkit-animation: fadeEffect 1s;
-			animation: fadeEffect 1s;
-			border-top: none;
-		}
-		/* Fade in tabs */
-		@-webkit-keyframes fadeEffect {
-			from {opacity: 0;}
-			to {opacity: 1;}
-		}
-		@keyframes fadeEffect {
-			from {opacity: 0;}
-			to {opacity: 1;}
-		}
-		table {
-			font-family: arial, sans-serif;
-			border-collapse: collapse;
-			width: 100%;
-		}
-		td, th {
-			border: 1px solid #dddddd;
-			text-align: left;
-			padding: 8px;
-		}
-		tr:nth-child(odd) {
-			background-color: #dddddd;
-		}
-		div.gallery {
-			margin: 5px;
-			border: 1px solid #ccc;
-			float: left;
-			width: 180px;
-		}
-		div.gallery:hover {
-			border: 1px solid #777;
-		}
-		div.gallery img {
-			width: 100%;
-			height: auto;
-		}
-		div.desc {
-			padding: 15px;
-			text-align: center;
-		}
-		</style>
-		</head>
-		<body>
-
-		<p></p>
-
-		<div class="tab">
-		  <button class="tablinks" onclick="openTab(event, 'Overview')" id="defaultOpen">Main Analysis</button>
-		  <button class="tablinks" onclick="openTab(event, 'Visualization')">Decision Tree Analysis</button>
-		</div>
-
-		<div id="Overview" class="tabcontent">
-		  <iframe src="html1folder/html1.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
-		</div>
-
-		<div id="Visualization" class="tabcontent">
-		  <iframe src="html2folder/html2.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
-		</div>
-
-		<script>
-		function openTab(evt, tabName) {
-			var i, tabcontent, tablinks;
-			tabcontent = document.getElementsByClassName("tabcontent");
-			for (i = 0; i < tabcontent.length; i++) {
-				tabcontent[i].style.display = "none";
-			}
-			tablinks = document.getElementsByClassName("tablinks");
-			for (i = 0; i < tablinks.length; i++) {
-				tablinks[i].className = tablinks[i].className.replace(" active", "");
-			}
-			document.getElementById(tabName).style.display = "block";
-			evt.currentTarget.className += " active";
-		}
-		// Get the element with id="defaultOpen" and click on it
-		document.getElementById("defaultOpen").click();
-		</script>
-
-		</body>
-		</html>
-		"""
-
-		file.write(html_string)
-		file.close()
-
-		return "dual_12.html"
-
-	### For Predict_Phenotype App	
-	def html_report_3(self, missingGenomes, phenotype):
-		"""
-		does: creates an .html file that makes the first report (second app).
-		"""
-		file = open(os.path.join(self.scratch, 'forSecHTML', 'html3.html'), u"w")
-
-		html_string = u"""
-		<!DOCTYPE html>
-		<html>
-
-		<head>
-		
-		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css" rel="stylesheet">
-
-		<style>
-		table, th, td , tr{
-			text-align: center;
-		}
-		</style>
-
-		</head>
-		<body>
-		<div class="container">
-
-		<h1 style="text-align:center;"> Predicting """ + phenotype + """ of Genomes</h1>
-
-		<p> Missing genomes are listed below (ie. these were included in your excel / pasted file but are not present in the workspace).
-		In the event that there were missing genomes they were excluded  </p>
-		<p> The missing genomes are: """ + str(missingGenomes) + """ </p>
-		
-		<br>
-
-		"""
-		file.write(html_string)
-
-
-		sec_string = u"""
-
-		<h1 style="text-align:left;">Prediction Results</h1>
-
-		<!-- <h2>Maybe we can add some more text here later?</h2> -->
-		<!--<p>How to create side-by-side images with the CSS float property:</p> -->
-
-		<p>  Here is a simple table that shows the prediction for each sample and the probability of that prediction being correct </p>
-
-		<p> Ways of improving predictions </p>
-		<ul>
-			<li>Gather more data</li>
-			<li>Tune Hyperparameters (additional options in Build Classifier App)</li>
-		</ul> 
-
-		"""
-		file.write(sec_string)
-
-		
-		another_file = open(os.path.join(self.scratch, 'forSecHTML', 'html3folder', 'results.html'), u"r")
-		all_str = another_file.read()
-		another_file.close()
-
-		file.write(all_str)
-		
-
-		next_str= u"""
-		</div>
-		</body>
-
-		<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
-		<script type="text/javascript" src="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
-    
-		<script type="text/javascript" language="javascript" class="init">
-   		$(document).ready(function() {
-			$('#results').DataTable();
-		});
-		</script>
-		</html>
-		"""
-
-		file.write(next_str)
-
-		file.close()
-
-		return "html3.html"
-
-	def html_nodual(self, location):
-
-		if location == "forHTML":
-			file = open(os.path.join(self.scratch, 'forHTML', 'nodual.html'), u"w")
-		elif location == "forSecHTML":
-			file = open(os.path.join(self.scratch, 'forSecHTML', 'nodual.html'), u"w")
+		uploaded_df_columns = uploaded_df.columns
+		_references = []
+		if("References" in uploaded_df_columns):
+			has_references = True
+			uploaded_df["References"].fillna("", inplace=True)
 		else:
-			file = open(os.path.join(self.scratch, 'forZeroHTML', 'nodual.html'), u"w")
+			has_references = False
+		
+		_evidence_types = []
+		if("Evidence Types" in uploaded_df_columns):
+			has_evidence_types = True
+			uploaded_df["Evidence Types"].fillna("", inplace=True)
+		else:
+			has_evidence_types = False
 
-		html_string = u"""
-		<!DOCTYPE html>
-		<html>
-		<head>
+		############################################################
+		#subset dataframe to only include values that aren't missing
+		filtered_uploaded_df = uploaded_df[~uploaded_df[genome_label].isin(missing_genomes)]
+
+		if(genome_label == "Genome Reference"):
+			#get name
+			input_genome_references = filtered_uploaded_df["Genome Reference"].to_list()
+
+			input_genome_names = []
+			for genome_ref in input_genome_references:
+				genome_name = str(self.ws_client.get_objects2({'objects' : [{'ref':genome_ref}]})['data'][0]['info'][1])
+				input_genome_names.append(genome_name)
+
+		else:
+			#get references
+			input_genome_references = []
+
+			for genome in filtered_uploaded_df[genome_label]: #genome_label MUST be "Genome Name"
+				meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': genome}]})['data'][0]['info']
+				genome_ref = str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
+				input_genome_references.append(genome_ref)
+
+			input_genome_names = filtered_uploaded_df["Genome Name"].to_list()
+
+		"""
+		At this point both
+			input_genome_references
+			input_genome_names
+
+		will be populated regardelss of what genome_label is 
+		"""
+
+		if(params["annotate"]):
+			
+			#RAST Annotate the Genome
+			output_genome_set_name = params['training_set_name'] + "_RAST"
+
+			#We know a head of time that altl names are just old names with .RAST appended to them
+			RAST_genome_names = [params['training_set_name'] + "_RAST_" + genome_name  for genome_name in input_genome_names]
+
+			self.RASTAnnotateGenomeParallel(current_ws, input_genome_references, output_genome_set_name, input_genome_names, RAST_genome_names)
+
+			# genome_set_name = "RAST_"+training_set_name
+			# # self.RASTAnnotateGenome(current_ws, _list_genome_ref, genome_set_name)
+
+			# # RAST_genome_names = _list_genome_name
+			# # RAST_genome_references = _list_genome_ref
+			# #We know a head of time that all names are just old names with .RAST appended to them
+			# RAST_genome_names = [genome_set_name + "_" + genome_name  for genome_name in _list_genome_name]
+
+			# self.RASTAnnotateGenomeParallel(current_ws, _list_genome_ref, genome_set_name, _list_genome_name, RAST_genome_names)
+
+			
+			_list_genome_name = RAST_genome_names
+
+			#Figure out new RAST references 
+			RAST_genome_references = []
+			for RAST_genome in RAST_genome_names:
+				meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': RAST_genome}]})['data'][0]['info']
+				genome_ref = str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
+				RAST_genome_references.append(genome_ref)
+			_list_genome_ref = RAST_genome_references
+
+		else:
+			_list_genome_ref = input_genome_references
+
+			#get genome_names
+			genome_names = []
+			for genome_ref in _list_genome_ref:
+				name = str(self.ws_client.get_objects2({'objects' : [{'ref':genome_ref}]})['data'][0]['info'][1])
+				genome_names.append(name)
+			_list_genome_name = genome_names
+
+		# get additional columns
+		_list_phenotype = filtered_uploaded_df["Phenotype"].to_list()
+		if(has_references):
+			_list_references = filtered_uploaded_df["References"].str.split(";").to_list()
+		else:
+			_list_references = [[]]*filtered_uploaded_df.shape[0]
+
+		if(has_evidence_types):
+			_list_evidence_types = filtered_uploaded_df["Evidence Types"].str.split(";").to_list()
+		else:
+			_list_evidence_types = [[]]*filtered_uploaded_df.shape[0]
+
+		# make the classifier_training_set (only need to make it from present genomes)
+		classifier_training_set = {}
+		for index, curr_genome_ref in enumerate(_list_genome_ref):
+			classifier_training_set[curr_genome_ref] = { 	'genome_name': _list_genome_name[index],
+															'genome_ref': curr_genome_ref,
+															'phenotype': _list_phenotype[index],
+															'references': _list_references[index],
+															'evidence_types': _list_evidence_types[index]
+														}
+
+
+		#everything above this is only for non-missing genomes
+		############################################################
+
+		report_table = pd.DataFrame.from_dict({	genome_label: uploaded_df[genome_label],
+												"Phenotype/Classification": uploaded_df["Phenotype"],
+												})	
+
+												#locations where genomes are present / not missing
+		report_table["Verified to be in the Narrative"] = np.where(~uploaded_df[genome_label].isin(missing_genomes), "Yes", "No")
+		report_table["Integrated into the Training Set"] = np.where(~uploaded_df[genome_label].isin(missing_genomes), "Yes", "No")
+
+		if(has_references):
+			report_table["References"] = uploaded_df["References"].str.split(";")
+		if(has_evidence_types):
+			report_table["Evidence Type(e.g; Respiration)"] = uploaded_df["Evidence Types"].str.split(";")
+
+		(number_of_genomes, number_of_classes) = self.createTrainingSetObject(current_ws, params, _list_genome_name, _list_genome_ref, _list_phenotype, _list_references, _list_evidence_types)
+		return (report_table, classifier_training_set, missing_genomes, genome_label, number_of_genomes, number_of_classes)
+
+	def createTrainingSetObject(self, current_ws, params, _list_genome_name, _list_genome_ref, _list_phenotype, _list_references, _list_evidence_types, with_Rast = False):
+		"""
+		Creates a GenomeClassifierTrainingSet: 
+		https://narrative.kbase.us/#spec/type/KBaseClassifier.GenomeClassifierTrainingSet
+
+		Parameter
+		---------
+		current_ws : str
+			current_ws
+		params : dict
+			user specified parameters
+		_list_genome_name: str list
+			list of genome names
+		_list_genome_ref: str list
+			list of genome references
+		_list_phenotype: str list
+			list of phenotypes
+		_list_references: str list
+			list of references
+		_list_evidence_types: str list
+			list of evidence types
+		with_Rast: bool
+			if true add an extra field with "annotated as true"
+		"""
+
+		classification_data = []
+
+		for index, curr_genome_ref in enumerate(_list_genome_ref):
+			classification_data.append({ 	'genome_name': _list_genome_name[index],
+											'genome_ref': curr_genome_ref,
+											'genome_classification': _list_phenotype[index],
+											'genome_id': "", #genome_id set to "" for now...
+											'references': _list_references[index],
+											'evidence_types': _list_evidence_types[index]
+										})
+
+		training_set_object = {
+			'name': params['training_set_name'],
+			'description': params['description'],
+			'classification_type': params['phenotype'],
+			'number_of_genomes': len(_list_genome_name),
+			'number_of_classes': len(list(set(_list_phenotype))),
+			'classes': sorted(list(set(_list_phenotype))),
+			'classification_data': classification_data
+			}
+
+		if(with_Rast):
+			training_set_object["annoated"] = True
+
+		number_of_genomes = len(_list_genome_name)
+		number_of_classes = len(list(set(_list_phenotype)))
+		training_set_ref = self.ws_client.save_objects({'workspace': current_ws,
+													  'objects':[{
+																  'type': 'KBaseClassifier.GenomeClassifierTrainingSet',
+																  'data': training_set_object,
+																  'name': params['training_set_name'],  
+																  'provenance': self.ctx['provenance']
+																}]
+													})[0]
+
+		print("A Training Set Object named " + str(params['training_set_name']) + " with reference: " + str(training_set_ref) + " was just made.")
+		
+		return (number_of_genomes, number_of_classes)
+
+	def checkUniqueColumn(self, uploaded_df, genome_label):
+
+		if(uploaded_df[genome_label].is_unique):
+			pass
+		else:
+			raise ValueError(str(genome_label) + " column is not unique")
+
+	def genomes_to_ws(self, to_ws='', from_ws='19217', refseq_ids=[], verbose=False):
+		"""
+		Special Thanks to https://github.com/braceal
+
+		Copies genomes specified in refseq_ids (GCF ids) from from_ws to to_ws
+		and returns a dictionary of associated genome object ref ids e.g. 65797/3/1
+		(ws/object-id/version).
+		
+		Will be GCF id itself if it does not exist
+		
+		return obj_refs: {'GCF_900128725.1': '36230/794/9', 'GCF_x001289725.1': 'GCF_900128725.1'}
+
+		Parameter
+		---------
+		to_ws : str
+			Workspace to copy objects to
+		from_ws : str
+			Workspace to copy objects from
+		refseq_ids : list
+			GCF ids of genomes to copy to to_ws
+		verbose : bool
+			If true, shows verbose output with progress updates
+		"""
+		# Default to current user workspace
+
+		obj_refs = {curr_refseq_id: curr_refseq_id for curr_refseq_id in refseq_ids}
+		total_add_refs = 0
+
+		# Use set for O(1) query
+		refseqs = set(refseq_ids)
+		# Data batch parameters
+		step = 10000 # How many genome objects to pull in each batch
+		max_object_id = 0 # Keeps track of max object id seen so far
+		prev_max_object_id = -1 # Defines stoping condition for while loop
+		if verbose:
+			batch = 0
+		# If the previous iterations max object id is greater than or equal
+		# to the most recent max_object_id, then all genomes have been pulled.
+		while max_object_id > prev_max_object_id:
+			prev_max_object_id = max_object_id
+			# Get list of KBaseGenomes.Genome objects
+			genomes = self.ws_client.list_objects({'ids':[from_ws],
+									   'type': 'KBaseGenomes.Genome',
+									   'includeMetadata':1,
+									   'minObjectID':max_object_id,
+									   'limit': step})
+			if verbose:
+				print(f'Batch {batch}')
+				print(f'\t{len(genomes)} genomes pulled with max_object_id {max_object_id}')
+				batch += 1
+			# Check each received genome to see if it is in the user requested refseq_ids
+			for genome in genomes:
+				if genome[1] in refseqs:
+					obj = self.ws_client.copy_object({'from':{'objid':genome[0],'wsid': from_ws},'to':{'wsid': to_ws,'name':genome[1]}})
+					# Build list of KBase object references
+					curr_obj_ref = f'{to_ws}/{obj[0]}/{obj[4]}'# (ws/object-id/version)
+					obj_refs[genome[1]] = curr_obj_ref
+					total_add_refs+=1
+				# Early stopping optimization
+				if total_add_refs == len(refseq_ids):
+					return obj_refs
+				# For pulling batches
+				if genome[0] > max_object_id:
+					max_object_id = genome[0]
+		return obj_refs
+
+	def findMissingGenomes(self, current_ws, workspace_id, uploaded_df):
+		"""
+		Finds missing genomes from user uploaded_df. Returns either a list of 
+		Genome References or Genome Names that are missing from workspace but are 
+		specified in uploaded_df. (Genome References are given preference over Genome Names)
+
+		Parameter
+		---------
+		current_ws : str
+			current_ws
+		workspace_id: str
+			ws_id ex: 69058 or 36230
+		uploaded_df : pd DataFrame
+			user uploaded dataframe
+		"""
+
+		if "Ref Seq Ids" in uploaded_df.columns:
+			#in the event that the user passes in "Ref Seq Ids" you have to use those first
+			self.checkUniqueColumn(uploaded_df, "Ref Seq Ids")
+
+			#{'GCF_900128725.1': '36230/794/9', 'GCF_x001289725.1': 'GCF_x001289725.1'}
+			# obj_refs = self.genomes_to_ws("36230", refseq_ids=uploaded_df["Ref Seq Ids"].to_list())
+			obj_refs = self.genomes_to_ws(workspace_id, refseq_ids=uploaded_df["Ref Seq Ids"].to_list())
+			#uploaded_df["Genome Reference"] = uploaded_df["Ref Seq Ids"].map(obj_refs)
+			uploaded_df["Genome Name"] = uploaded_df["Ref Seq Ids"]
+
+		all_genomes_workspace = self.ws_client.list_objects({'workspaces':[current_ws],'type':'KBaseGenomes.Genome'})
+
+		#figure out if matching on Reference or Name and then find missing genomes
+		if "Genome Reference" in uploaded_df.columns:
+			genome_label = "Genome Reference"
+			self.checkUniqueColumn(uploaded_df, genome_label)
+
+			all_df_genome = uploaded_df[genome_label]
+			all_refs2_workspace = [str(genome[6]) + "/" +str(genome[0])for genome in all_genomes_workspace]
+			all_refs3_workspace = [str(genome[6]) + "/" +str(genome[0]) + "/" + str(genome[4]) for genome in all_genomes_workspace]
+			
+			missing_genomes = []
+			for ref in all_df_genome:
+				if((ref not in all_refs2_workspace) and (ref not in all_refs3_workspace)):
+					missing_genomes.append(ref)
+
+		else:
+			genome_label = "Genome Name"
+			self.checkUniqueColumn(uploaded_df, genome_label)
+
+			all_df_genome = uploaded_df[genome_label]
+			all_names_workspace = [str(genome[1]) for genome in all_genomes_workspace]
+			missing_genomes = list(set(all_df_genome).difference(set(all_names_workspace)))
+
+		"""
+		genome_label is like the "key" that we are going to be consistently indexing by
+		
+		In this method if user passes in Ref Seq Ids ---> Genome Name
+		"""
+
+		return (genome_label, all_df_genome, missing_genomes)
+
+	def RASTAnnotateGenome(self, current_ws, input_genomes, output_genome_set_name):
+		"""
+		Take a list of genome references and creates a RAST annotated genome_set
+		based on (beta version of RAST SDK as of 8/2/2020)
+
+		Call to rast_genomes_assemblies also adds the RAST annotated genomes 
+		into the workspace.
+
+		Parameter
+		---------
+		current_ws : str
+			current_ws
+		input_genomes : str list
+			list of genome references ["12345/12/2", "12356/13/2", etc.]
+		output_genome_set_name: str
+			name of genome set that will be added to the workspaces: params['training_set_name'] + "_RAST"
+		"""
+
+		print("in RASTAnnotateGenome input_genomes are:")
+		print(input_genomes)
+
+		params_RAST =	{
+		"input_text": ";".join(input_genomes),
+		"output_workspace": current_ws,
+		"output_GenomeSet_name" : output_genome_set_name
+		}
+		
+		#we don't do anything with the output but you can if you want to
+		print(params_RAST)
+		output = self.rast.rast_genomes_assemblies(params_RAST)
+
+
+		print("this is output from rast processing")
+		print(output)
+		print("this is output from rast processing keys")
+		print(output.keys())
+
+		if(output):
+			pass
+		else:
+			print("output is: " + str(output))
+			raise ValueError("for some reason unable to RAST Annotate Genome")
+
+	def RASTAnnotateGenomeParallel(self, current_ws, input_genomes, output_genome_set_name, list_genome_names, RAST_genome_names):
+		"""
+		The method was suggested by Alex Brace (https://github.com/braceal). It runs the RASTAnnotateGenome (the bulk RAST Annotation
+		Script) in parallel which will allow for a major speed up in term of system runtime. 
+
+		However in order to do this there, needs to be some "accounting" steps that are also taken care off. The first this is that
+		in order to run in parallel we need to have batches sent to the parallel executor, this means that some of the batches may not
+		be the correct size as we expect them to be. This means that if we have lets say 25 genome and batch size of 10 then we will have
+		2 batches of size 10 and 1 batch of size 5. 
+
+		This creates a problem since we first to need to send multiple calls to RASTAnnotateGenome which then produces multiple genomes 
+		sets of (enumerated names). Then we need to merges these genome set, delete the old sets, and also rename all of the itermediate
+		annotated genomes that are created.
+
+		Parameter
+		---------
+		current_ws : str
+			current_ws
+		input_genomes : str list
+			list of genome references ["12345/12/2", "12356/13/2", etc.]
+		output_genome_set_name: str
+			name of genome set that will be added to the workspaces: params['training_set_name'] + "_RAST"
+		list_genome_names: str list
+			list of genome names ["GCF_1", "GCF_2", etc,]
+		RAST_genome_names: str list
+			this is the list of NEW genomes the user expects to be produced
+			will always be of the form ["RAST_something_GCF_1", "RAST_something_GCF_2", etc,]
+		"""
+
+		batch_size = 50 # batch_size (ie. number of genomes in a batch)
+		#hello future coder! In the case that this app has become popular we will need to change this batch size
+
+		genome_batches = [input_genomes[ind:ind+batch_size] for ind in range(0, len(input_genomes), batch_size)]
+		#genome_batches something like: [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [11, 12]]
+		
+		lengths_genome_batches = [len(batch) for batch in genome_batches]
+		#lengths_genome_batches something like: [10, 2]
+
+
+		list_genome_set_names = [f'{output_genome_set_name}_{i}' for i in range(len(genome_batches))]
+		#genome_set_name_1, genome_set_name_2, etc.
+
+		broadcasted_prefixes = [item for item, count in zip(list_genome_set_names,lengths_genome_batches) for i in range(count)]
+		#https://stackoverflow.com/questions/33382474/repeat-each-item-in-a-list-a-number-of-times-specified-in-another-list
+		#broadcasted_prefixes is something like: [genome_set_name_1, genome_set_name_1,genome_set_name_1, ..., genome_set_name_2, genome_set_name_2]
+
+		split_prefix_names = [prefix_set_name +"_"+ actual_name for prefix_set_name, actual_name in zip(broadcasted_prefixes, list_genome_names)]
+		#split_prefix_names something like: [genome_set_name_1_actual_genome_name_1, genome_set_name_1_actual_genome_name_2, ...
+		#									 genome_set_name_2_actual_genome_name_11, genome_set_name_2_actual_genome_name_12,]
+
+		#list of dictionary for kwargs for 
+		kwargs = [{'current_ws': current_ws,
+		           'input_genomes': batch,
+		           'output_genome_set_name': output_name} 
+		           for batch, output_name in zip(genome_batches,list_genome_set_names)] 
+
+		#see Alex for details
+		_worker = lambda kwargs: self.RASTAnnotateGenome(**kwargs)
+
+		with ThreadPoolExecutor() as executor:
+		        for _ in executor.map(_worker, kwargs):
+		             continue
+
+		#############################################
+		#Do some housekeeping in the workspace Yay!
+		#############################################
+
+		#1 Merge the genome sets into one genome set
+		#get references of list_genome_set_names
+		list_genome_set_refs = []
+
+		for output_name in list_genome_set_names: #genome_label MUST be "Genome Name"
+			meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': output_name}]})['data'][0]['info']
+			genome_set_ref= str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
+			list_genome_set_refs.append(genome_set_ref)
+
+		merge_params = {
+		"desc": "merging " + ', '.join(list_genome_set_names),
+		"input_refs":list_genome_set_refs,
+		"output_name":output_genome_set_name,
+		"workspace_name":current_ws
+		}
+
+		#do merge call
+		self.kb_util.KButil_Merge_GenomeSets(merge_params)
+
+		#2 Delete the said genome sets
+		for genome_set_ref in list_genome_set_refs:
+		    self.ws_client.delete_objects([{'workspace': current_ws, 'objid' : genome_set_ref.split("/")[1]}]) #get the objid ie. the 902 in 36230/902/1, 
+
+
+		# print("here is split_prefix_names")
+		# print(split_prefix_names)
+		# print("here is RAST_genome_names")
+		# print(RAST_genome_names)
+		#3 rename all output genomes to a standard name
+		for original_name, new_name in zip(split_prefix_names, RAST_genome_names):
+			self.ws_client.rename_object({'obj':{"workspace":current_ws, "name":original_name}, 'new_name': new_name})
+
+		time.sleep(10)
+
+	def createListsForPredictionSet(self, current_ws, params, uploaded_df):
+		"""
+		Similar method to createAndUseListsForTrainingSet, however adapted for the Predict Phenotype app.
+		Most differences are that the only required user input is Genome Name or Genome Reference so we don't 
+		need to account for other details.
+
+		Parameter
+		---------
+		current_ws : str
+			current_ws
+		params : dict
+			user specified parameters
+		uploaded_df: pd DataFrame
+			user uploaded file
+		"""
+
+		(genome_label, all_df_genome, missing_genomes) = self.findMissingGenomes(current_ws, params["workspace_id"], uploaded_df)
+		uploaded_df_columns = uploaded_df.columns
+
+		############################################################
+		#subset dataframe to only include values that aren't missing
+		filtered_uploaded_df = uploaded_df[~uploaded_df[genome_label].isin(missing_genomes)]
+
+		#get references
+		if(genome_label == "Genome Reference"):
+			input_genome_references = filtered_uploaded_df["Genome Reference"].to_list()
+
+			input_genome_names = []
+			for genome_ref in input_genome_references:
+				genome_name = str(self.ws_client.get_objects2({'objects' : [{'ref':genome_ref}]})['data'][0]['info'][1])
+				input_genome_names.append(genome_name)
+
+		else:
+			input_genome_references = []
+
+			for genome in filtered_uploaded_df[genome_label]: #genome_label MUST be "Genome Name"
+				meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': genome}]})['data'][0]['info']
+				genome_ref = str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
+				input_genome_references.append(genome_ref)
+
+			input_genome_names = filtered_uploaded_df["Genome Name"].to_list()
+
+		"""
+		At this point both
+			input_genome_references
+			input_genome_names
+
+		will be populated regardelss of what genome_label is 
+		"""
+
+		if(params["annotate"]):
+
+			#RAST Annotate the Genome (right now just make the set name off of description)
+			output_genome_set_name = params['description'] + "_RAST"
+
+			#We know a head of time that altl names are just old names with .RAST appended to them
+			RAST_genome_names = [params['description'] + "_RAST_" + genome_name  for genome_name in input_genome_names]
+
+			self.RASTAnnotateGenomeParallel(current_ws, input_genome_references, output_genome_set_name, input_genome_names, RAST_genome_names)
+
+			
+			# #RAST Annotate the Genome
+			# output_genome_set_name = params['training_set_name'] + "_RAST"
+			# #output_genome_set_name = params['training_set_name'] + "_GenomeSET"
+			# self.RASTAnnotateGenome(current_ws, input_genome_references, output_genome_set_name)
+			# #We know a head of time that all names are just old names with .RAST appended to them
+			# RAST_genome_names = [params['training_set_name'] + "_RAST_" + genome_name  for genome_name in input_genome_names]
+
+
+			_list_genome_name = RAST_genome_names
+
+			#Figure out new RAST references 
+			RAST_genome_references = []
+			for RAST_genome in RAST_genome_names:
+				meta_data = self.ws_client.get_objects2({'objects' : [{'workspace':current_ws, 'name': RAST_genome}]})['data'][0]['info']
+				genome_ref = str(meta_data[6]) + "/" + str(meta_data[0]) + "/" + str(meta_data[4])
+				RAST_genome_references.append(genome_ref)
+			_list_genome_ref = RAST_genome_references
+
+		else:
+			_list_genome_ref = input_genome_references
+
+			#get genome_names
+			genome_names = []
+			for genome_ref in _list_genome_ref:
+				name = str(self.ws_client.get_objects2({'objects' : [{'ref':genome_ref}]})['data'][0]['info'][1])
+				genome_names.append(name)
+			_list_genome_name = genome_names
+
+
+		#everything above this is only for non-missing genomes
+		############################################################
+		#locations where genomes are present / not missing
+		_in_workspace = np.where(~uploaded_df[genome_label].isin(missing_genomes), "True", "False")
+
+
+		subset_uploaded_df = pd.DataFrame(data={	"Genome Name": _list_genome_name,
+													"Genome Reference": _list_genome_ref
+												})
+
+		return (missing_genomes, genome_label, subset_uploaded_df, _in_workspace, _list_genome_name, _list_genome_ref)
+
+
+	def viewerHTMLContent(self, folder_name, status_view = False, main_report_view = False, decision_tree_view = False, ensemble_view = False):
+		file = open(os.path.join(self.scratch, folder_name, 'viewer.html'), "w")
+
+		header = u"""
+			<!DOCTYPE html>
+			<html>
+			<head>
 			<style>
 			body {font-family: "Lato", sans-serif;}
 			/* Style the tab */
@@ -3745,64 +2104,521 @@ class kb_genomeclfUtils(object):
 				padding: 15px;
 				text-align: center;
 			}
-		</style>
-		</head>
-		<body>
-
-			<p></p>
+			</style>
+			</head>
+			<body>
 
 			<div class="tab">
-			  <button class="tablinks" onclick="openTab(event, 'Overview')" id="defaultOpen">Main Analysis</button>
-		  </div>
-		"""
-		file.write(html_string)
+			""" 
+		file.write(header)
 
-		if location == "forHTML":
-			next_str = u"""
-			  <div id="Overview" class="tabcontent">
-				  <iframe src="html1folder/html1.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
-			  </div>
-			  """
-			file.write(next_str)
-		elif location == "forSecHTML" :
-			next_str = u"""
-			  <div id="Overview" class="tabcontent">
-				  <iframe src="html3.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
-			  </div>
-			  """         
-			file.write(next_str)  
-		else:
-			next_str = u"""
-			  <div id="Overview" class="tabcontent">
-				  <iframe src="html0.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
-			  </div>
-			  """         
-			file.write(next_str)  
+		if(status_view):
+			str_button = u"""
+			<button class="tablinks" onclick="openTab(event, 'Status')" id="defaultOpen">Status</button>
+			"""
+			file.write(str_button)
 
+		if(main_report_view):
+			str_button = u"""
+			<button class="tablinks" onclick="openTab(event, 'Overview')" id="defaultOpen">Overview</button>
+			"""
+			file.write(str_button)
 
-		next_str = u"""
-		  <script>
-			function openTab(evt, tabName) {
-				var i, tabcontent, tablinks;
-				tabcontent = document.getElementsByClassName("tabcontent");
-				for (i = 0; i < tabcontent.length; i++) {
-					tabcontent[i].style.display = "none";
-				}
-				tablinks = document.getElementsByClassName("tablinks");
-				for (i = 0; i < tablinks.length; i++) {
-					tablinks[i].className = tablinks[i].className.replace(" active", "");
-				}
-				document.getElementById(tabName).style.display = "block";
-				evt.currentTarget.className += " active";
+		if(decision_tree_view):
+			if(main_report_view):
+				str_button = u"""
+				<button class="tablinks" onclick="openTab(event, 'Decision Tree Tuning')">Decision Tree Tuning</button>
+				"""
+			else:
+				str_button = u"""
+				<button class="tablinks" onclick="openTab(event, 'Decision Tree Tuning')" id="defaultOpen">Decision Tree Tuning</button>
+				"""
+			file.write(str_button)
+			
+		if(ensemble_view):
+			str_button = u"""
+			<button class="tablinks" onclick="openTab(event, 'Ensemble Model')">Ensemble Model</button>
+			"""
+			file.write(str_button)
+
+		remainder = u"""
+		</div>
+		<div id="Status" class="tabcontent">
+		  <iframe src="status.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
+		</div>
+
+		<div id="Overview" class="tabcontent">
+		  <iframe src="main_report.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
+		</div>
+
+		<div id="Decision Tree Tuning" class="tabcontent">
+		  <iframe src="dtt_report.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
+		</div>
+
+		<div id="Ensemble Model" class="tabcontent">
+		  <iframe src="ensemble.html" style="height:100vh; width:100%; border: hidden;" ></iframe>
+		</div>
+
+		<script>
+		function openTab(evt, tabName) {
+			var i, tabcontent, tablinks;
+			tabcontent = document.getElementsByClassName("tabcontent");
+			for (i = 0; i < tabcontent.length; i++) {
+				tabcontent[i].style.display = "none";
 			}
-				// Get the element with id="defaultOpen" and click on it
-				document.getElementById("defaultOpen").click();
-			</script>
-
+			tablinks = document.getElementsByClassName("tablinks");
+			for (i = 0; i < tablinks.length; i++) {
+				tablinks[i].className = tablinks[i].className.replace(" active", "");
+			}
+			document.getElementById(tabName).style.display = "block";
+			evt.currentTarget.className += " active";
+		}
+		document.getElementById("defaultOpen").click();
+		</script>
 		</body>
 		</html>
 		"""
-		file.write(next_str)
+		file.write(remainder)
 		file.close()
 
-		return "nodual.html"
+		return "viewer.html"
+
+	def uploadHTMLContent(self, training_set_name, missing_genomes, genome_label, phenotype, upload_table, number_of_genomes, number_of_classes):
+		
+		file = open(os.path.join(self.scratch, 'forUpload', 'status.html'), "w")
+		header = u"""
+			<!DOCTYPE html>
+			<html>
+			<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
+			<body>
+
+			<h2 style="text-align:center;"> Upload Training Set Data Summary </h2>
+			<p>
+			"""
+		file.write(header)
+
+		first_paragraph = u"""A Genome Classifier Training Set named """ + str(training_set_name) + """  \
+							  with """ + str(number_of_genomes) + """ genomes and """ + str(number_of_classes) + """ unique classes was successfully created and added \
+							  to the Narrative.</p><p>"""
+		file.write(first_paragraph)
+
+
+		second_paragraph = u"""The following table shows the information and the status for each genome that is integrated \
+								into """ + str(training_set_name) + """.</p>"""
+
+		file.write(second_paragraph)
+
+		upload_table_html = upload_table.to_html(index=False, table_id="upload_table", justify='center')
+		file.write(upload_table_html)
+
+		scripts = u"""</body>
+
+			<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+			<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+			<script type="text/javascript">
+			$(document).ready(function() {
+				$('#upload_table').DataTable( {
+					"scrollY":        "500px",
+					"scrollCollapse": true,
+					"paging":         false
+				} );
+			} );
+			</script>
+			</html>"""
+		file.write(scripts)
+		file.close()
+
+	def annotateHTMLContent(self, annotated_trainingset_name, genome_set_name, report_table):
+		file = open(os.path.join(self.scratch, 'forAnnotate', 'status.html'), "w")
+		header = u"""
+			<!DOCTYPE html>
+			<html>
+			<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
+			<body>
+
+			<h2 style="text-align:center;"> Classifier Training Set Annotation Summary </h2>
+			<p>
+			"""
+		file.write(header)
+
+		first_paragraph = u"""The following genomes are annotated with RAST annotation algorithm. Additionally, \
+							a genome set comprising of all RAST annotated genomes was created \
+							named """ + str(genome_set_name) +  """.</p><p>"""
+		file.write(first_paragraph)
+
+
+		report_table_html = report_table.to_html(index=False, table_id="annotate_table", justify='center')
+		file.write(report_table_html)
+
+		scripts = u"""</body>
+
+			<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+			<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+			<script type="text/javascript">
+			$(document).ready(function() {
+				$('#annotate_table').DataTable( {
+					"scrollY":        "500px",
+					"scrollCollapse": true,
+					"paging":         false
+				} );
+			} );
+			</script>
+			</html>"""
+		file.write(scripts)
+		file.close()
+
+	def ulify(self, elements):
+	    string = "<ul>\n"
+	    for s in elements:
+	        string += "<li>" + str(s) + "</li>\n"
+	    string += "</ul>"
+	    return string
+
+	def buildMainHTMLContent(self, training_set_name, main_report_df, genome_classifier_object_names, phenotype, best_classifier_type_nice):
+
+		folder_name = "forBuild"
+		file = open(os.path.join(self.scratch, folder_name, 'main_report.html'), "w")
+		header = u"""
+			<!DOCTYPE html>
+			<html>
+
+			<style>
+			figcaption{
+			text-align: center;
+			}
+			* {
+			  box-sizing: border-box;
+			}
+			.single{
+			display: block;
+			margin-left: auto;
+			margin-right: auto;
+			width: 40%;
+			}
+			.column {
+			  float: left;
+			  width: 50%;
+			  padding: 5px;
+			}
+
+			/* Clearfix (clear floats) */
+			.row::after {
+			  content: "";
+			  clear: both;
+			  display: table;
+			}
+			</style>
+
+			<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
+			<body>
+
+			<h2 style="text-align:center;"> Construction of Genome Classifiers </h2>
+			"""
+		file.write(header)
+
+		list_genome_classifier_object_names =  self.ulify(genome_classifier_object_names)
+		file.write(list_genome_classifier_object_names)
+
+		first_sentence = u"<p>Based on the training set """ + str(training_set_name) + """ .</p><p>"""
+		file.write(first_sentence)
+
+		first_paragraph = 	u"""Below is a confusion matrix (or matrices) which evaluates the performance of the selected classification algorithms \
+							For each classification/phenotype class we compute the percentage of genomes with a true label (Y axis of the confusion matrix) \
+							that get classified with a predicted label (X axis on the confusion matrix). Read more about <a href="https://en.wikipedia.org/wiki/Confusion_matrix"> Confusion Matrices </a>. Given the \
+							magnitude of the number of classes relative to the overall size of the training set, creating only one test set would lead to \
+							inconclusive results. Instead, we use <a href= "https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.StratifiedKFold.html"> K-Fold </a> (K=10) Cross Validation to ensure the quality of the model. Thus the below confusion \
+							matrix (or matrices) represent the average percentages over all 10 folds.</p><p>
+							"""
+		file.write(first_paragraph)
+
+		if(best_classifier_type_nice != None):
+			sentence = u"""The best classification algorithm (highest average accuracy) was: """ + str(best_classifier_type_nice) +""".</p>"""
+			file.write(sentence)
+
+
+		#Do not produce confusion Matrix if more than 6 classes = 6*4 + 1
+		if(main_report_df.shape[0] > 6*4+1):
+			sentence = 	u"""<p color: #ff5050;> Sorry, we cannot display confusion matricies for classifiers with greater than 6 classes. \
+						However statistics are still produced below.</p>"""
+			file.write(sentence)
+
+		#We are making a confusion Matrix with <6 classes
+		else:
+			#single classifier was choosen
+			if(main_report_df.shape[1] == 2):
+				images_str = u"""
+							<div class="row">
+								<figcaption>""" + genome_classifier_object_names[0] + """  <a href=" """+ os.path.join("data", genome_classifier_object_names[0] + ".pickle") + """ " download> (Download) </a> </figcaption>
+								<img class="single" src=" """ + os.path.join("images", genome_classifier_object_names[0] +".png")+ """ " alt=" """+ genome_classifier_object_names[0]  +""" "  style="width:50%">
+							</div>
+				"""
+				file.write(images_str)
+			else:
+				images_str = u"""
+							<div class="row">
+							  <div class="column">
+								<figcaption>""" + genome_classifier_object_names[0] + """  <a href=" """+ os.path.join("data", genome_classifier_object_names[0] + ".pickle") + """ " download> (Download) </a> </figcaption>
+								<img src=" """ + os.path.join("images", genome_classifier_object_names[0] +".png")+ """ " alt=" """+ genome_classifier_object_names[0]  +""" "  style="width:100%">
+							  </div>
+							  <div class="column">
+								<figcaption>""" + genome_classifier_object_names[1] + """  <a href=" """+ os.path.join("data", genome_classifier_object_names[1] + ".pickle") + """ " download> (Download) </a> </figcaption>
+								<img src=" """ + os.path.join("images", genome_classifier_object_names[1] +".png")+ """ " alt=" """+ genome_classifier_object_names[1]  +""" "  style="width:100%">
+							  </div>
+							</div>
+							<div class="row">
+							  <div class="column">
+								<figcaption>""" + genome_classifier_object_names[2] + """  <a href=" """+ os.path.join("data", genome_classifier_object_names[2] + ".pickle") + """ " download> (Download) </a> </figcaption>
+								<img src=" """ + os.path.join("images", genome_classifier_object_names[2] +".png")+ """ " alt=" """+ genome_classifier_object_names[2]  +""" "  style="width:100%">
+							  </div>
+							  <div class="column">
+								<figcaption>""" + genome_classifier_object_names[3] + """  <a href=" """+ os.path.join("data", genome_classifier_object_names[3] + ".pickle") + """ " download> (Download) </a> </figcaption>
+								<img src=" """ + os.path.join("images", genome_classifier_object_names[3] +".png")+ """ " alt=" """+ genome_classifier_object_names[3]  +""" "  style="width:100%">
+							  </div>
+							</div>
+							<div class="row">
+							  <div class="column">
+								<figcaption>""" + genome_classifier_object_names[4] + """  <a href=" """+ os.path.join("data", genome_classifier_object_names[4] + ".pickle") + """ " download> (Download) </a> </figcaption>
+								<img src=" """ + os.path.join("images", genome_classifier_object_names[4] +".png")+ """ " alt=" """+ genome_classifier_object_names[4]  +""" "  style="width:100%">
+							  </div>
+							  <div class="column">
+								<figcaption>""" + genome_classifier_object_names[5] + """  <a href=" """+ os.path.join("data", genome_classifier_object_names[5] + ".pickle") + """ " download> (Download) </a> </figcaption>
+								<img src=" """ + os.path.join("images", genome_classifier_object_names[5] +".png")+ """ " alt=" """+ genome_classifier_object_names[5]  +""" "  style="width:100%">
+							  </div>
+							</div>
+				"""
+			
+				file.write(images_str)
+
+
+		second_paragraph = 	u"""<p>For each classification algorithm, we also provide the Precision, Recall, and F1-Score for each """ + str(phenotype) + """ \
+							class. More information about these metrics can be found <a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_recall_fscore_support.html#sklearn.metrics.precision_recall_fscore_support">
+							here</a>.</p>
+							"""
+		file.write(second_paragraph)
+
+		main_report_df.fillna('', inplace=True)
+		main_report_html = main_report_df.to_html(index=False, table_id="main_report_table", justify='center')
+		file.write(main_report_html)
+
+		scripts = u"""</body>
+
+			<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+			<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+
+			<script type="text/javascript">
+			$(document).ready(function() {
+				$('#main_report_table').DataTable( {
+					"ordering": false,
+					scrollCollapse: true,
+					paging:         false
+				} );
+			} );
+			</script>
+			</html>"""
+		file.write(scripts)
+		file.close()
+
+	def buildDTTHTMLContent(self, dtt_report_df, top_20, genome_dtt_classifier_object_names, best_classifier_type_nice):
+
+		folder_name = "forBuild"
+		file = open(os.path.join(self.scratch, folder_name, 'dtt_report.html'), "w")
+		header = u"""
+			<!DOCTYPE html>
+			<html>
+
+			<style>
+			figcaption{
+			text-align: center;
+			}
+			* {
+			  box-sizing: border-box;
+			}
+			.single{
+			display: block;
+			margin-left: auto;
+			margin-right: auto;
+			width: 40%;
+			}
+			.column {
+			  float: left;
+			  width: 50%;
+			  padding: 5px;
+			}
+
+			/* Clearfix (clear floats) */
+			.row::after {
+			  content: "";
+			  clear: both;
+			  display: table;
+			}
+			</style>
+
+			<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
+			<body>
+
+			<h2 style="text-align:center;"> Decision Tree Tuning </h2>
+			<p>
+			"""
+		file.write(header)
+
+		first_paragraph = 	u"""Since the functional roles are categorical, we further fine tune the Decision Tree \
+							classification algorithm to seek better metrics. We tune the Decision Tree based on two \
+							hyperparameters: Tree Depth and Criterion (quality of a split). The two criterion are "gini" which uses \
+							the Gini impurity score and "entropy" which uses information gain score.</p>
+							"""
+		file.write(first_paragraph)
+
+
+		#Show the graph for Tree Depth Accuracy
+		tuning_str =u"""
+		<div class="row">
+		  <div class="column">
+			<figcaption> Decision Tree Gini Criterion </figcaption>
+			<img src=" """ + os.path.join("images", "decision_tree_classifier_gini_depth.png")+ """ " alt="decision_tree_classifier_gini_depth"  style="width:100%">
+		  </div>
+		  <div class="column">
+			<figcaption> Decision Tree Entropy Criterion</figcaption>
+			<img src=" """ + os.path.join("images", "decision_tree_classifier_entropy_depth.png")+ """ " alt="decision_tree_classifier_entropy_depth"  style="width:100%">
+		  </div>
+		</div>
+		"""
+		file.write(tuning_str)
+
+		if((best_classifier_type_nice != "Decision Tree") and (best_classifier_type_nice != None)):
+			sentence = 	u"""<p> We also include the confusion matrix and metrics for """ + best_classifier_type_nice + """ (the best classifier determined highest average accuracy)</p>"""
+			file.write(sentence)
+		
+			tuning_str =u"""
+			<div class="row">
+			  <div class="column">
+				<figcaption>""" + genome_dtt_classifier_object_names[0] + """  <a href=" """+ os.path.join("data", genome_dtt_classifier_object_names[0] + ".pickle") + """ " download> (Download) </a> </figcaption>
+				<img src=" """ + os.path.join("images", genome_dtt_classifier_object_names[0] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[0]  +""" "  style="width:100%">
+			  </div>
+			  <div class="column">
+				<figcaption>""" + genome_dtt_classifier_object_names[1] + """  <a href=" """+ os.path.join("data", genome_dtt_classifier_object_names[1] + ".pickle") + """ " download> (Download) </a> </figcaption>
+				<img src=" """ + os.path.join("images", genome_dtt_classifier_object_names[1] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[1]  +""" "  style="width:100%">
+			  </div>
+			</div>
+			"""
+			file.write(tuning_str)
+
+		else:	
+			tuning_str = u"""
+						<div class="row">
+							<figcaption>""" + genome_dtt_classifier_object_names[0] + """  <a href=" """+ os.path.join("data", genome_dtt_classifier_object_names[0] + ".pickle") + """ " download> (Download) </a> </figcaption>
+							<img class="single" src=" """ + os.path.join("images", genome_dtt_classifier_object_names[0] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[0]  +""" "  style="width:50%">
+						</div>
+			"""
+			file.write(tuning_str)
+		
+		tuning_str =u"""
+		<div class="row">
+		  <div class="column">
+			<figcaption>""" + genome_dtt_classifier_object_names[-1 -1] + """  <a href=" """+ os.path.join("data", genome_dtt_classifier_object_names[-1 -1] + ".pickle") + """ " download> (Download) </a> </figcaption>
+			<img src=" """ + os.path.join("images", genome_dtt_classifier_object_names[-1 -1] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[-1 -1]  +""" "  style="width:100%">
+		  </div>
+		  <div class="column">
+			<figcaption>""" + genome_dtt_classifier_object_names[-1] + """  <a href=" """+ os.path.join("data", genome_dtt_classifier_object_names[-1] + ".pickle") + """ " download> (Download) </a> </figcaption>
+			<img src=" """ + os.path.join("images", genome_dtt_classifier_object_names[-1] +".png")+ """ " alt=" """+ genome_dtt_classifier_object_names[-1]  +""" "  style="width:100%">
+		  </div>
+		</div>
+		"""
+		file.write(tuning_str)
+
+
+		dtt_report_df.fillna('', inplace=True)
+		dtt_report_html = dtt_report_df.to_html(index=False, table_id="dtt_report_table", justify='center')
+		file.write(dtt_report_html)
+
+		sentence = u"""<p>Below is a visual reprsentation of the Decision Tree with the highest accuracy. Each node represents\
+						a decision (True or False) that the model predicts during the classification process, if the \
+						functional role is absent the classifier moves left, and if it is present it moves right. Leaf\
+						nodes represent final classifications.</p>"""
+		file.write(sentence)
+
+		tree_image = u"""
+					<br>
+					<div class="row">
+						<figcaption> Decision Tree on Functional Roles </figcaption>
+						<img src=" """ + os.path.join("images", "VisualDecisionTree.png")+ """ " alt="VisualDecisionTree"  style="width:100%">
+					</div>
+		"""
+		file.write(tree_image)
+
+
+		sentence = u"""<p>Below is the <a href="https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html#sklearn.tree.DecisionTreeClassifier.feature_importances_">weighting scheme</a> \
+						that the Decision Tree with the highest accuracy places on each of the functional roles</p>"""
+		file.write(sentence)
+
+		top_20_html = top_20.to_html(index=False, table_id="top_20_table", justify='center')
+		file.write(top_20_html)
+
+		scripts = u"""</body>
+
+			<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+			<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+			<script type="text/javascript">
+			$(document).ready(function() {
+				$('#dtt_report_table').DataTable( {
+					"ordering": false,
+					scrollCollapse: true,
+					paging:         false
+				} );
+			} );
+			</script>
+			<script type="text/javascript">
+			$(document).ready(function() {
+				$('#top_20_table').DataTable( {
+					"scrollY":        "500px",
+					"scrollCollapse": true,
+					"paging":         false
+				} );
+			} );
+			</script>
+			</html>"""
+		file.write(scripts)
+		file.close()
+
+	def predictHTMLContent(self, categorizer_name, phenotype, selection_attribute, missing_genomes, genome_label, predict_table):		
+		file = open(os.path.join(self.scratch, 'forPredict', 'status.html'), u"w")
+		header = u"""
+			<!DOCTYPE html>
+			<html>
+			<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
+			<body>
+
+			<h2 style="text-align:center;"> Phenotype Prediction based on Genome Classifiers </h2>
+			<p>
+			"""
+		file.write(header)
+
+		first_paragraph = u"""The Genome Categorizer """ + str(categorizer_name) \
+							+ """ has been used to make predictions for  """ + str(phenotype)+ """ based on \
+							""" + str(selection_attribute) + """. </p><p>"""
+		file.write(first_paragraph)
+
+		second_paragraph = u"""The following table summarizes the predictions in terms of <a href = "https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html#sklearn.linear_model.LogisticRegression.predict_proba">probabilities</a>.</p>"""
+		file.write(second_paragraph)
+
+		predict_table_html = predict_table.to_html(index=False, table_id="predict_table", justify='center')
+		file.write(predict_table_html)
+
+		scripts = u"""</body>
+
+			<script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+			<script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+			<script type="text/javascript">
+			$(document).ready(function() {
+				$('#predict_table').DataTable( {
+					"scrollY":        "500px",
+					"scrollCollapse": true,
+					"paging":         false
+				} );
+			} );
+			</script>
+			</html>"""
+		file.write(scripts)
+		file.close()
+
+
+

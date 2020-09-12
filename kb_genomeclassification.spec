@@ -118,18 +118,13 @@ module kb_genomeclassification {
     } EnsembleModelOptions;
 
     typedef structure {
-        string phenotypeclass;
-        string attribute;
+        string genome_attribute;
         string workspace;
-        string trainingset_name;
+        string training_set_name;
         mapping <string genome_id,ClassifierTrainingSet> classifier_training_set;
-        string classifier_out;
-        string target;
+        string classifier_object_name;
         string description;
-        string classifier;
-        string shock_id;
-        string list_name;
-        int save_ts;
+        string classifier_to_run;
         LogisticRegressionOptions logistic_regression;
         DecisionTreeClassifierOptions decision_tree_classifier;
         GaussianNBOptions gaussian_nb;
@@ -139,28 +134,14 @@ module kb_genomeclassification {
         EnsembleModelOptions ensemble_model;
     }BuildClassifierInput;
 
-	typedef structure{
-		string attribute;
-		float weight;
-	}attributeWeights;
-
-	typedef structure{
-		string phenotypeclass;
-		float accuracy;
-		float precision;
-		float recall;
-		float f1score;
-	}phenotypeClassInfo;
 
 	typedef structure{
 		string classifier_name;
 		string classifier_ref;
-		list<phenotypeClassInfo> phenotype_class_info;
-		float averagef1;
+		float accuracy;
 	}classifierInfo;
 
     typedef structure {
-        list<attributeWeights> attribute_weights;
     	list<classifierInfo> classifier_info;
         string report_name;
         string report_ref;
@@ -177,28 +158,24 @@ module kb_genomeclassification {
         returns (ClassifierOut output) authentication required;
 
 
-
    typedef structure {
         string workspace;
-        string attribute;
-        string classifier_name;
+        string categorizer_name;
         string description;
-        string phenotypeclass;
-        string Upload_File;
-        string list_name;
-        int Annotated;
+        string workspace_id;
+        list<string> input_genome_and_genome_set_refs;
     } ClassifierPredictionInput;
 
 
     typedef structure {
-        float prediction_accuracy;
+        float prediction_probabilities;
         string phenotype;
         string genome_name;
         string genome_ref;
     } PredictedPhenotypeOut;
 
    typedef structure {
-        mapping<string genome_id, PredictedPhenotypeOut> predictions;
+        mapping<string genome_id, PredictedPhenotypeOut> prediction_set;
         string report_name;
         string report_ref;
    }ClassifierPredictionOutput;
@@ -208,29 +185,26 @@ module kb_genomeclassification {
 
 
 	typedef structure {
-        string phenotypeclass;
+        string phenotype;
         string workspace;
+        string workspace_id;
         string description;
-        mapping <string genome_id,ClassifierTrainingSet> classifier_training_set;
-        string training_set_out;
-        string target;
-        string Upload_File;
-        int Annotated;
-        string list_name;
+        string training_set_name;
+        string file_path;
+        int annotate;
     }UploadTrainingSetInput;
 
     typedef structure {
         string phenotype;
         string genome_name;
         string genome_ref;
-        int load_status;
-        int RAST_annotation_status;
+        list<string> references;
+        list<string> evidence_types;
     } ClassifierTrainingSetOut;
 
 
-
     typedef structure {
-    	mapping <string genome_id,ClassifierTrainingSetOut> classifier_training_set;
+    	mapping <string genome_id, ClassifierTrainingSetOut> classifier_training_set;
         string report_name;
         string report_ref;
     }UploadTrainingSetOut;
@@ -238,4 +212,26 @@ module kb_genomeclassification {
 
 	funcdef upload_trainingset(UploadTrainingSetInput params)
         returns (UploadTrainingSetOut output) authentication required;
+
+
+    typedef structure{
+        string training_set_name;
+        string annotated_trainingset_name;
+        string description;
+        string workspace;
+    }RastAnnotateTrainingSetInput;
+
+    typedef structure{
+        mapping <string genome_id, ClassifierTrainingSetOut> classifier_training_set;
+        string report_name;
+        string report_ref;
+    }RastAnnotateTrainingSetOutput;
+
+    funcdef rast_annotate_trainingset(RastAnnotateTrainingSetInput params)
+        returns (RastAnnotateTrainingSetOutput output) authentication required;
 };
+
+
+
+
+

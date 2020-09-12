@@ -2,6 +2,7 @@
 package us.kbase.kbgenomeclassification;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Generated;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
@@ -19,16 +20,34 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
+    "classifier_info",
     "report_name",
     "report_ref"
 })
 public class ClassifierOut {
 
+    @JsonProperty("classifier_info")
+    private List<ClassifierInfo> classifierInfo;
     @JsonProperty("report_name")
     private String reportName;
     @JsonProperty("report_ref")
     private String reportRef;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+
+    @JsonProperty("classifier_info")
+    public List<ClassifierInfo> getClassifierInfo() {
+        return classifierInfo;
+    }
+
+    @JsonProperty("classifier_info")
+    public void setClassifierInfo(List<ClassifierInfo> classifierInfo) {
+        this.classifierInfo = classifierInfo;
+    }
+
+    public ClassifierOut withClassifierInfo(List<ClassifierInfo> classifierInfo) {
+        this.classifierInfo = classifierInfo;
+        return this;
+    }
 
     @JsonProperty("report_name")
     public String getReportName() {
@@ -72,7 +91,7 @@ public class ClassifierOut {
 
     @Override
     public String toString() {
-        return ((((((("ClassifierOut"+" [reportName=")+ reportName)+", reportRef=")+ reportRef)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((("ClassifierOut"+" [classifierInfo=")+ classifierInfo)+", reportName=")+ reportName)+", reportRef=")+ reportRef)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

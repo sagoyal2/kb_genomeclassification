@@ -19,44 +19,62 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
-    "prediction_accuracy",
-    "predictions"
+    "prediction_set",
+    "report_name",
+    "report_ref"
 })
 public class ClassifierPredictionOutput {
 
-    @JsonProperty("prediction_accuracy")
-    private Double predictionAccuracy;
-    @JsonProperty("predictions")
-    private Map<String, String> predictions;
+    @JsonProperty("prediction_set")
+    private Map<String, PredictedPhenotypeOut> predictionSet;
+    @JsonProperty("report_name")
+    private java.lang.String reportName;
+    @JsonProperty("report_ref")
+    private java.lang.String reportRef;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
-    @JsonProperty("prediction_accuracy")
-    public Double getPredictionAccuracy() {
-        return predictionAccuracy;
+    @JsonProperty("prediction_set")
+    public Map<String, PredictedPhenotypeOut> getPredictionSet() {
+        return predictionSet;
     }
 
-    @JsonProperty("prediction_accuracy")
-    public void setPredictionAccuracy(Double predictionAccuracy) {
-        this.predictionAccuracy = predictionAccuracy;
+    @JsonProperty("prediction_set")
+    public void setPredictionSet(Map<String, PredictedPhenotypeOut> predictionSet) {
+        this.predictionSet = predictionSet;
     }
 
-    public ClassifierPredictionOutput withPredictionAccuracy(Double predictionAccuracy) {
-        this.predictionAccuracy = predictionAccuracy;
+    public ClassifierPredictionOutput withPredictionSet(Map<String, PredictedPhenotypeOut> predictionSet) {
+        this.predictionSet = predictionSet;
         return this;
     }
 
-    @JsonProperty("predictions")
-    public Map<String, String> getPredictions() {
-        return predictions;
+    @JsonProperty("report_name")
+    public java.lang.String getReportName() {
+        return reportName;
     }
 
-    @JsonProperty("predictions")
-    public void setPredictions(Map<String, String> predictions) {
-        this.predictions = predictions;
+    @JsonProperty("report_name")
+    public void setReportName(java.lang.String reportName) {
+        this.reportName = reportName;
     }
 
-    public ClassifierPredictionOutput withPredictions(Map<String, String> predictions) {
-        this.predictions = predictions;
+    public ClassifierPredictionOutput withReportName(java.lang.String reportName) {
+        this.reportName = reportName;
+        return this;
+    }
+
+    @JsonProperty("report_ref")
+    public java.lang.String getReportRef() {
+        return reportRef;
+    }
+
+    @JsonProperty("report_ref")
+    public void setReportRef(java.lang.String reportRef) {
+        this.reportRef = reportRef;
+    }
+
+    public ClassifierPredictionOutput withReportRef(java.lang.String reportRef) {
+        this.reportRef = reportRef;
         return this;
     }
 
@@ -72,7 +90,7 @@ public class ClassifierPredictionOutput {
 
     @Override
     public java.lang.String toString() {
-        return ((((((("ClassifierPredictionOutput"+" [predictionAccuracy=")+ predictionAccuracy)+", predictions=")+ predictions)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((("ClassifierPredictionOutput"+" [predictionSet=")+ predictionSet)+", reportName=")+ reportName)+", reportRef=")+ reportRef)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

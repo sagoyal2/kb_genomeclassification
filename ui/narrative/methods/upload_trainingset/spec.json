@@ -7,32 +7,28 @@
     "service-mapping": {
       "input_mapping": [
         {
-          "input_parameter": "Annotated",
-          "target_property": "Annotated"
-        },
-        {
-          "input_parameter": "Upload_File",
-          "target_property": "Upload_File"
-        },
-        {
-          "input_parameter": "list_name",
-          "target_property": "list_name"
+          "input_parameter": "file_path",
+          "target_property": "file_path"
         },
         {
           "narrative_system_variable": "workspace",
           "target_property": "workspace"
         },
         {
+            "narrative_system_variable": "workspace_id",
+            "target_property": "workspace_id"
+        },
+        {
           "input_parameter": "description",
           "target_property": "description"
         },
         {
-          "input_parameter": "training_set_out",
-          "target_property": "training_set_out"
+          "input_parameter": "training_set_name",
+          "target_property": "training_set_name"
         },
         {
-          "input_parameter": "phenotypeclass",
-          "target_property": "phenotypeclass"
+          "input_parameter": "phenotype",
+          "target_property": "phenotype"
         }
       ],
       "method": "upload_trainingset",
@@ -72,81 +68,49 @@
   "job_id_output_field": "docker",
   "parameters": [
     {
-      "advanced": false,
-      "allow_multiple": false,
-      "checkbox_options": {
-        "checked_value": 1,
-        "unchecked_value": 0
-      },
-      "default_values": [
-        "0"
-      ],
-      "field_type": "checkbox",
-      "id": "Annotated",
-      "optional": true,
-      "text_options": {
-        "valid_ws_types": []
-      }
-    },
-    {
-      "id" : "Upload_File",
-      "optional" : true,
+      "id" : "file_path",
+      "optional" : false,
       "advanced" : false,
       "allow_multiple" : false,
       "default_values" : [ "" ],
       "field_type" : "dynamic_dropdown",
-      "dynamic_dropdown_options" : {
-        "data_source": "ftp_staging"
-      }
+      "text_options": {}
     },
     {
-      "advanced": false,
-      "allow_multiple": false,
-      "default_values": [
-        ""
-      ],
-      "field_type": "textarea",
-      "id": "list_name",
-      "optional": true,
-      "textarea_options": {
-        "n_rows": 15
-      }
-    },
-    {
+      "id": "description",
+      "optional": false,
       "advanced": false,
       "allow_multiple": false,
       "default_values": [
         ""
       ],
       "field_type": "text",
-      "id": "description",
-      "optional": false,
       "text_options": {
         "is_output_name": false
       }
     },
     {
+      "id": "phenotype",
+      "optional": false,
       "advanced": false,
       "allow_multiple": false,
       "default_values": [
         ""
       ],
       "field_type": "text",
-      "id": "phenotypeclass",
-      "optional": false,
       "text_options": {
         "valid_ws_types": []
       }
     },
     {
+      "id": "training_set_name",
+      "optional": false,
       "advanced": false,
       "allow_multiple": false,
       "default_values": [
         ""
       ],
       "field_type": "text",
-      "id": "training_set_out",
-      "optional": false,
       "text_options": {
         "is_output_name": true,
         "valid_ws_types": [

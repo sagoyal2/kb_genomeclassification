@@ -20,23 +20,23 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
     "workspace",
-    "classifier_name",
-    "phenotypeclass",
-    "shock_id",
-    "list_name"
+    "categorizer_name",
+    "description",
+    "file_path",
+    "annotate"
 })
 public class ClassifierPredictionInput {
 
     @JsonProperty("workspace")
     private String workspace;
-    @JsonProperty("classifier_name")
-    private String classifierName;
-    @JsonProperty("phenotypeclass")
-    private String phenotypeclass;
-    @JsonProperty("shock_id")
-    private String shockId;
-    @JsonProperty("list_name")
-    private String listName;
+    @JsonProperty("categorizer_name")
+    private String categorizerName;
+    @JsonProperty("description")
+    private String description;
+    @JsonProperty("file_path")
+    private String filePath;
+    @JsonProperty("annotate")
+    private Long annotate;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonProperty("workspace")
@@ -54,63 +54,63 @@ public class ClassifierPredictionInput {
         return this;
     }
 
-    @JsonProperty("classifier_name")
-    public String getClassifierName() {
-        return classifierName;
+    @JsonProperty("categorizer_name")
+    public String getCategorizerName() {
+        return categorizerName;
     }
 
-    @JsonProperty("classifier_name")
-    public void setClassifierName(String classifierName) {
-        this.classifierName = classifierName;
+    @JsonProperty("categorizer_name")
+    public void setCategorizerName(String categorizerName) {
+        this.categorizerName = categorizerName;
     }
 
-    public ClassifierPredictionInput withClassifierName(String classifierName) {
-        this.classifierName = classifierName;
+    public ClassifierPredictionInput withCategorizerName(String categorizerName) {
+        this.categorizerName = categorizerName;
         return this;
     }
 
-    @JsonProperty("phenotypeclass")
-    public String getPhenotypeclass() {
-        return phenotypeclass;
+    @JsonProperty("description")
+    public String getDescription() {
+        return description;
     }
 
-    @JsonProperty("phenotypeclass")
-    public void setPhenotypeclass(String phenotypeclass) {
-        this.phenotypeclass = phenotypeclass;
+    @JsonProperty("description")
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-    public ClassifierPredictionInput withPhenotypeclass(String phenotypeclass) {
-        this.phenotypeclass = phenotypeclass;
+    public ClassifierPredictionInput withDescription(String description) {
+        this.description = description;
         return this;
     }
 
-    @JsonProperty("shock_id")
-    public String getShockId() {
-        return shockId;
+    @JsonProperty("file_path")
+    public String getFilePath() {
+        return filePath;
     }
 
-    @JsonProperty("shock_id")
-    public void setShockId(String shockId) {
-        this.shockId = shockId;
+    @JsonProperty("file_path")
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
     }
 
-    public ClassifierPredictionInput withShockId(String shockId) {
-        this.shockId = shockId;
+    public ClassifierPredictionInput withFilePath(String filePath) {
+        this.filePath = filePath;
         return this;
     }
 
-    @JsonProperty("list_name")
-    public String getListName() {
-        return listName;
+    @JsonProperty("annotate")
+    public Long getAnnotate() {
+        return annotate;
     }
 
-    @JsonProperty("list_name")
-    public void setListName(String listName) {
-        this.listName = listName;
+    @JsonProperty("annotate")
+    public void setAnnotate(Long annotate) {
+        this.annotate = annotate;
     }
 
-    public ClassifierPredictionInput withListName(String listName) {
-        this.listName = listName;
+    public ClassifierPredictionInput withAnnotate(Long annotate) {
+        this.annotate = annotate;
         return this;
     }
 
@@ -126,7 +126,7 @@ public class ClassifierPredictionInput {
 
     @Override
     public String toString() {
-        return ((((((((((((("ClassifierPredictionInput"+" [workspace=")+ workspace)+", classifierName=")+ classifierName)+", phenotypeclass=")+ phenotypeclass)+", shockId=")+ shockId)+", listName=")+ listName)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((("ClassifierPredictionInput"+" [workspace=")+ workspace)+", categorizerName=")+ categorizerName)+", description=")+ description)+", filePath=")+ filePath)+", annotate=")+ annotate)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

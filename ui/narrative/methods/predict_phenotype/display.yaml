@@ -3,7 +3,7 @@
 #
 name: Predict Phenotype
 tooltip: |
-    This module predict phenotypes for genomes based on a selected classifier
+    This module predict phenotypes based on the classifier choosen.
 screenshots: []
 
 icon: null
@@ -27,26 +27,16 @@ suggestions:
 # Configure the display and description of parameters
 #
 parameters :
-    Upload_File :
+    categorizer_name :
         ui-name : |
-            File Path
+            Genome Categorizer
         short-hint : |
-            File Path that is found by uploading via the staging area
-    Annotated :
+            Select the classifier
+    input_genome_and_genome_set_refs:
         ui-name : |
-            Genomes RAST Annotated
+            Genome(s) or Genome Set(s)
         short-hint : |
-            Check box if Genomes are already RAST Annotated, if not module will first annotate and then create trainingset
-    attribute :
-        ui-name : |
-            Select the attribute
-        short-hint : |
-            Select the attribute that classifier be built
-    list_name :
-        ui-name : |
-            Genomes to Predict
-        short-hint : |
-            Paste a list of Genomes that you want predictions on
+            Select the Genomes and GenomeSets to make Phenotypic Predictions for.
     description:
         ui-name : |
             Description
@@ -54,15 +44,5 @@ parameters :
             Describe Purpose or Contents of Training Set
         placeholder: |
             Enter Description
-    classifier_name :
-        ui-name : |
-            Categorizer
-        short-hint : |
-            Select the classifier
-    phenotypeclass:
-        ui-name : |
-            Phenotype or Condition [e.g.; Gram type, Respiration]
-        short-hint : |
-            Select the phenotype to be predicted
 description : |
-    <p>This module predict phenotypes for genomes based on a selected classifier.</p>
+   <p>Description soon to follow</p>
