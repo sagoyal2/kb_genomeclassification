@@ -23,6 +23,7 @@ from sklearn import svm
 from sklearn.neural_network import MLPClassifier
 
 #additional classifier methods
+from sklearn.utils import class_weight
 from sklearn.tree import export_graphviz
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
@@ -276,7 +277,7 @@ class kb_genomeclfUtils(object):
 
 		if classifier_type == "k_nearest_neighbors":
 			if(params == None):
-				return KNeighborsClassifier()
+				return KNeighborsClassifier(weights = 'distance')
 			else:
 				return KNeighborsClassifier(n_neighbors = params["n_neighbors"],
 											weights = params["weights"],
@@ -298,9 +299,10 @@ class kb_genomeclfUtils(object):
 
 		elif classifier_type == "logistic_regression":
 			if(params == None):
-				return LogisticRegression(random_state=0)
+				return LogisticRegression( class_weight = "balanced", random_state=0)
 			else:
-				return LogisticRegression(	penalty = params["penalty"],
+				return LogisticRegression(	class_weight = "balanced",
+											penalty = params["penalty"],
 											dual = self.getBool(params["dual"]),
 											tol = params["lr_tolerance"],
 											C = params["lr_C"],
@@ -313,10 +315,11 @@ class kb_genomeclfUtils(object):
 
 		elif classifier_type == "decision_tree_classifier":
 			if(params == None):
-				return DecisionTreeClassifier(random_state=0)
+				return DecisionTreeClassifier(class_weight = "balanced", random_state=0)
 			else:
 
-				return DecisionTreeClassifier(	criterion = params["criterion"],
+				return DecisionTreeClassifier(	class_weight = "balanced",
+												criterion = params["criterion"],
 												splitter = params["splitter"],
 												max_depth = params["max_depth"],
 												min_samples_split = params["min_samples_split"],
@@ -328,9 +331,10 @@ class kb_genomeclfUtils(object):
 
 		elif classifier_type == "support_vector_machine":
 			if(params == None):
-				return svm.SVC(kernel = "linear",random_state=0)
+				return svm.SVC(class_weight = "balanced", kernel = "linear",random_state=0)
 			else:
-				return svm.SVC(	C = params["svm_C"],
+				return svm.SVC(	class_weight = "balanced",
+								C = params["svm_C"],
 								kernel = params["kernel"],
 								degree = params["degree"],
 								gamma = params["gamma"],
@@ -420,7 +424,14 @@ class kb_genomeclfUtils(object):
 			X_test = common_classifier_information["whole_X"][common_classifier_information["list_test_index"][c]]
 			y_test = common_classifier_information["whole_Y"][common_classifier_information["list_test_index"][c]]
 
-			classifier.fit(X_train, y_train)
+			#do class reweighting specifically for GaussianNB¶
+			if(current_classifier_object['classifier_type']=="gaussian_nb"):
+				#https://datascience.stackexchange.com/questions/13490/how-to-set-class-weights-for-imbalanced-classes-in-keras
+				class_weights = class_weight.compute_class_weight('balanced',np.unique(y_train),y_train)
+				classifier.fit(X_train, y_train, class_weight=class_weights)
+			else:
+				classifier.fit(X_train, y_train)
+
 			y_pred = classifier.predict(X_test)
 
 			cnf = confusion_matrix(y_test, y_pred, labels=list(common_classifier_information["class_list_mapping"].values()))
