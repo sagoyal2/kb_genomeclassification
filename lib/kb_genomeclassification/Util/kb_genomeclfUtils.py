@@ -2208,8 +2208,12 @@ class kb_genomeclfUtils(object):
 			"""
 		file.write(header)
 
+		#get breakdown of number of genomes per class
+		dict_of_value_counts = dict(upload_table["Phenotype/Classification"].value_counts())
+
 		first_paragraph = u"""A Genome Classifier Training Set named """ + str(training_set_name) + """  \
-							  with """ + str(number_of_genomes) + """ genomes and """ + str(number_of_classes) + """ unique classes was successfully created and added \
+							  with """ + str(number_of_genomes) + """ genomes and """ + str(number_of_classes) + """ unique classes (""" + str(dict_of_value_counts) + """) was \
+							  successfully created and added \
 							  to the Narrative.</p><p>"""
 		file.write(first_paragraph)
 
