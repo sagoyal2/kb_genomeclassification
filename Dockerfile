@@ -11,7 +11,7 @@ RUN pip install --upgrade pip
 RUN apt-get update
 RUN pip install pandas
 RUN pip install -U scikit-learn
-RUN pip install seaborn
+RUN pip install seaborn --ignore-installed
 #used to be matplotlib==3.0.3
 RUN python -mpip install matplotlib
 
