@@ -432,7 +432,7 @@ class kb_genomeclfUtils(object):
 			if(current_classifier_object['classifier_type']=="gaussian_nb"):
 				#https://datascience.stackexchange.com/questions/13490/how-to-set-class-weights-for-imbalanced-classes-in-keras
 				class_weights = class_weight.compute_class_weight('balanced',np.unique(y_train),y_train)
-				classifier.fit(X_train, y_train, class_weight=class_weights)
+				classifier.fit(X_train, y_train, sample_weight=class_weights)
 			else:
 				classifier.fit(X_train, y_train)
 
