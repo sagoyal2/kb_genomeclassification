@@ -431,8 +431,13 @@ class kb_genomeclfUtils(object):
 			#do class reweighting specifically for GaussianNB¶
 			if(current_classifier_object['classifier_type']=="gaussian_nb"):
 				#https://datascience.stackexchange.com/questions/13490/how-to-set-class-weights-for-imbalanced-classes-in-keras
-				class_weights = class_weight.compute_class_weight('balanced',np.unique(y_train),y_train)
-				classifier.fit(X_train, y_train, sample_weight=class_weights)
+				unique_classes =  np.unique(y_train)
+				class_weights = class_weight.compute_class_weight('balanced',unique_classes,y_train)
+				
+				dict_class_to_weight = {curr_class:curr_weight for curr_class, curr_weight in zip(unique_classes, class_weights)}
+				sample_weight = [dict_class_to_weight[curr_class] for curr_class in y_train]
+
+				classifier.fit(X_train, y_train, sample_weight=sample_weight)
 			else:
 				classifier.fit(X_train, y_train)
 
